@@ -1,255 +1,362 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SenAlert - Dashboard</title>
+  <title>SenAlert — Dashboard</title>
 
-  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
-  <!-- Chart.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <!-- Leaflet JS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f6f9;
-      color: #333;
+    :root {
+      --bleu:       #1a73e8;
+      --bleu-fonce: #1557b0;
+      --bleu-clair: #e8f0fe;
+      --sidebar-bg: #0f1b2d;
+      --sidebar-w:  240px;
+      --gris-bg:    #f0f4f8;
+      --blanc:      #ffffff;
+      --texte:      #2d3748;
+      --texte-muted:#718096;
+      --bordure:    #e2e8f0;
+      --rouge:      #e53e3e;
+      --orange:     #dd6b20;
+      --vert:       #38a169;
     }
 
-    /* ===== NAVBAR ===== */
-    .navbar {
-      background-color: #c0392b;
-      color: white;
-      padding: 15px 30px;
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: var(--gris-bg);
+      color: var(--texte);
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      min-height: 100vh;
     }
-    .navbar h1 { font-size: 22px; }
-    .navbar span { font-size: 14px; opacity: 0.85; }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--sidebar-bg);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0;
+      height: 100vh;
+      z-index: 100;
+    }
+    .sidebar-logo {
+      padding: 24px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .sidebar-logo h1 { font-size: 20px; font-weight: 700; color: white; }
+    .sidebar-logo p  { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 3px; }
+
+    .sidebar-menu { padding: 20px 12px; flex: 1; }
+    .menu-label {
+      font-size: 10px; color: rgba(255,255,255,0.3);
+      text-transform: uppercase; letter-spacing: 1px;
+      padding: 0 8px; margin-bottom: 8px; margin-top: 16px;
+    }
+    .menu-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 8px;
+      font-size: 14px; color: rgba(255,255,255,0.65);
+      cursor: pointer; transition: all 0.2s; margin-bottom: 2px;
+    }
+    .menu-item:hover { background: rgba(255,255,255,0.08); color: white; }
+    .menu-item.actif { background: var(--bleu); color: white; }
+    .menu-item .icone { font-size: 18px; }
+
+    .sidebar-bas { padding: 16px 12px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .user-info { display: flex; align-items: center; gap: 10px; padding: 8px 12px; }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--bleu);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 14px;
+    }
+    .user-info .nom  { font-size: 13px; font-weight: 600; color: white; }
+    .user-info .role { font-size: 11px; color: rgba(255,255,255,0.45); }
+
+    /* ===== MAIN ===== */
+    .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; }
+
+    .topbar {
+      background: var(--blanc);
+      border-bottom: 1px solid var(--bordure);
+      padding: 14px 28px;
+      display: flex; justify-content: space-between; align-items: center;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .topbar h2 { font-size: 18px; font-weight: 600; }
+    .topbar-droite { display: flex; align-items: center; gap: 12px; }
+    .badge-alerte {
+      background: var(--rouge); color: white;
+      font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 600;
+    }
+    .btn-actualiser {
+      background: var(--bleu); color: white; border: none;
+      padding: 8px 16px; border-radius: 8px; font-size: 13px;
+      cursor: pointer; font-weight: 600;
+    }
+    .btn-actualiser:hover { background: var(--bleu-fonce); }
+
+    .page { padding: 24px 28px; }
 
     /* ===== FILTRES ===== */
-    .filtres {
-      background: white;
-      padding: 15px 30px;
-      display: flex;
-      gap: 15px;
-      flex-wrap: wrap;
-      border-bottom: 1px solid #ddd;
+    .filtres-bar {
+      background: var(--blanc); border-radius: 12px;
+      border: 1px solid var(--bordure); padding: 16px 20px;
+      display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+      margin-bottom: 24px;
     }
-    .filtres select, .filtres button {
-      padding: 8px 14px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 14px;
-      cursor: pointer;
+    .filtres-bar label { font-size: 13px; color: var(--texte-muted); font-weight: 600; }
+    .filtres-bar select {
+      padding: 8px 12px; border: 1px solid var(--bordure);
+      border-radius: 8px; font-size: 13px;
+      background: var(--gris-bg); cursor: pointer; outline: none;
     }
-    .filtres button {
-      background-color: #c0392b;
-      color: white;
-      border: none;
-    }
-    .filtres button:hover { background-color: #a93226; }
+    .filtres-bar select:focus { border-color: var(--bleu); }
+    .btn-filtre { padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
+    .btn-filtre.principal { background: var(--bleu); color: white; }
+    .btn-filtre.principal:hover { background: var(--bleu-fonce); }
+    .btn-filtre.secondaire { background: var(--gris-bg); color: var(--texte-muted); border: 1px solid var(--bordure); }
 
     /* ===== STATS ===== */
-    .stats {
-      display: flex;
-      gap: 20px;
-      padding: 20px 30px;
-      flex-wrap: wrap;
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px; margin-bottom: 24px;
     }
     .stat-card {
-      background: white;
-      border-radius: 10px;
-      padding: 20px 25px;
-      flex: 1;
-      min-width: 150px;
-      text-align: center;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      background: var(--blanc); border-radius: 12px;
+      border: 1px solid var(--bordure); padding: 20px;
+      display: flex; align-items: center; gap: 16px;
     }
-    .stat-card .nombre {
-      font-size: 32px;
-      font-weight: bold;
-      color: #c0392b;
+    .stat-icone {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; font-size: 22px;
     }
-    .stat-card .label {
-      font-size: 13px;
-      color: #666;
-      margin-top: 5px;
-    }
+    .stat-icone.bleu   { background: var(--bleu-clair); }
+    .stat-icone.rouge  { background: #fff5f5; }
+    .stat-icone.vert   { background: #f0fff4; }
+    .stat-icone.orange { background: #fffaf0; }
+    .stat-info .valeur { font-size: 28px; font-weight: 700; line-height: 1; }
+    .stat-info .valeur.bleu   { color: var(--bleu); }
+    .stat-info .valeur.rouge  { color: var(--rouge); }
+    .stat-info .valeur.vert   { color: var(--vert); }
+    .stat-info .valeur.orange { color: var(--orange); }
+    .stat-info .etiquette { font-size: 12px; color: var(--texte-muted); margin-top: 4px; }
 
-    /* ===== CONTENU PRINCIPAL ===== */
-    .contenu {
-      display: flex;
-      gap: 20px;
-      padding: 0 30px 30px;
-      flex-wrap: wrap;
+    /* ===== CARTE + GRAPHIQUE ===== */
+    .grille-milieu { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .carte-box, .graph-box {
+      background: var(--blanc); border-radius: 12px;
+      border: 1px solid var(--bordure); overflow: hidden;
     }
-
-    /* ===== CARTE ===== */
-    .carte-container {
-      flex: 2;
-      min-width: 300px;
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-      overflow: hidden;
+    .box-header {
+      padding: 16px 20px; border-bottom: 1px solid var(--bordure);
+      display: flex; justify-content: space-between; align-items: center;
     }
-    .carte-container h2 {
-      padding: 15px 20px;
-      font-size: 16px;
-      border-bottom: 1px solid #eee;
-    }
-    #map { height: 380px; width: 100%; }
-
-    /* ===== GRAPHIQUE ===== */
-    .graphique-container {
-      flex: 1;
-      min-width: 250px;
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-      padding: 15px 20px;
-    }
-    .graphique-container h2 {
-      font-size: 16px;
-      margin-bottom: 15px;
-      border-bottom: 1px solid #eee;
-      padding-bottom: 10px;
-    }
+    .box-header h3 { font-size: 15px; font-weight: 600; }
+    .box-header span { font-size: 12px; color: var(--texte-muted); }
+    #map { height: 380px; }
+    .graph-box .graph-body { padding: 20px; }
 
     /* ===== TABLEAU ===== */
-    .tableau-container {
-      width: 100%;
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-      padding: 20px;
-      margin: 0 30px 30px;
+    .tableau-box {
+      background: var(--blanc); border-radius: 12px;
+      border: 1px solid var(--bordure); overflow: hidden; margin-bottom: 24px;
     }
-    .tableau-container h2 {
-      font-size: 16px;
-      margin-bottom: 15px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-    }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    thead tr { background: var(--gris-bg); }
     th {
-      background-color: #f0f0f0;
-      padding: 10px 12px;
-      text-align: left;
-      font-weight: 600;
+      padding: 12px 16px; text-align: left;
+      font-size: 12px; font-weight: 600; color: var(--texte-muted);
+      text-transform: uppercase; letter-spacing: 0.5px;
     }
-    td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; }
-    tr:hover { background-color: #fafafa; }
+    td { padding: 13px 16px; border-bottom: 1px solid var(--bordure); }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: #f7faff; }
 
-    .badge {
-      padding: 3px 10px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
+    .type-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;
     }
-    .badge.urgent { background: #fdecea; color: #c0392b; }
-    .badge.moyen  { background: #fff3e0; color: #e67e22; }
-    .badge.faible { background: #e8f5e9; color: #27ae60; }
+    .type-badge.inondation { background: #ebf8ff; color: #2b6cb0; }
+    .type-badge.incendie   { background: #fff5f5; color: #c53030; }
+    .type-badge.accident   { background: #fffaf0; color: #c05621; }
+    .type-badge.epidemie   { background: #faf5ff; color: #6b46c1; }
+
+    .niveau-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .niveau-badge.urgent { background: #fff5f5; color: var(--rouge); }
+    .niveau-badge.moyen  { background: #fffaf0; color: var(--orange); }
+    .niveau-badge.faible { background: #f0fff4; color: var(--vert); }
+
+    .point-statut { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .point-statut.encours { background: var(--orange); }
+    .point-statut.resolu  { background: var(--vert); }
   </style>
 </head>
 <body>
 
-  <!-- NAVBAR -->
-  <div class="navbar">
-    <h1>🚨 SenAlert — Dashboard</h1>
-    <span>Plateforme Nationale d'Alertes Citoyennes 🇸🇳</span>
-  </div>
-
-  <!-- FILTRES -->
-  <div class="filtres">
-    <select id="filtreRegion">
-      <option value="">Toutes les régions</option>
-      <option value="Dakar">Dakar</option>
-      <option value="Thiès">Thiès</option>
-      <option value="Saint-Louis">Saint-Louis</option>
-      <option value="Ziguinchor">Ziguinchor</option>
-    </select>
-
-    <select id="filtreType">
-      <option value="">Tous les types</option>
-      <option value="Inondation">Inondation</option>
-      <option value="Incendie">Incendie</option>
-      <option value="Accident">Accident</option>
-      <option value="Épidémie">Épidémie</option>
-    </select>
-
-    <button onclick="filtrerIncidents()">🔍 Filtrer</button>
-    <button onclick="reinitialiser()" style="background:#666;">↺ Réinitialiser</button>
-  </div>
-
-  <!-- STATS -->
-  <div class="stats">
-    <div class="stat-card">
-      <div class="nombre" id="totalIncidents">5</div>
-      <div class="label">Total Incidents</div>
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <h1>🚨 SenAlert</h1>
+      <p>Plateforme d'Alertes 🇸🇳</p>
     </div>
-    <div class="stat-card">
-      <div class="nombre" style="color:#e67e22;" id="enCours">3</div>
-      <div class="label">En cours</div>
+    <div class="sidebar-menu">
+      <div class="menu-label">Navigation</div>
+      <div class="menu-item actif"><span class="icone">📊</span> Dashboard</div>
+      <div class="menu-item"><span class="icone">🗺️</span> Carte</div>
+      <div class="menu-item"><span class="icone">🚨</span> Incidents</div>
+      <div class="menu-label">Gestion</div>
+      <div class="menu-item"><span class="icone">👥</span> Utilisateurs</div>
+      <div class="menu-item"><span class="icone">📈</span> Statistiques</div>
+      <div class="menu-item"><span class="icone">⚙️</span> Paramètres</div>
     </div>
-    <div class="stat-card">
-      <div class="nombre" style="color:#27ae60;" id="resolus">2</div>
-      <div class="label">Résolus</div>
-    </div>
-    <div class="stat-card">
-      <div class="nombre" style="color:#8e44ad;" id="regions">4</div>
-      <div class="label">Régions</div>
+    <div class="sidebar-bas">
+      <div class="user-info">
+        <div class="avatar">AS</div>
+        <div>
+          <div class="nom">Asmaou</div>
+          <div class="role">Dev Frontend</div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- CARTE + GRAPHIQUE -->
-  <div class="contenu">
-    <div class="carte-container">
-      <h2>🗺️ Carte des incidents</h2>
-      <div id="map"></div>
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <h2>📊 Tableau de bord</h2>
+      <div class="topbar-droite">
+        <span class="badge-alerte">🔴 3 alertes actives</span>
+        <button class="btn-actualiser" onclick="reinitialiser()">↺ Actualiser</button>
+      </div>
     </div>
 
-    <div class="graphique-container">
-      <h2>📊 Incidents par type</h2>
-      <canvas id="chartTypes"></canvas>
-    </div>
-  </div>
+    <div class="page">
 
-  <!-- TABLEAU -->
-  <div class="tableau-container">
-    <h2>📋 Liste des incidents</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Type</th>
-          <th>Région</th>
-          <th>Description</th>
-          <th>Date</th>
-          <th>Niveau</th>
-        </tr>
-      </thead>
-      <tbody id="corpsTableau"></tbody>
-    </table>
+      <!-- FILTRES -->
+      <div class="filtres-bar">
+        <label>Filtrer :</label>
+        <select id="filtreRegion">
+          <option value="">Toutes les régions</option>
+          <option value="Dakar">Dakar</option>
+          <option value="Thiès">Thiès</option>
+          <option value="Saint-Louis">Saint-Louis</option>
+          <option value="Ziguinchor">Ziguinchor</option>
+        </select>
+        <select id="filtreType">
+          <option value="">Tous les types</option>
+          <option value="Inondation">Inondation</option>
+          <option value="Incendie">Incendie</option>
+          <option value="Accident">Accident</option>
+          <option value="Épidémie">Épidémie</option>
+        </select>
+        <select id="filtreNiveau">
+          <option value="">Tous les niveaux</option>
+          <option value="urgent">Urgent</option>
+          <option value="moyen">Moyen</option>
+          <option value="faible">Faible</option>
+        </select>
+        <button class="btn-filtre principal" onclick="filtrerIncidents()">🔍 Filtrer</button>
+        <button class="btn-filtre secondaire" onclick="reinitialiser()">↺ Réinitialiser</button>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icone bleu">📋</div>
+          <div class="stat-info">
+            <div class="valeur bleu" id="totalIncidents">5</div>
+            <div class="etiquette">Total incidents</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icone rouge">🚨</div>
+          <div class="stat-info">
+            <div class="valeur rouge" id="urgents">3</div>
+            <div class="etiquette">Urgents</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icone vert">✅</div>
+          <div class="stat-info">
+            <div class="valeur vert" id="resolus">2</div>
+            <div class="etiquette">Résolus</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icone orange">📍</div>
+          <div class="stat-info">
+            <div class="valeur orange" id="regions">4</div>
+            <div class="etiquette">Régions touchées</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARTE + GRAPHIQUE -->
+      <div class="grille-milieu">
+        <div class="carte-box">
+          <div class="box-header">
+            <h3>🗺️ Carte des incidents</h3>
+            <span>Sénégal — Temps réel</span>
+          </div>
+          <div id="map"></div>
+        </div>
+        <div class="graph-box">
+          <div class="box-header">
+            <h3>📊 Statistiques</h3>
+            <span>Répartition</span>
+          </div>
+          <div class="graph-body">
+            <canvas id="chartTypes"></canvas>
+            <div style="margin-top:20px;">
+              <canvas id="chartNiveaux"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLEAU -->
+      <div class="tableau-box">
+        <div class="box-header">
+          <h3>📋 Liste des incidents</h3>
+          <span id="compteurTableau">5 incidents</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Type</th>
+              <th>Région</th>
+              <th>Description</th>
+              <th>Date</th>
+              <th>Statut</th>
+              <th>Niveau</th>
+            </tr>
+          </thead>
+          <tbody id="corpsTableau"></tbody>
+        </table>
+      </div>
+
+    </div>
   </div>
 
   <script>
     // ===== DONNÉES DE TEST =====
     const incidents = [
-      { id: 1, type: "Inondation",  region: "Dakar",       description: "Inondation quartier Pikine",    date: "2026-06-08", niveau: "urgent", lat: 14.6928, lng: -17.4467 },
-      { id: 2, type: "Incendie",    region: "Thiès",       description: "Incendie marché central",       date: "2026-06-07", niveau: "urgent", lat: 14.7886, lng: -16.9260 },
-      { id: 3, type: "Accident",    region: "Saint-Louis", description: "Accident sur RN2",              date: "2026-06-06", niveau: "moyen",  lat: 16.0179, lng: -16.4896 },
-      { id: 4, type: "Épidémie",    region: "Ziguinchor",  description: "Cas de choléra signalés",       date: "2026-06-05", niveau: "urgent", lat: 12.5605, lng: -16.2719 },
-      { id: 5, type: "Inondation",  region: "Dakar",       description: "Débordement canal Hann",        date: "2026-06-04", niveau: "faible", lat: 14.7200, lng: -17.4100 },
+      { id:1, type:"Inondation", region:"Dakar",       description:"Inondation quartier Pikine", date:"2026-06-08", niveau:"urgent", statut:"encours", lat:14.6928, lng:-17.4467 },
+      { id:2, type:"Incendie",   region:"Thiès",       description:"Incendie marché central",    date:"2026-06-07", niveau:"urgent", statut:"encours", lat:14.7886, lng:-16.9260 },
+      { id:3, type:"Accident",   region:"Saint-Louis", description:"Accident sur RN2",           date:"2026-06-06", niveau:"moyen",  statut:"resolu",  lat:16.0179, lng:-16.4896 },
+      { id:4, type:"Épidémie",   region:"Ziguinchor",  description:"Cas de choléra signalés",    date:"2026-06-05", niveau:"urgent", statut:"encours", lat:12.5605, lng:-16.2719 },
+      { id:5, type:"Inondation", region:"Dakar",       description:"Débordement canal Hann",     date:"2026-06-04", niveau:"faible", statut:"resolu",  lat:14.7200, lng:-17.4100 },
     ];
 
     // ===== CARTE LEAFLET =====
@@ -258,78 +365,95 @@
       attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    const couleurs = { urgent: 'red', moyen: 'orange', faible: 'green' };
+    const couleursNiveau = { urgent:'#e53e3e', moyen:'#dd6b20', faible:'#38a169' };
 
     function afficherMarqueurs(liste) {
-      map.eachLayer(layer => { if (layer instanceof L.CircleMarker) map.removeLayer(layer); });
+      map.eachLayer(l => { if (l instanceof L.CircleMarker) map.removeLayer(l); });
       liste.forEach(inc => {
         L.circleMarker([inc.lat, inc.lng], {
-          radius: 10,
-          fillColor: couleurs[inc.niveau],
-          color: '#fff',
-          weight: 2,
-          opacity: 1,
-          fillOpacity: 0.85
-        }).addTo(map).bindPopup(`<b>${inc.type}</b><br>${inc.region}<br>${inc.description}`);
+          radius: 11, fillColor: couleursNiveau[inc.niveau],
+          color: '#fff', weight: 2.5, fillOpacity: 0.9
+        }).addTo(map).bindPopup(
+          `<b>${inc.type}</b><br>📍 ${inc.region}<br>${inc.description}<br><small>${inc.date}</small>`
+        );
       });
     }
 
     // ===== TABLEAU =====
+    const typesIcones = { Inondation:'🌊', Incendie:'🔥', Accident:'🚗', 'Épidémie':'🦠' };
+    const typesCss    = { Inondation:'inondation', Incendie:'incendie', Accident:'accident', 'Épidémie':'epidemie' };
+
     function afficherTableau(liste) {
       const tbody = document.getElementById('corpsTableau');
       tbody.innerHTML = '';
       liste.forEach(inc => {
         tbody.innerHTML += `
           <tr>
-            <td>${inc.id}</td>
-            <td>${inc.type}</td>
-            <td>${inc.region}</td>
+            <td style="color:#718096;font-weight:600;">#${inc.id}</td>
+            <td><span class="type-badge ${typesCss[inc.type]}">${typesIcones[inc.type]} ${inc.type}</span></td>
+            <td>📍 ${inc.region}</td>
             <td>${inc.description}</td>
-            <td>${inc.date}</td>
-            <td><span class="badge ${inc.niveau}">${inc.niveau.toUpperCase()}</span></td>
+            <td style="color:#718096;">${inc.date}</td>
+            <td><span class="point-statut ${inc.statut}"></span>${inc.statut === 'encours' ? 'En cours' : 'Résolu'}</td>
+            <td><span class="niveau-badge ${inc.niveau}">${inc.niveau.toUpperCase()}</span></td>
           </tr>`;
       });
+      document.getElementById('compteurTableau').textContent = liste.length + ' incident(s)';
     }
 
-    // ===== GRAPHIQUE =====
-    const ctx = document.getElementById('chartTypes').getContext('2d');
-    const typesCount = {};
-    incidents.forEach(i => { typesCount[i.type] = (typesCount[i.type] || 0) + 1; });
+    // ===== GRAPHIQUES =====
+    const typesCount   = {};
+    const niveauxCount = { urgent:0, moyen:0, faible:0 };
+    incidents.forEach(i => {
+      typesCount[i.type] = (typesCount[i.type] || 0) + 1;
+      niveauxCount[i.niveau]++;
+    });
 
-    new Chart(ctx, {
+    new Chart(document.getElementById('chartTypes').getContext('2d'), {
       type: 'doughnut',
       data: {
         labels: Object.keys(typesCount),
-        datasets: [{
-          data: Object.values(typesCount),
-          backgroundColor: ['#3498db','#e74c3c','#f39c12','#9b59b6'],
-        }]
+        datasets: [{ data: Object.values(typesCount), backgroundColor: ['#1a73e8','#e53e3e','#dd6b20','#6b46c1'], borderWidth: 0 }]
       },
-      options: { plugins: { legend: { position: 'bottom' } } }
+      options: { plugins: { legend: { position:'bottom', labels:{ font:{ size:11 } } } }, cutout:'65%' }
+    });
+
+    new Chart(document.getElementById('chartNiveaux').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: ['Urgent','Moyen','Faible'],
+        datasets: [{ data: Object.values(niveauxCount), backgroundColor: ['#e53e3e','#dd6b20','#38a169'], borderRadius: 6 }]
+      },
+      options: { plugins: { legend: { display:false } }, scales: { y: { beginAtZero:true, ticks:{ stepSize:1 } } } }
     });
 
     // ===== FILTRES =====
     function filtrerIncidents() {
       const region = document.getElementById('filtreRegion').value;
       const type   = document.getElementById('filtreType').value;
+      const niveau = document.getElementById('filtreNiveau').value;
       const filtre = incidents.filter(i =>
         (!region || i.region === region) &&
-        (!type   || i.type   === type)
+        (!type   || i.type   === type)   &&
+        (!niveau || i.niveau === niveau)
       );
       afficherMarqueurs(filtre);
       afficherTableau(filtre);
       document.getElementById('totalIncidents').textContent = filtre.length;
+      document.getElementById('urgents').textContent = filtre.filter(i => i.niveau === 'urgent').length;
     }
 
     function reinitialiser() {
       document.getElementById('filtreRegion').value = '';
       document.getElementById('filtreType').value   = '';
+      document.getElementById('filtreNiveau').value = '';
       afficherMarqueurs(incidents);
       afficherTableau(incidents);
       document.getElementById('totalIncidents').textContent = incidents.length;
+      document.getElementById('urgents').textContent = incidents.filter(i => i.niveau === 'urgent').length;
     }
 
-    // ===== CONNEXION API DJANGO (à activer quand le backend est prêt) =====
+    // ===== CONNEXION API DJANGO (décommenter quand backend prêt) =====
     /*
     async function chargerIncidents() {
       const token = localStorage.getItem('token');
@@ -343,9 +467,10 @@
     chargerIncidents();
     */
 
-    // ===== INITIALISATION =====
+    // ===== INIT =====
     afficherMarqueurs(incidents);
     afficherTableau(incidents);
   </script>
+
 </body>
 </html>
