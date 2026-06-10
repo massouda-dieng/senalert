@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SenAlert - Dashboard</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+  <!-- Chart.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <!-- Leaflet JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f6f9;
+      color: #333;
+    }
+
+    /* ===== NAVBAR ===== */
+    .navbar {
+      background-color: #c0392b;
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .navbar h1 { font-size: 22px; }
+    .navbar span { font-size: 14px; opacity: 0.85; }
+
+    /* ===== FILTRES ===== */
+    .filtres {
+      background: white;
+      padding: 15px 30px;
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid #ddd;
+    }
+    .filtres select, .filtres button {
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .filtres button {
+      background-color: #c0392b;
+      color: white;
+      border: none;
+    }
+    .filtres button:hover { background-color: #a93226; }
+
+    /* ===== STATS ===== */
+    .stats {
+      display: flex;
+      gap: 20px;
+      padding: 20px 30px;
+      flex-wrap: wrap;
+    }
+    .stat-card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px 25px;
+      flex: 1;
+      min-width: 150px;
+      text-align: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .stat-card .nombre {
+      font-size: 32px;
+      font-weight: bold;
+      color: #c0392b;
+    }
+    .stat-card .label {
+      font-size: 13px;
+      color: #666;
+      margin-top: 5px;
+    }
+
+    /* ===== CONTENU PRINCIPAL ===== */
+    .contenu {
+      display: flex;
+      gap: 20px;
+      padding: 0 30px 30px;
+      flex-wrap: wrap;
+    }
+
+    /* ===== CARTE ===== */
+    .carte-container {
+      flex: 2;
+      min-width: 300px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    .carte-container h2 {
+      padding: 15px 20px;
+      font-size: 16px;
+      border-bottom: 1px solid #eee;
+    }
+    #map { height: 380px; width: 100%; }
+
+    /* ===== GRAPHIQUE ===== */
+    .graphique-container {
+      flex: 1;
+      min-width: 250px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      padding: 15px 20px;
+    }
+    .graphique-container h2 {
+      font-size: 16px;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+
+    /* ===== TABLEAU ===== */
+    .tableau-container {
+      width: 100%;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      padding: 20px;
+      margin: 0 30px 30px;
+    }
+    .tableau-container h2 {
+      font-size: 16px;
+      margin-bottom: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th {
+      background-color: #f0f0f0;
+      padding: 10px 12px;
+      text-align: left;
+      font-weight: 600;
+    }
+    td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; }
+    tr:hover { background-color: #fafafa; }
+
+    .badge {
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge.urgent { background: #fdecea; color: #c0392b; }
+    .badge.moyen  { background: #fff3e0; color: #e67e22; }
+    .badge.faible { background: #e8f5e9; color: #27ae60; }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <div class="navbar">
+    <h1>🚨 SenAlert — Dashboard</h1>
+    <span>Plateforme Nationale d'Alertes Citoyennes 🇸🇳</span>
+  </div>
+
+  <!-- FILTRES -->
+  <div class="filtres">
+    <select id="filtreRegion">
+      <option value="">Toutes les régions</option>
+      <option value="Dakar">Dakar</option>
+      <option value="Thiès">Thiès</option>
+      <option value="Saint-Louis">Saint-Louis</option>
+      <option value="Ziguinchor">Ziguinchor</option>
+    </select>
+
+    <select id="filtreType">
+      <option value="">Tous les types</option>
+      <option value="Inondation">Inondation</option>
+      <option value="Incendie">Incendie</option>
+      <option value="Accident">Accident</option>
+      <option value="Épidémie">Épidémie</option>
+    </select>
+
+    <button onclick="filtrerIncidents()">🔍 Filtrer</button>
+    <button onclick="reinitialiser()" style="background:#666;">↺ Réinitialiser</button>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="nombre" id="totalIncidents">5</div>
+      <div class="label">Total Incidents</div>
+    </div>
+    <div class="stat-card">
+      <div class="nombre" style="color:#e67e22;" id="enCours">3</div>
+      <div class="label">En cours</div>
+    </div>
+    <div class="stat-card">
+      <div class="nombre" style="color:#27ae60;" id="resolus">2</div>
+      <div class="label">Résolus</div>
+    </div>
+    <div class="stat-card">
+      <div class="nombre" style="color:#8e44ad;" id="regions">4</div>
+      <div class="label">Régions</div>
+    </div>
+  </div>
+
+  <!-- CARTE + GRAPHIQUE -->
+  <div class="contenu">
+    <div class="carte-container">
+      <h2>🗺️ Carte des incidents</h2>
+      <div id="map"></div>
+    </div>
+
+    <div class="graphique-container">
+      <h2>📊 Incidents par type</h2>
+      <canvas id="chartTypes"></canvas>
+    </div>
+  </div>
+
+  <!-- TABLEAU -->
+  <div class="tableau-container">
+    <h2>📋 Liste des incidents</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Type</th>
+          <th>Région</th>
+          <th>Description</th>
+          <th>Date</th>
+          <th>Niveau</th>
+        </tr>
+      </thead>
+      <tbody id="corpsTableau"></tbody>
+    </table>
+  </div>
+
+  <script>
+    // ===== DONNÉES DE TEST =====
+    const incidents = [
+      { id: 1, type: "Inondation",  region: "Dakar",       description: "Inondation quartier Pikine",    date: "2026-06-08", niveau: "urgent", lat: 14.6928, lng: -17.4467 },
+      { id: 2, type: "Incendie",    region: "Thiès",       description: "Incendie marché central",       date: "2026-06-07", niveau: "urgent", lat: 14.7886, lng: -16.9260 },
+      { id: 3, type: "Accident",    region: "Saint-Louis", description: "Accident sur RN2",              date: "2026-06-06", niveau: "moyen",  lat: 16.0179, lng: -16.4896 },
+      { id: 4, type: "Épidémie",    region: "Ziguinchor",  description: "Cas de choléra signalés",       date: "2026-06-05", niveau: "urgent", lat: 12.5605, lng: -16.2719 },
+      { id: 5, type: "Inondation",  region: "Dakar",       description: "Débordement canal Hann",        date: "2026-06-04", niveau: "faible", lat: 14.7200, lng: -17.4100 },
+    ];
+
+    // ===== CARTE LEAFLET =====
+    const map = L.map('map').setView([14.4974, -14.4524], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    const couleurs = { urgent: 'red', moyen: 'orange', faible: 'green' };
+
+    function afficherMarqueurs(liste) {
+      map.eachLayer(layer => { if (layer instanceof L.CircleMarker) map.removeLayer(layer); });
+      liste.forEach(inc => {
+        L.circleMarker([inc.lat, inc.lng], {
+          radius: 10,
+          fillColor: couleurs[inc.niveau],
+          color: '#fff',
+          weight: 2,
+          opacity: 1,
+          fillOpacity: 0.85
+        }).addTo(map).bindPopup(`<b>${inc.type}</b><br>${inc.region}<br>${inc.description}`);
+      });
+    }
+
+    // ===== TABLEAU =====
+    function afficherTableau(liste) {
+      const tbody = document.getElementById('corpsTableau');
+      tbody.innerHTML = '';
+      liste.forEach(inc => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${inc.id}</td>
+            <td>${inc.type}</td>
+            <td>${inc.region}</td>
+            <td>${inc.description}</td>
+            <td>${inc.date}</td>
+            <td><span class="badge ${inc.niveau}">${inc.niveau.toUpperCase()}</span></td>
+          </tr>`;
+      });
+    }
+
+    // ===== GRAPHIQUE =====
+    const ctx = document.getElementById('chartTypes').getContext('2d');
+    const typesCount = {};
+    incidents.forEach(i => { typesCount[i.type] = (typesCount[i.type] || 0) + 1; });
+
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(typesCount),
+        datasets: [{
+          data: Object.values(typesCount),
+          backgroundColor: ['#3498db','#e74c3c','#f39c12','#9b59b6'],
+        }]
+      },
+      options: { plugins: { legend: { position: 'bottom' } } }
+    });
+
+    // ===== FILTRES =====
+    function filtrerIncidents() {
+      const region = document.getElementById('filtreRegion').value;
+      const type   = document.getElementById('filtreType').value;
+      const filtre = incidents.filter(i =>
+        (!region || i.region === region) &&
+        (!type   || i.type   === type)
+      );
+      afficherMarqueurs(filtre);
+      afficherTableau(filtre);
+      document.getElementById('totalIncidents').textContent = filtre.length;
+    }
+
+    function reinitialiser() {
+      document.getElementById('filtreRegion').value = '';
+      document.getElementById('filtreType').value   = '';
+      afficherMarqueurs(incidents);
+      afficherTableau(incidents);
+      document.getElementById('totalIncidents').textContent = incidents.length;
+    }
+
+    // ===== CONNEXION API DJANGO (à activer quand le backend est prêt) =====
+    /*
+    async function chargerIncidents() {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://127.0.0.1:8000/api/incidents/', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const data = await res.json();
+      afficherMarqueurs(data);
+      afficherTableau(data);
+    }
+    chargerIncidents();
+    */
+
+    // ===== INITIALISATION =====
+    afficherMarqueurs(incidents);
+    afficherTableau(incidents);
+  </script>
+</body>
+</html>
