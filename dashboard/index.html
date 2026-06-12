@@ -453,19 +453,16 @@
       document.getElementById('urgents').textContent = incidents.filter(i => i.niveau === 'urgent').length;
     }
 
-    // ===== CONNEXION API DJANGO (décommenter quand backend prêt) =====
-    /*
     async function chargerIncidents() {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://127.0.0.1:8000/api/incidents/', {
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-      const data = await res.json();
-      afficherMarqueurs(data);
-      afficherTableau(data);
-    }
-    chargerIncidents();
-    */
+  const token = localStorage.getItem('token');
+  const res = await fetch('http://127.0.0.1:8000/api/incidents/', {
+    headers: { 'Authorization': 'Bearer ' + token }
+  });
+  const data = await res.json();
+  afficherMarqueurs(data);
+  afficherTableau(data);
+}
+chargerIncidents();
 
     // ===== INIT =====
     afficherMarqueurs(incidents);
