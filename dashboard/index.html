@@ -390,21 +390,18 @@
       mettreAjourStats(incidents);
     }
 
-    // CONNEXION API DJANGO (décommenter quand backend prêt)
-    /*
     async function chargerIncidents() {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://127.0.0.1:8000/api/incidents/', {
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-      const data = await res.json();
-      afficherMarqueurs(data);
-      afficherAlertesRecentes(data);
-      afficherTableau(data);
-      mettreAjourStats(data);
-    }
-    chargerIncidents();
-    */
+  const token = localStorage.getItem('token');
+  const res = await fetch('http://127.0.0.1:8000/api/incidents/', {
+    headers: { 'Authorization': 'Bearer ' + token }
+  });
+  const data = await res.json();
+  afficherMarqueurs(data);
+  afficherAlertesRecentes(data);
+  afficherTableau(data);
+  mettreAjourStats(data);
+}
+chargerIncidents();
 
     afficherMarqueurs(incidents);
     afficherAlertesRecentes(incidents);
