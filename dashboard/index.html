@@ -21,21 +21,16 @@
     }
     body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--gris); display: flex; min-height: 100vh; }
 
-    /* SIDEBAR */
     .sidebar {
       width: var(--sidebar-w); background: var(--sidebar);
       display: flex; flex-direction: column;
       position: fixed; top: 0; left: 0; height: 100vh; z-index: 100;
     }
     .sidebar-header {
-      background: var(--rouge);
-      padding: 18px 20px;
+      background: var(--rouge); padding: 18px 20px;
       display: flex; align-items: center; gap: 10px;
     }
-    .sidebar-header .logo-icone { font-size: 24px; }
-    .sidebar-header h1 { font-size: 20px; font-weight: 800; color: white; letter-spacing: 0.5px; }
-    .sidebar-header h1 span { font-weight: 400; }
-
+    .sidebar-header h1 { font-size: 20px; font-weight: 800; color: white; }
     .sidebar-menu { padding: 16px 12px; flex: 1; }
     .menu-item {
       display: flex; align-items: center; gap: 12px;
@@ -45,8 +40,6 @@
     }
     .menu-item:hover { background: rgba(255,255,255,0.07); color: white; }
     .menu-item.actif { background: var(--rouge); color: white; }
-    .menu-item .mi { font-size: 18px; width: 22px; text-align: center; }
-
     .sidebar-bas { padding: 14px 12px; border-top: 1px solid rgba(255,255,255,0.07); }
     .deconnexion {
       display: flex; align-items: center; gap: 10px;
@@ -55,10 +48,8 @@
     }
     .deconnexion:hover { background: rgba(255,255,255,0.07); color: white; }
 
-    /* MAIN */
     .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; }
 
-    /* TOPBAR */
     .topbar {
       background: var(--rouge); padding: 14px 28px;
       display: flex; justify-content: space-between; align-items: center;
@@ -83,7 +74,6 @@
 
     .page { padding: 24px 28px; }
 
-    /* STATS */
     .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
     .stat-card { border-radius: 14px; padding: 24px 20px; color: white; position: relative; overflow: hidden; }
     .stat-card.bleu   { background: linear-gradient(135deg, #1a73e8, #0d47a1); }
@@ -97,7 +87,6 @@
       width: 100px; height: 100px; border-radius: 50%; background: rgba(255,255,255,0.08);
     }
 
-    /* FILTRES */
     .filtres-bar {
       background: var(--blanc); border-radius: 14px;
       border: 1px solid var(--bordure); padding: 14px 18px;
@@ -114,7 +103,6 @@
     .btn-f.p:hover { background: #c62828; }
     .btn-f.s { background: var(--gris); color: var(--muted); border: 1px solid var(--bordure); }
 
-    /* GRILLE MILIEU */
     .grille-milieu { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; margin-bottom: 24px; }
     .carte-box, .alertes-box {
       background: var(--blanc); border-radius: 14px; border: 1px solid var(--bordure); overflow: hidden;
@@ -124,14 +112,13 @@
       display: flex; justify-content: space-between; align-items: center;
     }
     .box-header h3 { font-size: 15px; font-weight: 700; }
-    .box-header span, .box-header a { font-size: 12px; color: var(--muted); }
+    .box-header span { font-size: 12px; color: var(--muted); }
     .voir-tout { color: var(--rouge) !important; font-weight: 600; cursor: pointer; }
     #map { height: 320px; }
 
-    /* ALERTES RECENTES */
     .alerte-item {
       display: flex; align-items: center; gap: 12px;
-      padding: 13px 18px; border-bottom: 1px solid var(--bordure); transition: background 0.15s;
+      padding: 13px 18px; border-bottom: 1px solid var(--bordure);
     }
     .alerte-item:last-child { border-bottom: none; }
     .alerte-item:hover { background: #fafbfc; }
@@ -149,13 +136,11 @@
     .alerte-droite { text-align: right; }
     .alerte-droite .date { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
-    /* STATUT BADGES */
     .statut-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-block; }
     .statut-badge.attente { background: #fff3e0; color: #e65100; }
     .statut-badge.encours { background: #e3f2fd; color: #1565c0; }
     .statut-badge.traite  { background: #e8f5e9; color: #2e7d32; }
 
-    /* TABLEAU */
     .tableau-box {
       background: var(--blanc); border-radius: 14px;
       border: 1px solid var(--bordure); overflow: hidden; margin-bottom: 24px;
@@ -175,6 +160,12 @@
     .niveau-badge.urgent { background: #fce4ec; color: #c62828; }
     .niveau-badge.moyen  { background: #fff3e0; color: #e65100; }
     .niveau-badge.faible { background: #e8f5e9; color: #2e7d32; }
+
+    /* MESSAGE CHARGEMENT */
+    .chargement {
+      text-align: center; padding: 40px;
+      color: var(--muted); font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -182,19 +173,19 @@
   <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="sidebar-header">
-      <span class="logo-icone">🔔</span>
-      <h1>Sen<span>Alert</span></h1>
+      <span style="font-size:24px;">🔔</span>
+      <h1>SenAlert</h1>
     </div>
     <div class="sidebar-menu">
-      <div class="menu-item actif"><span class="mi">📊</span> Tableau de bord</div>
-      <div class="menu-item"><span class="mi">🚨</span> Alertes</div>
-      <div class="menu-item"><span class="mi">🛠️</span> Interventions</div>
-      <div class="menu-item"><span class="mi">👥</span> Utilisateurs</div>
-      <div class="menu-item"><span class="mi">📈</span> Statistiques</div>
-      <div class="menu-item"><span class="mi">⚙️</span> Paramètres</div>
+      <div class="menu-item actif"><span style="font-size:18px;">📊</span> Tableau de bord</div>
+      <div class="menu-item"><span style="font-size:18px;">🚨</span> Alertes</div>
+      <div class="menu-item"><span style="font-size:18px;">🛠️</span> Interventions</div>
+      <div class="menu-item"><span style="font-size:18px;">👥</span> Utilisateurs</div>
+      <div class="menu-item"><span style="font-size:18px;">📈</span> Statistiques</div>
+      <div class="menu-item"><span style="font-size:18px;">⚙️</span> Paramètres</div>
     </div>
     <div class="sidebar-bas">
-      <div class="deconnexion"><span class="mi">🚪</span> Déconnexion</div>
+      <div class="deconnexion"><span style="font-size:18px;">🚪</span> Déconnexion</div>
     </div>
   </div>
 
@@ -217,17 +208,17 @@
       <div class="stats-grid">
         <div class="stat-card bleu">
           <span class="sc-icone">📋</span>
-          <div class="sc-val" id="totalAlertes">5</div>
+          <div class="sc-val" id="totalAlertes">--</div>
           <div class="sc-label">Total alertes</div>
         </div>
         <div class="stat-card orange">
           <span class="sc-icone">⏳</span>
-          <div class="sc-val" id="enAttente">3</div>
+          <div class="sc-val" id="enAttente">--</div>
           <div class="sc-label">En attente</div>
         </div>
         <div class="stat-card vert">
           <span class="sc-icone">✅</span>
-          <div class="sc-val" id="traitees">2</div>
+          <div class="sc-val" id="traitees">--</div>
           <div class="sc-label">Traitées</div>
         </div>
       </div>
@@ -258,7 +249,7 @@
         <button class="btn-f s" onclick="reinit()">↺ Réinitialiser</button>
       </div>
 
-      <!-- CARTE + ALERTES RECENTES -->
+      <!-- CARTE + ALERTES -->
       <div class="grille-milieu">
         <div class="carte-box">
           <div class="box-header">
@@ -267,13 +258,12 @@
           </div>
           <div id="map"></div>
         </div>
-
         <div class="alertes-box">
           <div class="box-header">
             <h3>🚨 Alertes récentes</h3>
             <a class="voir-tout">Voir tout</a>
           </div>
-          <div id="alertesRecentes"></div>
+          <div id="alertesRecentes"><div class="chargement">⏳ Chargement...</div></div>
         </div>
       </div>
 
@@ -281,7 +271,7 @@
       <div class="tableau-box">
         <div class="box-header">
           <h3>📋 Toutes les alertes</h3>
-          <span id="compteur">5 alertes</span>
+          <span id="compteur">--</span>
         </div>
         <table>
           <thead>
@@ -289,7 +279,9 @@
               <th>#</th><th>Type</th><th>Région</th><th>Description</th><th>Date</th><th>Statut</th><th>Niveau</th>
             </tr>
           </thead>
-          <tbody id="corpsTableau"></tbody>
+          <tbody id="corpsTableau">
+            <tr><td colspan="7" class="chargement">⏳ Chargement des données...</td></tr>
+          </tbody>
         </table>
       </div>
 
@@ -297,13 +289,7 @@
   </div>
 
   <script>
-    const incidents = [
-      { id:1, type:"Accident",   region:"Dakar",        description:"Collision route de Pikine",    date:"12 Mai 2024", statut:"attente", niveau:"urgent", lat:14.6928, lng:-17.4467 },
-      { id:2, type:"Incendie",   region:"Guédiawaye",   description:"Incendie marché central",      date:"12 Mai 2024", statut:"encours", niveau:"urgent", lat:14.7700, lng:-17.3900 },
-      { id:3, type:"Inondation", region:"Keur Massar",  description:"Inondation quartier nord",     date:"12 Mai 2024", statut:"attente", niveau:"moyen",  lat:14.7400, lng:-17.3500 },
-      { id:4, type:"Épidémie",   region:"Dakar Plateau",description:"Urgence médicale signalée",    date:"12 Mai 2024", statut:"traite",  niveau:"faible", lat:14.6800, lng:-17.4400 },
-      { id:5, type:"Inondation", region:"Ziguinchor",   description:"Débordement fleuve Casamance", date:"11 Mai 2024", statut:"attente", niveau:"urgent", lat:12.5605, lng:-16.2719 },
-    ];
+    let tousLesIncidents = [];
 
     const map = L.map('map').setView([14.4974, -14.4524], 6);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'© OpenStreetMap' }).addTo(map);
@@ -311,31 +297,40 @@
     const couleursType = { Accident:'#ff9800', Incendie:'#e53935', Inondation:'#1a73e8', 'Épidémie':'#9c27b0' };
     const iconesType   = { Accident:'🚗', Incendie:'🔥', Inondation:'🌊', 'Épidémie':'🦠' };
     const iconesCSS    = { Accident:'accident', Incendie:'incendie', Inondation:'inondation', 'Épidémie':'epidemie' };
-    const statutLabel  = { attente:'En attente', encours:'En cours', traite:'Traitée' };
+    const statutLabel  = { attente:'En attente', encours:'En cours', traite:'Traitée', pending:'En attente', resolved:'Traitée' };
 
     function afficherMarqueurs(liste) {
       map.eachLayer(l => { if (l instanceof L.CircleMarker) map.removeLayer(l); });
       liste.forEach(inc => {
-        L.circleMarker([inc.lat, inc.lng], {
-          radius:11, fillColor:couleursType[inc.type], color:'#fff', weight:2.5, fillOpacity:0.9
-        }).addTo(map).bindPopup(`<b>${iconesType[inc.type]} ${inc.type}</b><br>📍 ${inc.region}<br>${inc.description}`);
+        const lat = inc.latitude || inc.lat;
+        const lng = inc.longitude || inc.lng;
+        if (!lat || !lng) return;
+        L.circleMarker([lat, lng], {
+          radius:11, fillColor: couleursType[inc.type_incident] || couleursType[inc.type] || '#999',
+          color:'#fff', weight:2.5, fillOpacity:0.9
+        }).addTo(map).bindPopup(`<b>${inc.type_incident || inc.type}</b><br>📍 ${inc.region || ''}<br>${inc.description || ''}`);
       });
     }
 
     function afficherAlertesRecentes(liste) {
       const div = document.getElementById('alertesRecentes');
+      if (liste.length === 0) { div.innerHTML = '<div class="chargement">Aucun incident trouvé</div>'; return; }
       div.innerHTML = '';
       liste.slice(0,5).forEach(inc => {
+        const type   = inc.type_incident || inc.type || 'Inconnu';
+        const region = inc.region || inc.ville || '';
+        const statut = inc.statut || inc.status || 'attente';
+        const date   = inc.date_signalement || inc.date || '';
         div.innerHTML += `
           <div class="alerte-item">
-            <div class="alerte-icone ${iconesCSS[inc.type]}">${iconesType[inc.type]}</div>
+            <div class="alerte-icone ${(iconesCSS[type] || 'accident')}">${iconesType[type] || '🚨'}</div>
             <div class="alerte-info">
-              <div class="titre">${inc.type}</div>
-              <div class="lieu">📍 ${inc.region}</div>
+              <div class="titre">${type}</div>
+              <div class="lieu">📍 ${region}</div>
             </div>
             <div class="alerte-droite">
-              <span class="statut-badge ${inc.statut}">${statutLabel[inc.statut]}</span>
-              <div class="date">${inc.date}</div>
+              <span class="statut-badge ${statut}">${statutLabel[statut] || statut}</span>
+              <div class="date">${date}</div>
             </div>
           </div>`;
       });
@@ -343,17 +338,23 @@
 
     function afficherTableau(liste) {
       const tbody = document.getElementById('corpsTableau');
+      if (liste.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="chargement">Aucun incident trouvé</td></tr>'; return; }
       tbody.innerHTML = '';
-      liste.forEach(inc => {
+      liste.forEach((inc, i) => {
+        const type   = inc.type_incident || inc.type || 'Inconnu';
+        const region = inc.region || inc.ville || '';
+        const statut = inc.statut || inc.status || 'attente';
+        const niveau = inc.niveau || inc.gravite || 'moyen';
+        const date   = inc.date_signalement || inc.date || '';
         tbody.innerHTML += `
           <tr>
-            <td style="color:#8492a6;font-weight:600;">#${inc.id}</td>
-            <td><span class="type-ic">${iconesType[inc.type]}</span>${inc.type}</td>
-            <td>📍 ${inc.region}</td>
-            <td>${inc.description}</td>
-            <td style="color:#8492a6;">${inc.date}</td>
-            <td><span class="statut-badge ${inc.statut}">${statutLabel[inc.statut]}</span></td>
-            <td><span class="niveau-badge ${inc.niveau}">${inc.niveau.toUpperCase()}</span></td>
+            <td style="color:#8492a6;font-weight:600;">#${inc.id || i+1}</td>
+            <td><span class="type-ic">${iconesType[type] || '🚨'}</span>${type}</td>
+            <td>📍 ${region}</td>
+            <td>${inc.description || ''}</td>
+            <td style="color:#8492a6;">${date}</td>
+            <td><span class="statut-badge ${statut}">${statutLabel[statut] || statut}</span></td>
+            <td><span class="niveau-badge ${niveau}">${niveau.toUpperCase()}</span></td>
           </tr>`;
       });
       document.getElementById('compteur').textContent = liste.length + ' alerte(s)';
@@ -361,19 +362,22 @@
 
     function mettreAjourStats(liste) {
       document.getElementById('totalAlertes').textContent = liste.length;
-      document.getElementById('enAttente').textContent = liste.filter(i => i.statut === 'attente' || i.statut === 'encours').length;
-      document.getElementById('traitees').textContent  = liste.filter(i => i.statut === 'traite').length;
+      document.getElementById('enAttente').textContent = liste.filter(i => i.statut === 'attente' || i.statut === 'encours' || i.status === 'pending').length;
+      document.getElementById('traitees').textContent  = liste.filter(i => i.statut === 'traite' || i.status === 'resolved').length;
     }
 
     function filtrer() {
       const region = document.getElementById('filtreRegion').value;
       const type   = document.getElementById('filtreType').value;
       const statut = document.getElementById('filtreStatut').value;
-      const f = incidents.filter(i =>
-        (!region || i.region === region) &&
-        (!type   || i.type   === type)   &&
-        (!statut || i.statut === statut)
-      );
+      const f = tousLesIncidents.filter(i => {
+        const iRegion = i.region || i.ville || '';
+        const iType   = i.type_incident || i.type || '';
+        const iStatut = i.statut || i.status || '';
+        return (!region || iRegion === region) &&
+               (!type   || iType   === type)   &&
+               (!statut || iStatut === statut);
+      });
       afficherMarqueurs(f);
       afficherAlertesRecentes(f);
       afficherTableau(f);
@@ -384,29 +388,45 @@
       document.getElementById('filtreRegion').value = '';
       document.getElementById('filtreType').value   = '';
       document.getElementById('filtreStatut').value = '';
-      afficherMarqueurs(incidents);
-      afficherAlertesRecentes(incidents);
-      afficherTableau(incidents);
-      mettreAjourStats(incidents);
+      afficherMarqueurs(tousLesIncidents);
+      afficherAlertesRecentes(tousLesIncidents);
+      afficherTableau(tousLesIncidents);
+      mettreAjourStats(tousLesIncidents);
     }
 
+    // ===== CONNEXION API DJANGO =====
     async function chargerIncidents() {
-  const token = localStorage.getItem('token');
-  const res = await fetch('http://127.0.0.1:8000/api/incidents/', {
-    headers: { 'Authorization': 'Bearer ' + token }
-  });
-  const data = await res.json();
-  afficherMarqueurs(data);
-  afficherAlertesRecentes(data);
-  afficherTableau(data);
-  mettreAjourStats(data);
-}
-chargerIncidents();
+      try {
+        const token = localStorage.getItem('token');
+        const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
 
-    afficherMarqueurs(incidents);
-    afficherAlertesRecentes(incidents);
-    afficherTableau(incidents);
-    mettreAjourStats(incidents);
+        // API 1 — Liste des incidents
+        const resIncidents = await fetch('http://127.0.0.1:8000/api/incidents/', { headers });
+        const incidents = await resIncidents.json();
+        tousLesIncidents = Array.isArray(incidents) ? incidents : (incidents.results || []);
+
+        afficherMarqueurs(tousLesIncidents);
+        afficherAlertesRecentes(tousLesIncidents);
+        afficherTableau(tousLesIncidents);
+        mettreAjourStats(tousLesIncidents);
+
+        // API 2 — Statistiques IA
+        try {
+          const resStats = await fetch('http://127.0.0.1:8000/api/analyse/statistiques/', { headers });
+          const stats = await resStats.json();
+          console.log('Statistiques IA :', stats);
+        } catch(e) {
+          console.log('API statistiques pas encore disponible');
+        }
+
+      } catch(err) {
+        console.error('Erreur API:', err);
+        document.getElementById('corpsTableau').innerHTML =
+          '<tr><td colspan="7" class="chargement">❌ Backend non disponible — lance : py manage.py runserver</td></tr>';
+      }
+    }
+
+    chargerIncidents();
   </script>
 </body>
 </html>
