@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User
+from .models import User, Autorite
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=6)
@@ -23,3 +23,10 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'role', 'telephone', 'region']
+
+class AutoriteSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = Autorite
+        fields = ['id', 'username', 'type_autorite', 'region', 'nom_service']
