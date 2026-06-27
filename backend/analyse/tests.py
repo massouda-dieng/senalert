@@ -2,7 +2,13 @@ from django.test import TestCase
 from django.utils import timezone
 from datetime import timedelta
 from unittest.mock import MagicMock
-from .analyzer import calculer_score_risque, determiner_niveau, analyser_zones_risque
+from incidents.models import Incident
+from .analyzer import (
+    calculer_score_risque,
+    determiner_niveau,
+    analyser_zones_risque,
+    calculer_statistiques,
+)
 
 
 def make_incident(type_incident, region='dakar', jours_passes=0):
@@ -62,3 +68,11 @@ class TestAnalyserZonesRisque(TestCase):
         ]
         result = analyser_zones_risque(incidents)
         self.assertEqual(result[0]['region'], 'dakar')
+
+
+class TestCalculerStatistiques(TestCase):
+
+    def test_liste_vide(self):
+        result = calculer_statistiques(Incident.objects.none())
+        self.assertEqual(result['total_incidents'], 0)
+        self.assertEqual(result['taux_resolution'], 0.0)

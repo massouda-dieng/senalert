@@ -73,3 +73,36 @@ def analyser_zones_risque(incidents_qs):
 
     resultats.sort(key=lambda x: x['score'], reverse=True)
     return resultats
+
+
+def calculer_statistiques(incidents_qs):
+    """
+    Calcule des statistiques globales sur tous les incidents :
+    total, répartition par type, par statut, taux de résolution.
+    """
+    total = incidents_qs.count()
+
+    if total == 0:
+        return {
+            'total_incidents': 0,
+            'par_type': {},
+            'par_statut': {},
+            'taux_resolution': 0.0,
+        }
+
+    par_type = defaultdict(int)
+    par_statut = defaultdict(int)
+
+    for inc in incidents_qs:
+        par_type[inc.type_incident] += 1
+        par_statut[inc.statut] += 1
+
+    resolus = par_statut.get('resolu', 0)
+    taux_resolution = round((resolus / total) * 100, 2)
+
+    return {
+        'total_incidents': total,
+        'par_type': dict(par_type),
+        'par_statut': dict(par_statut),
+        'taux_resolution': taux_resolution,
+    }
