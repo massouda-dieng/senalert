@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -27,6 +29,15 @@ class _IncidentsScreenState extends State<IncidentsScreen> {
     'nouveau': 'Nouveau',
     'en_cours': 'En cours',
     'resolu': 'Résolu',
+  };
+
+  final Map<String, Color> _typeColors = {
+    'accident': Colors.red,
+    'incendie': Colors.deepOrange,
+    'inondation': Colors.blue,
+    'electricite': Colors.amber,
+    'insecurite': Colors.purple,
+    'autre': Colors.grey,
   };
 
   @override
@@ -59,11 +70,54 @@ class _IncidentsScreenState extends State<IncidentsScreen> {
     }
   }
 
+  List<Marker> _buildMarkers() {
+    return _incidents
+        .where((inc) => inc['latitude'] != null && inc['longitude'] != null)
+        .map((incident) {
+      final type = incident['type_incident'] ?? 'autre';
+      final color = _typeColors[type] ?? Colors.grey;
+      return Marker(
+        point: LatLng(
+          double.parse(incident['latitude'].toString()),
+          double.parse(incident['longitude'].toString()),
+        ),
+        width: 40,
+        height: 40,
+        child: GestureDetector(
+          onTap: () => _showDetail(incident),
+          child: Icon(Icons.location_on, color: color, size: 36),
+        ),
+      );
+    }).toList();
+  }
+
+  void _showDetail(dynamic incident) {
+    final type = incident['type_incident'] ?? 'autre';
+    final statut = incident['statut'] ?? 'nouveau';
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(_typeLabels[type] ?? type),
+        content: Text(
+          '${incident['description'] ?? ''}\n\n'
+          'Région : ${incident['region'] ?? ''}\n'
+          'Statut : ${_statutLabels[statut] ?? statut}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Liste des incidents'),
+        title: const Text('Carte des incidents'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -73,47 +127,49 @@ class _IncidentsScreenState extends State<IncidentsScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _incidents.isEmpty
-              ? const Center(child: Text('Aucun incident pour le moment'))
-              : ListView.builder(
-                  padding: const EdgeInsets.all(8.0),
-                  itemCount: _incidents.length,
-                  itemBuilder: (context, index) {
-                    final incident = _incidents[index];
-                    final type = incident['type_incident'] ?? 'autre';
-                    final statut = incident['statut'] ?? 'nouveau';
-                    return Card(
-                      child: ListTile(
-                        leading: const Icon(Icons.warning, color: Colors.red),
-                        title: Text(_typeLabels[type] ?? type),
-                        subtitle: Text(
-                          '${incident['description'] ?? ''}\n📍 ${incident['region'] ?? ''}',
-                        ),
-                        isThreeLine: true,
-                        trailing: Text(_statutLabels[statut] ?? statut),
-                        onTap: () {
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: Text(_typeLabels[type] ?? type),
-                              content: Text(
-                                '${incident['description'] ?? ''}\n\n'
-                                'Région : ${incident['region'] ?? ''}\n'
-                                'Statut : ${_statutLabels[statut] ?? statut}',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text('OK'),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
+          : Column(
+              children: [
+                Expanded(
+                  child: FlutterMap(
+                    options: const MapOptions(
+                      initialCenter: LatLng(14.6937, -17.4441),
+                      initialZoom: 7,
+                    ),
+                    children: [
+                      TileLayer(
+                        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.senalert.app',
                       ),
-                    );
-                  },
+                      MarkerLayer(markers: _buildMarkers()),
+                    ],
+                  ),
                 ),
+                Container(
+                  height: 200,
+                  padding: const EdgeInsets.all(8.0),
+                  child: _incidents.isEmpty
+                      ? const Center(child: Text('Aucun incident'))
+                      : ListView.builder(
+                          itemCount: _incidents.length,
+                          itemBuilder: (context, index) {
+                            final incident = _incidents[index];
+                            final type = incident['type_incident'] ?? 'autre';
+                            final statut = incident['statut'] ?? 'nouveau';
+                            return Card(
+                              child: ListTile(
+                                leading: Icon(Icons.warning,
+                                    color: _typeColors[type] ?? Colors.grey),
+                                title: Text(_typeLabels[type] ?? type),
+                                subtitle: Text(incident['description'] ?? ''),
+                                trailing: Text(_statutLabels[statut] ?? statut),
+                                onTap: () => _showDetail(incident),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
     );
   }
 }
