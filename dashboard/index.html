@@ -21,6 +21,34 @@
     }
     body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--gris); display: flex; min-height: 100vh; }
 
+    /* LOGIN */
+    .login-wrap {
+      width: 100%; min-height: 100vh; display: flex;
+      align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #1a2035, #2d3748);
+    }
+    .login-box {
+      background: white; border-radius: 16px; padding: 40px;
+      width: 380px; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    }
+    .login-box .logo { text-align: center; font-size: 40px; margin-bottom: 8px; }
+    .login-box h2 { text-align: center; font-size: 22px; font-weight: 800; color: var(--rouge); margin-bottom: 4px; }
+    .login-box p { text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+    .login-box label { font-size: 12px; font-weight: 600; color: var(--texte); display: block; margin-bottom: 6px; }
+    .login-box input {
+      width: 100%; padding: 11px 14px; border: 1px solid var(--bordure);
+      border-radius: 8px; font-size: 14px; margin-bottom: 16px; outline: none;
+    }
+    .login-box input:focus { border-color: var(--rouge); }
+    .login-box button {
+      width: 100%; padding: 12px; border: none; border-radius: 8px;
+      background: var(--rouge); color: white; font-size: 14px; font-weight: 700;
+      cursor: pointer; margin-top: 4px;
+    }
+    .login-box button:hover { background: #c62828; }
+    .login-error { color: var(--rouge); font-size: 12px; margin-top: 10px; text-align: center; min-height: 16px; }
+    .dashboard-hidden { display: none; }
+
     /* SIDEBAR */
     .sidebar {
       width: var(--sidebar-w); background: var(--sidebar);
@@ -139,10 +167,12 @@
       width: 38px; height: 38px; border-radius: 10px;
       display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
     }
-    .alerte-icone.accident   { background: #fff3e0; }
-    .alerte-icone.incendie   { background: #fce4ec; }
-    .alerte-icone.inondation { background: #e3f2fd; }
-    .alerte-icone.epidemie   { background: #f3e5f5; }
+    .alerte-icone.accident    { background: #fff3e0; }
+    .alerte-icone.incendie    { background: #fce4ec; }
+    .alerte-icone.inondation  { background: #e3f2fd; }
+    .alerte-icone.electricite { background: #fff8e1; }
+    .alerte-icone.insecurite  { background: #f3e5f5; }
+    .alerte-icone.autre       { background: #eceff1; }
     .alerte-info { flex: 1; }
     .alerte-info .titre { font-size: 14px; font-weight: 600; color: var(--texte); }
     .alerte-info .lieu  { font-size: 12px; color: var(--muted); margin-top: 2px; }
@@ -151,9 +181,9 @@
 
     /* STATUT BADGES */
     .statut-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-block; }
-    .statut-badge.attente { background: #fff3e0; color: #e65100; }
-    .statut-badge.encours { background: #e3f2fd; color: #1565c0; }
-    .statut-badge.traite  { background: #e8f5e9; color: #2e7d32; }
+    .statut-badge.nouveau  { background: #fff3e0; color: #e65100; }
+    .statut-badge.en_cours { background: #e3f2fd; color: #1565c0; }
+    .statut-badge.resolu   { background: #e8f5e9; color: #2e7d32; }
 
     /* TABLEAU */
     .tableau-box {
@@ -171,154 +201,240 @@
     tr:last-child td { border-bottom: none; }
     tbody tr:hover { background: #fafbfc; }
     .type-ic { font-size: 16px; margin-right: 6px; }
-    .niveau-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-    .niveau-badge.urgent { background: #fce4ec; color: #c62828; }
-    .niveau-badge.moyen  { background: #fff3e0; color: #e65100; }
-    .niveau-badge.faible { background: #e8f5e9; color: #2e7d32; }
   </style>
 </head>
 <body>
 
-  <!-- SIDEBAR -->
-  <div class="sidebar">
-    <div class="sidebar-header">
-      <span class="logo-icone">🔔</span>
-      <h1>Sen<span>Alert</span></h1>
-    </div>
-    <div class="sidebar-menu">
-      <div class="menu-item actif"><span class="mi">📊</span> Tableau de bord</div>
-      <div class="menu-item"><span class="mi">🚨</span> Alertes</div>
-      <div class="menu-item"><span class="mi">🛠️</span> Interventions</div>
-      <div class="menu-item"><span class="mi">👥</span> Utilisateurs</div>
-      <div class="menu-item"><span class="mi">📈</span> Statistiques</div>
-      <div class="menu-item"><span class="mi">⚙️</span> Paramètres</div>
-    </div>
-    <div class="sidebar-bas">
-      <div class="deconnexion"><span class="mi">🚪</span> Déconnexion</div>
+  <!-- ÉCRAN DE CONNEXION -->
+  <div class="login-wrap" id="loginWrap">
+    <div class="login-box">
+      <div class="logo">🔔</div>
+      <h2>SenAlert</h2>
+      <p>Connexion administrateur / autorité</p>
+      <label>Nom d'utilisateur</label>
+      <input type="text" id="loginUsername" placeholder="ex: admin" />
+      <label>Mot de passe</label>
+      <input type="password" id="loginPassword" placeholder="••••••••" />
+      <button onclick="connexion()">SE CONNECTER</button>
+      <div class="login-error" id="loginError"></div>
     </div>
   </div>
 
-  <!-- MAIN -->
-  <div class="main">
-    <div class="topbar">
-      <h2>Tableau de bord</h2>
-      <div class="topbar-droite">
-        <button class="notif-btn">🔔</button>
-        <div class="user-chip">
-          <div class="av">AS</div>
-          <span>Asmaou</span>
-        </div>
+  <!-- DASHBOARD (caché tant qu'on n'est pas connecté) -->
+  <div id="dashboardWrap" class="dashboard-hidden" style="display:flex; width:100%;">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icone">🔔</span>
+        <h1>Sen<span>Alert</span></h1>
+      </div>
+      <div class="sidebar-menu">
+        <div class="menu-item actif"><span class="mi">📊</span> Tableau de bord</div>
+        <div class="menu-item"><span class="mi">🚨</span> Alertes</div>
+        <div class="menu-item"><span class="mi">🛠️</span> Interventions</div>
+        <div class="menu-item"><span class="mi">👥</span> Utilisateurs</div>
+        <div class="menu-item"><span class="mi">📈</span> Statistiques</div>
+        <div class="menu-item"><span class="mi">⚙️</span> Paramètres</div>
+      </div>
+      <div class="sidebar-bas">
+        <div class="deconnexion" onclick="deconnexion()"><span class="mi">🚪</span> Déconnexion</div>
       </div>
     </div>
 
-    <div class="page">
-
-      <!-- STATS -->
-      <div class="stats-grid">
-        <div class="stat-card bleu">
-          <span class="sc-icone">📋</span>
-          <div class="sc-val" id="totalAlertes">5</div>
-          <div class="sc-label">Total alertes</div>
-        </div>
-        <div class="stat-card orange">
-          <span class="sc-icone">⏳</span>
-          <div class="sc-val" id="enAttente">3</div>
-          <div class="sc-label">En attente</div>
-        </div>
-        <div class="stat-card vert">
-          <span class="sc-icone">✅</span>
-          <div class="sc-val" id="traitees">2</div>
-          <div class="sc-label">Traitées</div>
-        </div>
-      </div>
-
-      <!-- FILTRES -->
-      <div class="filtres-bar">
-        <select id="filtreRegion">
-          <option value="">Toutes les régions</option>
-          <option value="Dakar">Dakar</option>
-          <option value="Thiès">Thiès</option>
-          <option value="Saint-Louis">Saint-Louis</option>
-          <option value="Ziguinchor">Ziguinchor</option>
-        </select>
-        <select id="filtreType">
-          <option value="">Tous les types</option>
-          <option value="Accident">Accident</option>
-          <option value="Incendie">Incendie</option>
-          <option value="Inondation">Inondation</option>
-          <option value="Épidémie">Épidémie</option>
-        </select>
-        <select id="filtreStatut">
-          <option value="">Tous les statuts</option>
-          <option value="attente">En attente</option>
-          <option value="encours">En cours</option>
-          <option value="traite">Traitée</option>
-        </select>
-        <button class="btn-f p" onclick="filtrer()">🔍 Filtrer</button>
-        <button class="btn-f s" onclick="reinit()">↺ Réinitialiser</button>
-      </div>
-
-      <!-- CARTE + ALERTES RECENTES -->
-      <div class="grille-milieu">
-        <div class="carte-box">
-          <div class="box-header">
-            <h3>🗺️ Carte des incidents</h3>
-            <span>Temps réel</span>
+    <!-- MAIN -->
+    <div class="main">
+      <div class="topbar">
+        <h2>Tableau de bord</h2>
+        <div class="topbar-droite">
+          <button class="notif-btn">🔔</button>
+          <div class="user-chip">
+            <div class="av" id="userAvatar">A</div>
+            <span id="userName">Utilisateur</span>
           </div>
-          <div id="map"></div>
         </div>
+      </div>
 
-        <div class="alertes-box">
-          <div class="box-header">
-            <h3>🚨 Alertes récentes</h3>
-            <a class="voir-tout">Voir tout</a>
+      <div class="page">
+
+        <!-- STATS -->
+        <div class="stats-grid">
+          <div class="stat-card bleu">
+            <span class="sc-icone">📋</span>
+            <div class="sc-val" id="totalAlertes">0</div>
+            <div class="sc-label">Total alertes</div>
           </div>
-          <div id="alertesRecentes"></div>
+          <div class="stat-card orange">
+            <span class="sc-icone">⏳</span>
+            <div class="sc-val" id="enAttente">0</div>
+            <div class="sc-label">En attente</div>
+          </div>
+          <div class="stat-card vert">
+            <span class="sc-icone">✅</span>
+            <div class="sc-val" id="traitees">0</div>
+            <div class="sc-label">Traitées</div>
+          </div>
         </div>
-      </div>
 
-      <!-- TABLEAU -->
-      <div class="tableau-box">
-        <div class="box-header">
-          <h3>📋 Toutes les alertes</h3>
-          <span id="compteur">5 alertes</span>
+        <!-- FILTRES -->
+        <div class="filtres-bar">
+          <select id="filtreRegion">
+            <option value="">Toutes les régions</option>
+            <option value="dakar">Dakar</option>
+            <option value="thies">Thiès</option>
+            <option value="saint_louis">Saint-Louis</option>
+            <option value="ziguinchor">Ziguinchor</option>
+            <option value="kaolack">Kaolack</option>
+            <option value="tambacounda">Tambacounda</option>
+            <option value="louga">Louga</option>
+            <option value="fatick">Fatick</option>
+            <option value="kolda">Kolda</option>
+            <option value="matam">Matam</option>
+            <option value="diourbel">Diourbel</option>
+          </select>
+          <select id="filtreType">
+            <option value="">Tous les types</option>
+            <option value="accident">Accident</option>
+            <option value="incendie">Incendie</option>
+            <option value="inondation">Inondation</option>
+            <option value="electricite">Coupure électricité</option>
+            <option value="insecurite">Insécurité</option>
+            <option value="autre">Autre</option>
+          </select>
+          <select id="filtreStatut">
+            <option value="">Tous les statuts</option>
+            <option value="nouveau">Nouveau</option>
+            <option value="en_cours">En cours</option>
+            <option value="resolu">Résolu</option>
+          </select>
+          <button class="btn-f p" onclick="filtrer()">🔍 Filtrer</button>
+          <button class="btn-f s" onclick="reinit()">↺ Réinitialiser</button>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th>#</th><th>Type</th><th>Région</th><th>Description</th><th>Date</th><th>Statut</th><th>Niveau</th>
-            </tr>
-          </thead>
-          <tbody id="corpsTableau"></tbody>
-        </table>
-      </div>
 
+        <!-- CARTE + ALERTES RECENTES -->
+        <div class="grille-milieu">
+          <div class="carte-box">
+            <div class="box-header">
+              <h3>🗺️ Carte des incidents</h3>
+              <span>Temps réel</span>
+            </div>
+            <div id="map"></div>
+          </div>
+
+          <div class="alertes-box">
+            <div class="box-header">
+              <h3>🚨 Alertes récentes</h3>
+              <a class="voir-tout">Voir tout</a>
+            </div>
+            <div id="alertesRecentes"></div>
+          </div>
+        </div>
+
+        <!-- TABLEAU -->
+        <div class="tableau-box">
+          <div class="box-header">
+            <h3>📋 Toutes les alertes</h3>
+            <span id="compteur">0 alerte</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th><th>Type</th><th>Région</th><th>Description</th><th>Date</th><th>Statut</th>
+              </tr>
+            </thead>
+            <tbody id="corpsTableau"></tbody>
+          </table>
+        </div>
+
+      </div>
     </div>
   </div>
 
   <script>
-    const incidents = [
-      { id:1, type:"Accident",   region:"Dakar",        description:"Collision route de Pikine",    date:"12 Mai 2024", statut:"attente", niveau:"urgent", lat:14.6928, lng:-17.4467 },
-      { id:2, type:"Incendie",   region:"Guédiawaye",   description:"Incendie marché central",      date:"12 Mai 2024", statut:"encours", niveau:"urgent", lat:14.7700, lng:-17.3900 },
-      { id:3, type:"Inondation", region:"Keur Massar",  description:"Inondation quartier nord",     date:"12 Mai 2024", statut:"attente", niveau:"moyen",  lat:14.7400, lng:-17.3500 },
-      { id:4, type:"Épidémie",   region:"Dakar Plateau",description:"Urgence médicale signalée",    date:"12 Mai 2024", statut:"traite",  niveau:"faible", lat:14.6800, lng:-17.4400 },
-      { id:5, type:"Inondation", region:"Ziguinchor",   description:"Débordement fleuve Casamance", date:"11 Mai 2024", statut:"attente", niveau:"urgent", lat:12.5605, lng:-16.2719 },
-    ];
+    const API_BASE = 'http://127.0.0.1:8000/api';
+    let incidents = [];
+    let map = null;
 
-    const map = L.map('map').setView([14.4974, -14.4524], 6);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'© OpenStreetMap' }).addTo(map);
+    const couleursType = {
+      accident:'#ff9800', incendie:'#e53935', inondation:'#1a73e8',
+      electricite:'#fbc02d', insecurite:'#9c27b0', autre:'#607d8b'
+    };
+    const iconesType = {
+      accident:'🚗', incendie:'🔥', inondation:'🌊',
+      electricite:'⚡', insecurite:'🚨', autre:'⚠️'
+    };
+    const labelType = {
+      accident:'Accident', incendie:'Incendie', inondation:'Inondation',
+      electricite:'Coupure électricité', insecurite:'Insécurité', autre:'Autre'
+    };
+    const statutLabel = { nouveau:'Nouveau', en_cours:'En cours', resolu:'Résolu' };
 
-    const couleursType = { Accident:'#ff9800', Incendie:'#e53935', Inondation:'#1a73e8', 'Épidémie':'#9c27b0' };
-    const iconesType   = { Accident:'🚗', Incendie:'🔥', Inondation:'🌊', 'Épidémie':'🦠' };
-    const iconesCSS    = { Accident:'accident', Incendie:'incendie', Inondation:'inondation', 'Épidémie':'epidemie' };
-    const statutLabel  = { attente:'En attente', encours:'En cours', traite:'Traitée' };
+    // ===== CONNEXION =====
+    async function connexion() {
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const errorDiv = document.getElementById('loginError');
+      errorDiv.textContent = '';
+
+      if (!username || !password) {
+        errorDiv.textContent = 'Remplissez tous les champs';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/auth/login/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        if (!res.ok) {
+          errorDiv.textContent = 'Identifiants incorrects';
+          return;
+        }
+
+        const data = await res.json();
+        localStorage.setItem('token', data.access);
+        localStorage.setItem('username', username);
+
+        document.getElementById('loginWrap').style.display = 'none';
+        document.getElementById('dashboardWrap').style.display = 'flex';
+        document.getElementById('userName').textContent = username;
+        document.getElementById('userAvatar').textContent = username.substring(0, 2).toUpperCase();
+
+        initCarte();
+        chargerIncidents();
+      } catch (e) {
+        errorDiv.textContent = 'Impossible de contacter le serveur';
+      }
+    }
+
+    function deconnexion() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+      document.getElementById('dashboardWrap').style.display = 'none';
+      document.getElementById('loginWrap').style.display = 'flex';
+      document.getElementById('loginUsername').value = '';
+      document.getElementById('loginPassword').value = '';
+    }
+
+    // ===== CARTE =====
+    function initCarte() {
+      if (map) return;
+      map = L.map('map').setView([14.4974, -14.4524], 6);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'© OpenStreetMap' }).addTo(map);
+    }
 
     function afficherMarqueurs(liste) {
       map.eachLayer(l => { if (l instanceof L.CircleMarker) map.removeLayer(l); });
       liste.forEach(inc => {
-        L.circleMarker([inc.lat, inc.lng], {
-          radius:11, fillColor:couleursType[inc.type], color:'#fff', weight:2.5, fillOpacity:0.9
-        }).addTo(map).bindPopup(`<b>${iconesType[inc.type]} ${inc.type}</b><br>📍 ${inc.region}<br>${inc.description}`);
+        if (!inc.latitude || !inc.longitude) return;
+        L.circleMarker([inc.latitude, inc.longitude], {
+          radius:11, fillColor:couleursType[inc.type_incident] || '#607d8b',
+          color:'#fff', weight:2.5, fillOpacity:0.9
+        }).addTo(map).bindPopup(
+          `<b>${iconesType[inc.type_incident] || '⚠️'} ${labelType[inc.type_incident] || inc.type_incident}</b><br>📍 ${inc.region}<br>${inc.description || ''}`
+        );
       });
     }
 
@@ -328,14 +444,14 @@
       liste.slice(0,5).forEach(inc => {
         div.innerHTML += `
           <div class="alerte-item">
-            <div class="alerte-icone ${iconesCSS[inc.type]}">${iconesType[inc.type]}</div>
+            <div class="alerte-icone ${inc.type_incident}">${iconesType[inc.type_incident] || '⚠️'}</div>
             <div class="alerte-info">
-              <div class="titre">${inc.type}</div>
+              <div class="titre">${labelType[inc.type_incident] || inc.type_incident}</div>
               <div class="lieu">📍 ${inc.region}</div>
             </div>
             <div class="alerte-droite">
-              <span class="statut-badge ${inc.statut}">${statutLabel[inc.statut]}</span>
-              <div class="date">${inc.date}</div>
+              <span class="statut-badge ${inc.statut}">${statutLabel[inc.statut] || inc.statut}</span>
+              <div class="date">${formaterDate(inc.date_creation)}</div>
             </div>
           </div>`;
       });
@@ -348,12 +464,11 @@
         tbody.innerHTML += `
           <tr>
             <td style="color:#8492a6;font-weight:600;">#${inc.id}</td>
-            <td><span class="type-ic">${iconesType[inc.type]}</span>${inc.type}</td>
+            <td><span class="type-ic">${iconesType[inc.type_incident] || '⚠️'}</span>${labelType[inc.type_incident] || inc.type_incident}</td>
             <td>📍 ${inc.region}</td>
-            <td>${inc.description}</td>
-            <td style="color:#8492a6;">${inc.date}</td>
-            <td><span class="statut-badge ${inc.statut}">${statutLabel[inc.statut]}</span></td>
-            <td><span class="niveau-badge ${inc.niveau}">${inc.niveau.toUpperCase()}</span></td>
+            <td>${inc.description || ''}</td>
+            <td style="color:#8492a6;">${formaterDate(inc.date_creation)}</td>
+            <td><span class="statut-badge ${inc.statut}">${statutLabel[inc.statut] || inc.statut}</span></td>
           </tr>`;
       });
       document.getElementById('compteur').textContent = liste.length + ' alerte(s)';
@@ -361,8 +476,14 @@
 
     function mettreAjourStats(liste) {
       document.getElementById('totalAlertes').textContent = liste.length;
-      document.getElementById('enAttente').textContent = liste.filter(i => i.statut === 'attente' || i.statut === 'encours').length;
-      document.getElementById('traitees').textContent  = liste.filter(i => i.statut === 'traite').length;
+      document.getElementById('enAttente').textContent = liste.filter(i => i.statut === 'nouveau' || i.statut === 'en_cours').length;
+      document.getElementById('traitees').textContent = liste.filter(i => i.statut === 'resolu').length;
+    }
+
+    function formaterDate(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      return d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
     }
 
     function filtrer() {
@@ -371,7 +492,7 @@
       const statut = document.getElementById('filtreStatut').value;
       const f = incidents.filter(i =>
         (!region || i.region === region) &&
-        (!type   || i.type   === type)   &&
+        (!type   || i.type_incident === type) &&
         (!statut || i.statut === statut)
       );
       afficherMarqueurs(f);
@@ -391,22 +512,38 @@
     }
 
     async function chargerIncidents() {
-  const token = localStorage.getItem('token');
-  const res = await fetch('http://127.0.0.1:8000/api/incidents/', {
-    headers: { 'Authorization': 'Bearer ' + token }
-  });
-  const data = await res.json();
-  afficherMarqueurs(data);
-  afficherAlertesRecentes(data);
-  afficherTableau(data);
-  mettreAjourStats(data);
-}
-chargerIncidents();
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch(`${API_BASE}/incidents/`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) {
+          console.error('Erreur API incidents:', res.status);
+          return;
+        }
+        incidents = await res.json();
+        afficherMarqueurs(incidents);
+        afficherAlertesRecentes(incidents);
+        afficherTableau(incidents);
+        mettreAjourStats(incidents);
+      } catch (e) {
+        console.error('Erreur de connexion:', e);
+      }
+    }
 
-    afficherMarqueurs(incidents);
-    afficherAlertesRecentes(incidents);
-    afficherTableau(incidents);
-    mettreAjourStats(incidents);
+    // ===== AU CHARGEMENT DE LA PAGE =====
+    window.addEventListener('DOMContentLoaded', () => {
+      const token = localStorage.getItem('token');
+      const username = localStorage.getItem('username');
+      if (token && username) {
+        document.getElementById('loginWrap').style.display = 'none';
+        document.getElementById('dashboardWrap').style.display = 'flex';
+        document.getElementById('userName').textContent = username;
+        document.getElementById('userAvatar').textContent = username.substring(0, 2).toUpperCase();
+        initCarte();
+        chargerIncidents();
+      }
+    });
   </script>
 </body>
 </html>
