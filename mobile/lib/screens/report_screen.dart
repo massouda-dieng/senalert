@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -19,6 +21,9 @@ class _ReportScreenState extends State<ReportScreen> {
   String _region = 'dakar';
   Position? _currentPosition;
   bool _gpsLoading = false;
+  final MapController _mapController = MapController();
+
+  final LatLng _defaultPosition = const LatLng(14.6937, -17.4441); // Dakar
 
   final Map<String, String> _incidentTypes = {
     'accident': 'Accident',
@@ -61,6 +66,7 @@ class _ReportScreenState extends State<ReportScreen> {
         _currentPosition = position;
         _gpsLoading = false;
       });
+      _mapController.move(LatLng(position.latitude, position.longitude), 14);
     } catch (e) {
       Fluttertoast.showToast(msg: 'Impossible de récupérer la position');
       setState(() => _gpsLoading = false);
@@ -113,6 +119,10 @@ class _ReportScreenState extends State<ReportScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final position = _currentPosition != null
+        ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
+        : _defaultPosition;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Signaler une urgence')),
       body: SingleChildScrollView(
@@ -123,6 +133,60 @@ class _ReportScreenState extends State<ReportScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    height: 250,
+                    child: FlutterMap(
+                      mapController: _mapController,
+                      options: MapOptions(
+                        initialCenter: position,
+                        initialZoom: 14,
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'com.senalert.app',
+                        ),
+                        MarkerLayer(
+                          markers: [
+                            Marker(
+                              point: position,
+                              width: 40,
+                              height: 40,
+                              child: const Icon(Icons.location_on,
+                                  color: Colors.red, size: 40),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(Icons.gps_fixed,
+                        color: _currentPosition != null ? Colors.green : Colors.grey,
+                        size: 18),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        _gpsLoading
+                            ? 'Localisation en cours...'
+                            : _currentPosition != null
+                                ? '${_currentPosition!.latitude.toStringAsFixed(4)}, ${_currentPosition!.longitude.toStringAsFixed(4)}'
+                                : 'Position non disponible',
+                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _getCurrentLocation,
+                      child: const Text('Actualiser'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
                 DropdownButtonFormField<String>(
                   value: _incidentType,
                   decoration: const InputDecoration(
@@ -160,35 +224,6 @@ class _ReportScreenState extends State<ReportScreen> {
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) => value!.isEmpty ? 'Veuillez décrire l\'incident' : null,
-                ),
-                const SizedBox(height: 20),
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: _currentPosition != null ? Colors.green.shade50 : Colors.grey.shade100,
-                    border: Border.all(
-                      color: _currentPosition != null ? Colors.green : Colors.grey,
-                    ),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.location_on,
-                          color: _currentPosition != null ? Colors.green : Colors.grey),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _gpsLoading
-                            ? const Text('Localisation en cours...')
-                            : Text(_currentPosition != null
-                                ? 'GPS: ${_currentPosition!.latitude.toStringAsFixed(4)}, ${_currentPosition!.longitude.toStringAsFixed(4)}'
-                                : 'Position non disponible'),
-                      ),
-                      TextButton(
-                        onPressed: _getCurrentLocation,
-                        child: const Text('Actualiser'),
-                      ),
-                    ],
-                  ),
                 ),
                 const SizedBox(height: 30),
                 SizedBox(
