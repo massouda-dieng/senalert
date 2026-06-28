@@ -41,7 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   prefixIcon: Icon(Icons.person),
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => value!.isEmpty ? 'Entrez votre nom d'utilisateur' : null,
+                validator: (value) => value!.isEmpty ? "Entrez votre nom d'utilisateur" : null,
               ),
               const SizedBox(height: 20),
               TextFormField(
