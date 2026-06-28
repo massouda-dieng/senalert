@@ -11,9 +11,10 @@ class AuthService {
         Uri.parse('$baseUrl/auth/register/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'nom_complet': name,
+          'username': name,
           'email': email,
           'password': password,
+          'role': 'citoyen',
         }),
       );
       if (response.statusCode == 201) {
@@ -25,20 +26,20 @@ class AuthService {
     }
   }
 
-  Future<Map<String, dynamic>?> login(String email, String password) async {
+  Future<Map<String, dynamic>?> login(String username, String password) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/login/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'email': email,
+          'username': username,
           'password': password,
         }),
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', data['token'] ?? '');
+        await prefs.setString('token', data['access'] ?? '');
         return data;
       }
       return null;
