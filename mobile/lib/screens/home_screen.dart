@@ -16,11 +16,17 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = [
-    const HomeContent(),
-    const ReportScreen(),
-    const IncidentsScreen(),
-  ];
+  void _goToTab(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  List<Widget> get _screens => [
+        HomeContent(onSignaler: () => _goToTab(1), onVoirIncidents: () => _goToTab(2)),
+        const ReportScreen(),
+        const IncidentsScreen(),
+      ];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -38,7 +44,6 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.account_circle),
             onPressed: () {
-              // Profile or logout
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
@@ -93,7 +98,14 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class HomeContent extends StatelessWidget {
-  const HomeContent({super.key});
+  final VoidCallback onSignaler;
+  final VoidCallback onVoirIncidents;
+
+  const HomeContent({
+    super.key,
+    required this.onSignaler,
+    required this.onVoirIncidents,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -113,10 +125,7 @@ class HomeContent extends StatelessWidget {
           ),
           const SizedBox(height: 30),
           ElevatedButton(
-            onPressed: () {
-              // Navigate to report
-              // But since it's in bottom nav, perhaps switch tab or navigate
-            },
+            onPressed: onSignaler,
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               minimumSize: const Size(double.infinity, 50),
@@ -125,7 +134,7 @@ class HomeContent extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           ElevatedButton(
-            onPressed: () {},
+            onPressed: onVoirIncidents,
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
               foregroundColor: Colors.red,
