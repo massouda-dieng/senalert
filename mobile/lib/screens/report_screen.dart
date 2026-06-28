@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,13 +15,25 @@ class ReportScreen extends StatefulWidget {
 class _ReportScreenState extends State<ReportScreen> {
   final _formKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
-  String _incidentType = 'Accident';
+  String _incidentType = 'accident';
+  String _region = 'dakar';
   Position? _currentPosition;
-  GoogleMapController? _mapController;
-  final LatLng _initialPosition = const LatLng(14.6937, -17.4441); // Dakar approx
-  Marker? _currentMarker;
+  bool _gpsLoading = false;
 
-  final List<String> _incidentTypes = ['Accident', 'Incendie', 'Inondation', 'Urgence médicale'];
+  final Map<String, String> _incidentTypes = {
+    'accident': 'Accident',
+    'incendie': 'Incendie',
+    'inondation': 'Inondation',
+    'electricite': 'Coupure électricité',
+    'insecurite': 'Insécurité',
+    'autre': 'Autre',
+  };
+
+  final List<String> _regions = [
+    'dakar', 'thies', 'saint_louis', 'kaolack', 'ziguinchor',
+    'tambacounda', 'louga', 'fatick', 'kolda', 'matam',
+    'diourbel', 'kaffrine', 'sedhiou', 'kedougou',
+  ];
 
   @override
   void initState() {
@@ -31,31 +42,28 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   Future<void> _getCurrentLocation() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      Fluttertoast.showToast(msg: 'Veuillez activer la localisation');
-      return;
-    }
+    setState(() => _gpsLoading = true);
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        Fluttertoast.showToast(msg: 'Veuillez activer la localisation');
+        setState(() => _gpsLoading = false);
+        return;
+      }
 
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) return;
-    }
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
 
-    Position position = await Geolocator.getCurrentPosition();
-    setState(() {
-      _currentPosition = position;
-      _currentMarker = Marker(
-        markerId: const MarkerId('current'),
-        position: LatLng(position.latitude, position.longitude),
-      );
-    });
-
-    if (_mapController != null) {
-      _mapController!.animateCamera(
-        CameraUpdate.newLatLng(LatLng(position.latitude, position.longitude)),
-      );
+      Position position = await Geolocator.getCurrentPosition();
+      setState(() {
+        _currentPosition = position;
+        _gpsLoading = false;
+      });
+    } catch (e) {
+      Fluttertoast.showToast(msg: 'Impossible de récupérer la position');
+      setState(() => _gpsLoading = false);
     }
   }
 
@@ -79,13 +87,15 @@ class _ReportScreenState extends State<ReportScreen> {
           Uri.parse('http://127.0.0.1:8000/api/incidents/'),
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Token $token',
+            'Authorization': 'Bearer $token',
           },
           body: jsonEncode({
-            'type': _incidentType,
+            'type_incident': _incidentType,
             'description': _descriptionController.text,
             'latitude': _currentPosition!.latitude,
             'longitude': _currentPosition!.longitude,
+            'region': _region,
+            'statut': 'nouveau',
           }),
         );
 
@@ -113,33 +123,31 @@ class _ReportScreenState extends State<ReportScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
-                  height: 300,
-                  child: GoogleMap(
-                    initialCameraPosition: CameraPosition(
-                      target: _initialPosition,
-                      zoom: 12,
-                    ),
-                    markers: _currentMarker != null ? {_currentMarker!} : {},
-                    onMapCreated: (GoogleMapController controller) {
-                      _mapController = controller;
-                    },
-                    myLocationEnabled: true,
-                    myLocationButtonEnabled: true,
-                  ),
-                ),
-                const SizedBox(height: 20),
                 DropdownButtonFormField<String>(
                   value: _incidentType,
                   decoration: const InputDecoration(
                     labelText: 'Type d\'incident',
                     border: OutlineInputBorder(),
                   ),
-                  items: _incidentTypes.map((type) {
-                    return DropdownMenuItem(value: type, child: Text(type));
+                  items: _incidentTypes.entries.map((e) {
+                    return DropdownMenuItem(value: e.key, child: Text(e.value));
                   }).toList(),
                   onChanged: (value) {
                     setState(() => _incidentType = value!);
+                  },
+                ),
+                const SizedBox(height: 20),
+                DropdownButtonFormField<String>(
+                  value: _region,
+                  decoration: const InputDecoration(
+                    labelText: 'Région',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: _regions.map((r) {
+                    return DropdownMenuItem(value: r, child: Text(r));
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() => _region = value!);
                   },
                 ),
                 const SizedBox(height: 20),
@@ -154,21 +162,32 @@ class _ReportScreenState extends State<ReportScreen> {
                   validator: (value) => value!.isEmpty ? 'Veuillez décrire l\'incident' : null,
                 ),
                 const SizedBox(height: 20),
-                // Photo upload placeholder
                 Container(
-                  height: 150,
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
+                    color: _currentPosition != null ? Colors.green.shade50 : Colors.grey.shade100,
+                    border: Border.all(
+                      color: _currentPosition != null ? Colors.green : Colors.grey,
+                    ),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.camera_alt, size: 50, color: Colors.grey),
-                        Text('Ajouter une photo'),
-                      ],
-                    ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.location_on,
+                          color: _currentPosition != null ? Colors.green : Colors.grey),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _gpsLoading
+                            ? const Text('Localisation en cours...')
+                            : Text(_currentPosition != null
+                                ? 'GPS: ${_currentPosition!.latitude.toStringAsFixed(4)}, ${_currentPosition!.longitude.toStringAsFixed(4)}'
+                                : 'Position non disponible'),
+                      ),
+                      TextButton(
+                        onPressed: _getCurrentLocation,
+                        child: const Text('Actualiser'),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 30),

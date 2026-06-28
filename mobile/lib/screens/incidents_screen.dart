@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class IncidentsScreen extends StatefulWidget {
   const IncidentsScreen({super.key});
@@ -14,6 +13,21 @@ class IncidentsScreen extends StatefulWidget {
 class _IncidentsScreenState extends State<IncidentsScreen> {
   List<dynamic> _incidents = [];
   bool _isLoading = true;
+
+  final Map<String, String> _typeLabels = {
+    'accident': 'Accident',
+    'incendie': 'Incendie',
+    'inondation': 'Inondation',
+    'electricite': 'Coupure électricité',
+    'insecurite': 'Insécurité',
+    'autre': 'Autre',
+  };
+
+  final Map<String, String> _statutLabels = {
+    'nouveau': 'Nouveau',
+    'en_cours': 'En cours',
+    'resolu': 'Résolu',
+  };
 
   @override
   void initState() {
@@ -29,7 +43,7 @@ class _IncidentsScreenState extends State<IncidentsScreen> {
 
       final response = await http.get(
         Uri.parse('http://127.0.0.1:8000/api/incidents/'),
-        headers: token != null ? {'Authorization': 'Token $token'} : {},
+        headers: token != null ? {'Authorization': 'Bearer $token'} : {},
       );
 
       if (response.statusCode == 200) {
@@ -49,7 +63,7 @@ class _IncidentsScreenState extends State<IncidentsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Carte des incidents'),
+        title: const Text('Liste des incidents'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -59,69 +73,47 @@ class _IncidentsScreenState extends State<IncidentsScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Expanded(
-                  child: GoogleMap(
-                    initialCameraPosition: const CameraPosition(
-                      target: LatLng(14.6937, -17.4441),
-                      zoom: 10,
-                    ),
-                    markers: _buildMarkers(),
-                  ),
-                ),
-                Container(
-                  height: 200,
+          : _incidents.isEmpty
+              ? const Center(child: Text('Aucun incident pour le moment'))
+              : ListView.builder(
                   padding: const EdgeInsets.all(8.0),
-                  child: ListView.builder(
-                    itemCount: _incidents.length,
-                    itemBuilder: (context, index) {
-                      final incident = _incidents[index];
-                      return Card(
-                        child: ListTile(
-                          leading: const Icon(Icons.warning, color: Colors.red),
-                          title: Text(incident['type'] ?? 'Incident'),
-                          subtitle: Text(incident['description'] ?? ''),
-                          trailing: Text(incident['status'] ?? 'En attente'),
-                          onTap: () {
-                            // Show details
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: Text(incident['type'] ?? ''),
-                                content: Text(incident['description'] ?? ''),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: const Text('OK'),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
+                  itemCount: _incidents.length,
+                  itemBuilder: (context, index) {
+                    final incident = _incidents[index];
+                    final type = incident['type_incident'] ?? 'autre';
+                    final statut = incident['statut'] ?? 'nouveau';
+                    return Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.warning, color: Colors.red),
+                        title: Text(_typeLabels[type] ?? type),
+                        subtitle: Text(
+                          '${incident['description'] ?? ''}\n📍 ${incident['region'] ?? ''}',
                         ),
-                      );
-                    },
-                  ),
+                        isThreeLine: true,
+                        trailing: Text(_statutLabels[statut] ?? statut),
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: Text(_typeLabels[type] ?? type),
+                              content: Text(
+                                '${incident['description'] ?? ''}\n\n'
+                                'Région : ${incident['region'] ?? ''}\n'
+                                'Statut : ${_statutLabels[statut] ?? statut}',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('OK'),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
                 ),
-              ],
-            ),
     );
-  }
-
-  Set<Marker> _buildMarkers() {
-    return _incidents
-        .where((inc) => inc['latitude'] != null && inc['longitude'] != null)
-        .map((incident) {
-          return Marker(
-            markerId: MarkerId(incident['id'].toString()),
-            position: LatLng(incident['latitude'], incident['longitude']),
-            infoWindow: InfoWindow(
-              title: incident['type'],
-              snippet: incident['description'],
-            ),
-          );
-        })
-        .toSet();
   }
 }
