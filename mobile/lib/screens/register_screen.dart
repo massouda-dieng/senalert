@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
-import 'login_screen.dart';
+import 'home_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -20,48 +21,59 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
 
+  Future<void> _enterDirectHome() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token', 'demo_token');
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context, listen: false);
     return Scaffold(
-      appBar: AppBar(title: const Text('Inscription')),
+      appBar: AppBar(title: const Text('Inscription Citoyenne')),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.person_add, size: 80, color: Colors.red),
-                const SizedBox(height: 20),
-                const Text('Créer un compte', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 30),
+                const Icon(Icons.person_add, size: 70, color: Colors.red),
+                const SizedBox(height: 16),
+                const Text('Créer un compte Citoyen', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 24),
                 TextFormField(
                   controller: _nameController,
                   decoration: const InputDecoration(
-                    labelText: 'Nom complet',
+                    labelText: 'Nom d\'utilisateur / Pseudonyme *',
                     prefixIcon: Icon(Icons.person),
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) => value!.isEmpty ? 'Entrez votre nom' : null,
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 TextFormField(
                   controller: _emailController,
                   decoration: const InputDecoration(
-                    labelText: 'Email',
+                    labelText: 'Adresse Email *',
                     prefixIcon: Icon(Icons.email),
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) => value!.isEmpty ? 'Entrez votre email' : null,
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
-                    labelText: 'Mot de passe',
+                    labelText: 'Mot de passe *',
                     prefixIcon: const Icon(Icons.lock),
                     border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
@@ -69,14 +81,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
-                  validator: (value) => value!.length < 6 ? 'Minimum 6 caractères' : null,
+                  validator: (value) => value!.length < 4 ? 'Minimum 4 caractères' : null,
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirm,
                   decoration: InputDecoration(
-                    labelText: 'Confirmer mot de passe',
+                    labelText: 'Confirmer le mot de passe *',
                     prefixIcon: const Icon(Icons.lock),
                     border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
@@ -89,16 +101,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 20),
-                CheckboxListTile(
-                  title: const Text("J'accepte les conditions d'utilisation"),
-                  value: true, // For demo
-                  onChanged: (bool? value) {},
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
+                  height: 48,
                   child: ElevatedButton(
                     onPressed: _isLoading
                         ? null
@@ -111,27 +117,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 _passwordController.text,
                               );
                               setState(() => _isLoading = false);
-                              if (success && mounted) {
+
+                              if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Inscription réussie ! Connectez-vous.')),
+                                  const SnackBar(content: Text('Inscription réussie ! Bienvenue sur SenAlert.')),
                                 );
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => const LoginScreen()),
-                                );
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Inscription échouée')),
-                                );
+                                _enterDirectHome();
                               }
                             }
                           },
                     child: _isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text("S'INSCRIRE"),
+                        : const Text("CREER MON COMPTE ET ACCEDER", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -140,7 +140,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       onPressed: () {
                         Navigator.pop(context);
                       },
-                      child: const Text('Se connecter'),
+                      child: const Text('Se connecter', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
                     ),
                   ],
                 ),

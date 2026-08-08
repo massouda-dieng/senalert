@@ -19,14 +19,14 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkAuth() async {
-    await Future.delayed(const Duration(seconds: 2)); // Splash delay
+    await Future.delayed(const Duration(seconds: 2));
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     if (mounted) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => token != null && token.isNotEmpty 
+          builder: (context) => (token != null && token.isNotEmpty) 
               ? const HomeScreen() 
               : const LoginScreen(),
         ),
@@ -41,13 +41,14 @@ class _SplashScreenState extends State<SplashScreen> {
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              'assets/images/senalert_logo.png', // Assume you place the logo here
-              height: 200,
+          children: const [
+            Icon(
+              Icons.notifications_active,
+              size: 100,
+              color: Colors.red,
             ),
-            const SizedBox(height: 20),
-            const Text(
+            SizedBox(height: 20),
+            Text(
               'SenAlert',
               style: TextStyle(
                 fontSize: 32,
@@ -55,12 +56,13 @@ class _SplashScreenState extends State<SplashScreen> {
                 color: Colors.red,
               ),
             ),
-            const Text(
-              'Plateforme d\'alertes citoyennes',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+            SizedBox(height: 8),
+            Text(
+              'Plateforme d\'alertes citoyennes au Sénégal',
+              style: TextStyle(fontSize: 15, color: Colors.grey),
             ),
-            const SizedBox(height: 40),
-            const CircularProgressIndicator(color: Colors.red),
+            SizedBox(height: 40),
+            CircularProgressIndicator(color: Colors.red),
           ],
         ),
       ),
