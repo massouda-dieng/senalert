@@ -1,192 +1,571 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <title>SenAlert — Dashboard</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial; background: #f5f5f5; }
-        
-        /* SIDEBAR */
-        .sidebar {
-            position: fixed; left: 0; top: 0;
-            width: 220px; height: 100vh;
-            background: #1a1a2e; color: white;
-            padding: 20px 0;
-        }
-        .sidebar .logo {
-            padding: 15px 20px 25px;
-            font-size: 20px; font-weight: bold;
-            color: #C0392B; border-bottom: 1px solid #333;
-        }
-        .sidebar ul { list-style: none; padding: 15px 0; }
-        .sidebar ul li a {
-            display: block; padding: 12px 20px;
-            color: #ccc; text-decoration: none; font-size: 14px;
-        }
-        .sidebar ul li a:hover,
-        .sidebar ul li.active a {
-            background: #C0392B; color: white;
-        }
-        .sidebar .logout {
-            position: absolute; bottom: 20px; left: 0; right: 0;
-            padding: 12px 20px; color: #ccc;
-            text-decoration: none; display: block; font-size: 14px;
-        }
-        .sidebar .logout:hover { color: #C0392B; }
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SenAlert — Plateforme Nationale de Gestion des Urgences & Incidents</title>
+  
+  <!-- Fonts & Libraries -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
-        /* MAIN CONTENT */
-        .main { margin-left: 220px; padding: 30px; }
+  <style>
+    :root {
+      --bg-main: #0B0F19;
+      --bg-card: #151C2C;
+      --bg-card-hover: #1C263B;
+      --bg-sidebar: #0E1322;
+      --bg-topbar: rgba(15, 23, 42, 0.85);
+      --bg-input: #1E293B;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-color-hover: rgba(255, 255, 255, 0.18);
+      
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+      --text-dark: #64748B;
+      
+      --primary: #E63946;
+      --primary-hover: #D62839;
+      --primary-glow: rgba(230, 57, 70, 0.35);
+      
+      --accent-orange: #FFB703;
+      --accent-green: #06D6A0;
+      --accent-blue: #118AB2;
+      --accent-purple: #8B5CF6;
+      --accent-cyan: #00F5D4;
+      
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --radius-xl: 24px;
+      
+      --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+      --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.35);
+      --shadow-lg: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
+      --glass: rgba(21, 28, 44, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
 
-        /* HEADER */
-        .header {
-            background: white; padding: 15px 25px;
-            border-radius: 8px; margin-bottom: 25px;
-            display: flex; justify-content: space-between;
-            align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        .header h2 { color: #333; font-size: 20px; }
-        .header .user { color: #666; font-size: 14px; }
+    [data-theme="light"] {
+      --bg-main: #F1F5F9;
+      --bg-card: #FFFFFF;
+      --bg-card-hover: #F8FAFC;
+      --bg-sidebar: #0F172A;
+      --bg-topbar: rgba(255, 255, 255, 0.9);
+      --bg-input: #F8FAFC;
+      --border-color: #E2E8F0;
+      --border-color-hover: #CBD5E1;
+      
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+      --text-dark: #94A3B8;
+      
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 10px 20px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 20px 30px rgba(0, 0, 0, 0.12);
+      --glass: rgba(255, 255, 255, 0.85);
+      --glass-border: rgba(0, 0, 0, 0.08);
+    }
 
-        /* KPI CARDS */
-        .stats { display: flex; gap: 20px; margin-bottom: 25px; }
-        .card {
-            flex: 1; padding: 25px 20px;
-            border-radius: 10px; color: white;
-            text-align: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        .card h2 { font-size: 48px; font-weight: bold; margin-bottom: 5px; }
-        .card p { font-size: 14px; opacity: 0.9; }
-        .rouge { background: #C0392B; }
-        .orange { background: #E67E22; }
-        .vert { background: #27AE60; }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
 
-        /* TABLE */
-        .table-section {
-            background: white; border-radius: 10px;
-            padding: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        .table-section .table-header {
-            display: flex; justify-content: space-between;
-            align-items: center; margin-bottom: 15px;
-        }
-        .table-section h3 { color: #333; font-size: 16px; }
-        .voir-tout { color: #C0392B; text-decoration: none; font-size: 13px; }
-        table { width: 100%; border-collapse: collapse; }
-        th {
-            background: #C0392B; color: white;
-            padding: 12px 15px; text-align: left; font-size: 13px;
-        }
-        td { padding: 12px 15px; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
-        tr:last-child td { border-bottom: none; }
-        tr:hover td { background: #fafafa; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.25); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.45); }
 
-        /* BADGES */
-        .badge {
-            padding: 4px 12px; border-radius: 12px;
-            font-size: 11px; font-weight: bold;
-        }
-        .attente { background: #FCE5CD; color: #E67E22; }
-        .cours   { background: #FFF2CC; color: #F39C12; }
-        .traitee { background: #D9EAD3; color: #27AE60; }
+    /* SIDEBAR */
+    .sidebar {
+      width: 260px; background: var(--bg-sidebar);
+      border-right: 1px solid var(--border-color);
+      display: flex; flex-direction: column;
+      height: 100vh; position: fixed; top: 0; left: 0; z-index: 90;
+      transition: var(--transition);
+    }
+    .sidebar-header {
+      padding: 24px 22px; display: flex; align-items: center; gap: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .logo-icon {
+      width: 42px; height: 42px; border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--primary), #9B2226);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; color: white; box-shadow: 0 4px 14px var(--primary-glow);
+    }
+    .logo-text { display: flex; flex-direction: column; }
+    .logo-text h2 { font-size: 20px; font-weight: 800; color: white; letter-spacing: -0.5px; line-height: 1.1; }
+    .logo-text span { font-size: 11px; font-weight: 600; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; }
 
-        /* ICONES TYPE */
-        .type-icon { margin-right: 6px; }
-    </style>
+    .sidebar-nav { padding: 20px 14px; flex: 1; overflow-y: auto; }
+    .nav-label { font-size: 11px; font-weight: 700; color: var(--text-dark); text-transform: uppercase; letter-spacing: 1.2px; padding: 12px 12px 6px; }
+    
+    .nav-item {
+      display: flex; align-items: center; gap: 14px;
+      padding: 12px 16px; border-radius: var(--radius-md);
+      color: var(--text-muted); font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: var(--transition); margin-bottom: 4px;
+    }
+    .nav-item:hover { background: rgba(255, 255, 255, 0.05); color: var(--text-main); }
+    .nav-item.active {
+      background: linear-gradient(135deg, var(--primary), #B7094C);
+      color: white; box-shadow: 0 6px 18px var(--primary-glow);
+    }
+    .nav-item .icon { font-size: 18px; width: 22px; text-align: center; }
+    .nav-item .badge-count {
+      margin-left: auto; background: rgba(255, 255, 255, 0.2);
+      color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700;
+    }
+    .nav-item.active .badge-count { background: white; color: var(--primary); }
+
+    .sidebar-footer {
+      padding: 16px; border-top: 1px solid var(--border-color);
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .server-status {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color); border-radius: var(--radius-md);
+      font-size: 12px; font-weight: 600;
+    }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); box-shadow: 0 0 10px var(--accent-green); }
+
+    /* MAIN WRAPPER */
+    .main-wrapper {
+      margin-left: 260px; flex: 1;
+      display: flex; flex-direction: column; min-height: 100vh;
+    }
+
+    .topbar {
+      height: 70px; background: var(--bg-topbar);
+      backdrop-filter: blur(15px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0 32px; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 80;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 20px; }
+    .page-title { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+    
+    .live-ticker {
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(255, 183, 3, 0.1); border: 1px solid rgba(255, 183, 3, 0.25);
+      padding: 6px 14px; border-radius: 30px; font-size: 12px; color: var(--accent-orange); font-weight: 600;
+    }
+    .live-ticker .pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-orange); animation: pulseAnim 1.5s infinite; }
+    @keyframes pulseAnim { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.6); opacity: 0.4; } 100% { transform: scale(1); opacity: 1; } }
+
+    .topbar-right { display: flex; align-items: center; gap: 16px; }
+    
+    .clock-display {
+      font-size: 13px; font-weight: 700; color: var(--text-muted);
+      background: var(--bg-card); padding: 8px 14px; border-radius: var(--radius-md);
+      border: 1px solid var(--border-color); display: flex; align-items: center; gap: 8px;
+    }
+    
+    .btn-action-primary {
+      background: linear-gradient(135deg, var(--primary), #C1121F);
+      color: white; border: none; padding: 10px 18px; border-radius: var(--radius-md);
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; gap: 8px;
+      box-shadow: 0 4px 14px var(--primary-glow); transition: var(--transition);
+    }
+    .btn-action-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px var(--primary-glow); }
+
+    .icon-btn {
+      width: 40px; height: 40px; border-radius: var(--radius-md);
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      color: var(--text-main); display: flex; align-items: center; justify-content: center;
+      font-size: 16px; cursor: pointer; transition: var(--transition);
+    }
+
+    .user-profile {
+      display: flex; align-items: center; gap: 12px;
+      padding: 6px 12px; border-radius: var(--radius-md);
+      background: var(--bg-card); border: 1px solid var(--border-color);
+    }
+    .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+      color: white; display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 13px;
+    }
+    .user-info { display: flex; flex-direction: column; text-align: left; }
+    .user-name { font-size: 13px; font-weight: 700; line-height: 1.1; }
+    .user-role { font-size: 11px; color: var(--text-muted); }
+
+    .content-container { padding: 28px 32px; flex: 1; }
+    .view-section { display: none; animation: fadeIn 0.3s ease; }
+    .view-section.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 28px; }
+    .metric-card {
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg); padding: 24px; transition: var(--transition);
+    }
+    .metric-card .icon-box {
+      width: 48px; height: 48px; border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; margin-bottom: 16px;
+    }
+    .metric-card.red .icon-box { background: rgba(230, 57, 70, 0.15); color: var(--primary); }
+    .metric-card.orange .icon-box { background: rgba(255, 183, 3, 0.15); color: var(--accent-orange); }
+    .metric-card.blue .icon-box { background: rgba(17, 138, 178, 0.15); color: var(--accent-blue); }
+    .metric-card.green .icon-box { background: rgba(6, 214, 160, 0.15); color: var(--accent-green); }
+
+    .metric-val { font-size: 36px; font-weight: 800; letter-spacing: -1px; line-height: 1; margin-bottom: 6px; }
+    .metric-label { font-size: 13px; font-weight: 600; color: var(--text-muted); }
+
+    .dashboard-middle { display: grid; grid-template-columns: 1.8fr 1fr; gap: 24px; margin-bottom: 28px; }
+    .card-box {
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column;
+    }
+    .card-header {
+      padding: 18px 24px; border-bottom: 1px solid var(--border-color);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+    #map { height: 420px; width: 100%; background: #111827; }
+
+    .alerts-feed { padding: 12px; overflow-y: auto; max-height: 420px; }
+    .feed-item {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 14px 16px; border-radius: var(--radius-md);
+      transition: var(--transition); border-bottom: 1px solid var(--border-color);
+    }
+    .feed-icon {
+      width: 40px; height: 40px; border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+    }
+    .feed-content { flex: 1; }
+    .feed-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .feed-title { font-size: 14px; font-weight: 700; }
+    .feed-time { font-size: 11px; color: var(--text-dark); }
+    .feed-location { font-size: 12px; color: var(--text-muted); }
+
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+      text-transform: uppercase;
+    }
+    .status-nouveau { background: rgba(255, 183, 3, 0.15); color: var(--accent-orange); }
+    .status-en_cours { background: rgba(17, 138, 178, 0.15); color: var(--accent-blue); }
+    .status-resolu { background: rgba(6, 214, 160, 0.15); color: var(--accent-green); }
+
+    .table-responsive { overflow-x: auto; }
+    .custom-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .custom-table th {
+      padding: 14px 20px; background: rgba(0, 0, 0, 0.15);
+      color: var(--text-muted); font-size: 11px; font-weight: 700;
+      text-transform: uppercase; border-bottom: 1px solid var(--border-color);
+    }
+    .custom-table td { padding: 16px 20px; border-bottom: 1px solid var(--border-color); font-size: 13.5px; }
+
+    .btn-sm {
+      padding: 6px 12px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600;
+      border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-main);
+      cursor: pointer; transition: var(--transition);
+    }
+    .btn-sm:hover { background: var(--primary); color: white; }
+
+    .dispatch-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .unit-card {
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg); padding: 22px;
+    }
+    .unit-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .unit-code { font-size: 16px; font-weight: 800; }
+
+    .charts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 28px; }
+    .chart-box { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 24px; }
+  </style>
 </head>
 <body>
 
-    <!-- SIDEBAR -->
-    <div class="sidebar">
-        <div class="logo">🔔 SenAlert</div>
-        <ul>
-            <li class="active"><a href="/dashboard/">📊 Tableau de bord</a></li>
-            <li><a href="#">🚨 Alertes</a></li>
-            <li><a href="#">🚒 Interventions</a></li>
-            <li><a href="#">👥 Utilisateurs</a></li>
-            <li><a href="#">📈 Statistiques</a></li>
-            <li><a href="#">⚙️ Paramètres</a></li>
-        </ul>
-        <a href="/admin/logout/" class="logout">🚪 Déconnexion</a>
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-icon">🔔</div>
+      <div class="logo-text">
+        <h2>Sen<span>Alert</span></h2>
+        <span>Sénégal Urgences</span>
+      </div>
     </div>
 
-    <!-- CONTENU PRINCIPAL -->
-    <div class="main">
+    <div class="sidebar-nav">
+      <div class="nav-label">Commandement</div>
+      <div class="nav-item active" onclick="switchTab('dashboard')">
+        <span class="icon">📊</span>
+        <span>Tableau de bord</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('incidents')">
+        <span class="icon">🚨</span>
+        <span>Alertes & Incidents</span>
+        <span class="badge-count">{{ total_alertes|default:"0" }}</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('dispatch')">
+        <span class="icon">🛠️</span>
+        <span>Interventions & Unités</span>
+      </div>
 
-        <!-- HEADER -->
-        <div class="header">
-            <h2>Tableau de bord</h2>
-            <span class="user">👤 {{ request.user.username }}</span>
+      <div class="nav-label">Gestion & Analytics</div>
+      <div class="nav-item" onclick="switchTab('analytics')">
+        <span class="icon">📈</span>
+        <span>Statistiques & Risques</span>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="server-status">
+        <div class="status-dot"></div>
+        <span>Serveur Django Prêt</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN WRAPPER -->
+  <div class="main-wrapper">
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 class="page-title" id="pageTitle">Tableau de bord national</h1>
+        <div class="live-ticker">
+          <div class="pulse"></div>
+          <span>Surveillance des 14 régions du Sénégal</span>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <div class="clock-display" id="clockDisplay">🕒 --:--:-- GMT</div>
+        <button class="icon-btn" onclick="playSirenSound()" title="Tester alarme sonore">🔊</button>
+        <button class="icon-btn" onclick="toggleTheme()">☀️</button>
+        <div class="user-profile">
+          <div class="avatar">A</div>
+          <div class="user-info">
+            <span class="user-name">Administrateur</span>
+            <span class="user-role">Commandement Central</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="content-container">
+
+      <!-- DASHBOARD SECTION -->
+      <section id="sec-dashboard" class="view-section active">
+        <!-- ANACIM WEATHER BANNER -->
+        <div style="background: rgba(17, 138, 178, 0.12); border: 1px solid rgba(17, 138, 178, 0.3); padding: 12px 20px; border-radius: var(--radius-md); margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 600; color: var(--text-main);">
+            <span style="font-size: 20px;">🌦️</span>
+            <span><strong>Vigilance Météorologique ANACIM Sénégal :</strong> Risque d inondation temporaire sur Dakar, Thiès et Saint-Louis.</span>
+          </div>
+          <span class="status-badge status-en_cours">Niveau Jaune</span>
         </div>
 
-        <!-- KPI -->
-        <div class="stats">
-            <div class="card rouge">
-                <h2>{{ total_alertes }}</h2>
-                <p>Total alertes</p>
-            </div>
-            <div class="card orange">
-                <h2>{{ en_attente }}</h2>
-                <p>En attente</p>
-            </div>
-            <div class="card vert">
-                <h2>{{ traitees }}</h2>
-                <p>Traitées</p>
-            </div>
+        <div class="metrics-grid">
+          <div class="metric-card red">
+            <div class="icon-box">📋</div>
+            <div class="metric-val">{{ total_alertes|default:"0" }}</div>
+            <div class="metric-label">Total Alertes Signalées</div>
+          </div>
+          <div class="metric-card orange">
+            <div class="icon-box">⏳</div>
+            <div class="metric-val">{{ en_attente|default:"0" }}</div>
+            <div class="metric-label">Urgences En Attente</div>
+          </div>
+          <div class="metric-card blue">
+            <div class="icon-box">🚔</div>
+            <div class="metric-val">{{ en_cours|default:"0" }}</div>
+            <div class="metric-label">Interventions En Cours</div>
+          </div>
+          <div class="metric-card green">
+            <div class="icon-box">✅</div>
+            <div class="metric-val">{{ traitees|default:"0" }}</div>
+            <div class="metric-label">Incidents Résolus</div>
+          </div>
         </div>
 
-        <!-- TABLEAU ALERTES RECENTES -->
-        <div class="table-section">
-            <div class="table-header">
-                <h3>Alertes récentes</h3>
-                <a href="#" class="voir-tout">Voir tout</a>
+        <div class="dashboard-middle">
+          <div class="card-box">
+            <div class="card-header">
+              <h3 class="card-title">🗺️ Carte Interactive des Incidents du Sénégal</h3>
             </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Type d'incident</th>
-                        <th>Zone</th>
-                        <th>Statut</th>
-                        <th>Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for alerte in alertes_recentes %}
+            <div id="map"></div>
+          </div>
+
+          <div class="card-box">
+            <div class="card-header">
+              <h3 class="card-title">🚨 Fil des Urgences Récents</h3>
+            </div>
+            <div class="alerts-feed">
+              {% for inc in alertes_recentes %}
+              <div class="feed-item">
+                <div class="feed-icon" style="background:rgba(230,57,70,0.15); color:#E63946;">🚨</div>
+                <div class="feed-content">
+                  <div class="feed-header">
+                    <span class="feed-title">{{ inc.type_incident|capfirst }}</span>
+                    <span class="feed-time">{{ inc.date_creation|date:"d/m H:i" }}</span>
+                  </div>
+                  <div class="feed-location">📍 {{ inc.region|upper }} — {{ inc.description|truncatewords:8 }}</div>
+                  <div style="margin-top:4px;">
+                    <span class="status-badge status-{{ inc.statut }}">{{ inc.statut }}</span>
+                  </div>
+                </div>
+              </div>
+              {% empty %}
+              <p style="padding:20px; color:var(--text-muted);">Aucune alerte enregistrée.</p>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- INCIDENTS SECTION -->
+      <section id="sec-incidents" class="view-section">
+        <div class="card-box">
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
                 <tr>
-                    <td>
-                        {% if alerte.type_incident == 'accident' %}🚗
-                        {% elif alerte.type_incident == 'incendie' %}🔥
-                        {% elif alerte.type_incident == 'inondation' %}🌊
-                        {% elif alerte.type_incident == 'insecurite' %}🚨
-                        {% elif alerte.type_incident == 'electricite' %}⚡
-                        {% else %}🔔{% endif %}
-                        {{ alerte.get_type_incident_display }}
-                    </td>
-                    <td>{{ alerte.region }}</td>
-                    <td>
-                        {% if alerte.statut == 'nouveau' %}
-                            <span class="badge attente">En attente</span>
-                        {% elif alerte.statut == 'en_cours' %}
-                            <span class="badge cours">En cours</span>
-                        {% else %}
-                            <span class="badge traitee">Traitée</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ alerte.date_creation|date:"d M Y" }}</td>
+                  <th># Code</th>
+                  <th>Type d'Incident</th>
+                  <th>Région</th>
+                  <th>Description</th>
+                  <th>Date</th>
+                  <th>Statut</th>
                 </tr>
-                {% empty %}
+              </thead>
+              <tbody>
+                {% for inc in alertes_recentes %}
                 <tr>
-                    <td colspan="4" style="text-align:center; color:#999; padding:30px;">
-                        Aucune alerte pour le moment
-                    </td>
+                  <td><strong>#INC-{{ inc.id }}</strong></td>
+                  <td>{{ inc.type_incident|capfirst }}</td>
+                  <td>📍 {{ inc.region|upper }}</td>
+                  <td>{{ inc.description }}</td>
+                  <td>{{ inc.date_creation|date:"d/m/Y H:i" }}</td>
+                  <td><span class="status-badge status-{{ inc.statut }}">{{ inc.statut }}</span></td>
                 </tr>
                 {% endfor %}
-                </tbody>
+              </tbody>
             </table>
+          </div>
         </div>
+      </section>
+
+      <!-- DISPATCH SECTION -->
+      <section id="sec-dispatch" class="view-section">
+        <div class="dispatch-grid">
+          <div class="unit-card">
+            <div class="unit-header">
+              <span class="unit-code">SP-18-DAKAR</span>
+              <span class="status-badge status-en_cours">En Mission</span>
+            </div>
+            <h4>Sapeurs-Pompiers Dakar</h4>
+            <p style="font-size:13px; color:var(--text-muted); margin-top:4px;">Zone: Pikine / Guédiawaye</p>
+          </div>
+          <div class="unit-card">
+            <div class="unit-header">
+              <span class="unit-code">POL-17-THIES</span>
+              <span class="status-badge status-resolu">Disponible</span>
+            </div>
+            <h4>Police Nationale Thiès</h4>
+            <p style="font-size:13px; color:var(--text-muted); margin-top:4px;">Zone: Thiès Centre</p>
+          </div>
+          <div class="unit-card">
+            <div class="unit-header">
+              <span class="unit-code">SAMU-1515</span>
+              <span class="status-badge status-resolu">Disponible</span>
+            </div>
+            <h4>SAMU National Sénégal</h4>
+            <p style="font-size:13px; color:var(--text-muted); margin-top:4px;">Urgence Médicale</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ANALYTICS SECTION -->
+      <section id="sec-analytics" class="view-section">
+        <div class="charts-grid">
+          <div class="chart-box">
+            <h3 class="card-title" style="margin-bottom:16px;">📊 Incidents par Région</h3>
+            <canvas id="chartRegion" height="240"></canvas>
+          </div>
+          <div class="chart-box">
+            <h3 class="card-title" style="margin-bottom:16px;">🍩 Distribution des Urgences</h3>
+            <canvas id="chartType" height="240"></canvas>
+          </div>
+        </div>
+      </section>
 
     </div>
+  </div>
 
+  <script>
+    let map = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      setInterval(() => {
+        const d = new Date();
+        document.getElementById('clockDisplay').textContent = '🕒 ' + d.toLocaleTimeString('fr-FR') + ' GMT Dakar';
+      }, 1000);
+
+      map = L.map('map').setView([14.4974, -14.4524], 7);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap', maxZoom: 19
+      }).addTo(map);
+
+      {% for inc in alertes_recentes %}
+      {% if inc.latitude and inc.longitude %}
+      L.circleMarker([{{ inc.latitude }}, {{ inc.longitude }}], {
+        radius: 9, fillColor: '#E63946', color: '#fff', weight: 2, fillOpacity: 0.9
+      }).addTo(map).bindPopup('<b>{{ inc.type_incident }}</b><br>📍 {{ inc.region }}');
+      {% endif %}
+      {% endfor %}
+    });
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      document.getElementById(`sec-${tabId}`).classList.add('active');
+      if (tabId === 'dashboard' && map) setTimeout(() => map.invalidateSize(), 200);
+    }
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      html.setAttribute('data-theme', html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+    }
+
+    function playSirenSound() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.5);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.5);
+      } catch(e) {}
+    }
+  </script>
 </body>
 </html>
