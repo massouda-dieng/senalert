@@ -556,7 +556,7 @@
         <span>Interventions & Unités</span>
       </div>
 
-      <div class="nav-label">Gestion & Analyse</div>
+      <div class="nav-label">Administration & Système</div>
       <div class="nav-item" onclick="switchTab('users')">
         <span class="icon">👥</span>
         <span>Utilisateurs & Autorités</span>
@@ -569,6 +569,10 @@
         <span class="icon">⚙️</span>
         <span>Paramètres Système</span>
       </div>
+      <a href="http://127.0.0.1:8000/admin/" target="_blank" class="nav-item" style="text-decoration:none;">
+        <span class="icon">🔑</span>
+        <span>Administration Django ↗</span>
+      </a>
     </div>
 
     <div class="sidebar-footer">
@@ -597,6 +601,10 @@
 
       <div class="topbar-right">
         <div class="clock-display" id="clockDisplay">🕒 --:--:-- GMT</div>
+
+        <a href="http://127.0.0.1:8000/admin/" target="_blank" class="btn-secondary" style="text-decoration:none; display:flex; align-items:center; gap:6px;">
+          <span>🔑 Admin Django ↗</span>
+        </a>
 
         <button class="btn-action-primary" onclick="openNewIncidentModal()">
           <span>+ Signaler Incident</span>
@@ -894,6 +902,23 @@
       <section id="sec-settings" class="view-section">
         <div class="card-box" style="padding: 32px; max-width: 720px;">
           <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 20px;">⚙️ Paramètres du Système SenAlert</h2>
+
+          <div style="margin-bottom: 28px; padding: 20px; background: rgba(17, 138, 178, 0.12); border: 1px solid rgba(17, 138, 178, 0.3); border-radius: var(--radius-md);">
+            <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 8px; display:flex; align-items:center; gap:8px;">
+              <span>🔑</span> Accès Direct à l Administration Django (/admin/)
+            </h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+              Gérez les utilisateurs, rôles, autorités régionales et base de données directement via la console d administration Django.
+            </p>
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+              <span style="font-size: 12.5px; color: var(--text-main);">
+                Compte : <strong>Papa</strong> | Mot de passe : <strong>Papa</strong>
+              </span>
+              <a href="http://127.0.0.1:8000/admin/" target="_blank" class="btn-action-primary" style="text-decoration:none;">
+                Ouvrir Administration Django ↗
+              </a>
+            </div>
+          </div>
 
           <div class="form-group">
             <label>Adresse de l'API Backend Django</label>
