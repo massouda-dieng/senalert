@@ -41,14 +41,18 @@ class _SplashScreenState extends State<SplashScreen> {
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(
-              Icons.notifications_active,
-              size: 100,
-              color: Colors.red,
+          children: [
+            Image.asset(
+              'assets/images/senalert_logo.png',
+              height: 180,
+              errorBuilder: (context, error, stackTrace) => const Icon(
+                Icons.notifications_active,
+                size: 100,
+                color: Colors.red,
+              ),
             ),
-            SizedBox(height: 20),
-            Text(
+            const SizedBox(height: 20),
+            const Text(
               'SenAlert',
               style: TextStyle(
                 fontSize: 32,
@@ -56,13 +60,13 @@ class _SplashScreenState extends State<SplashScreen> {
                 color: Colors.red,
               ),
             ),
-            SizedBox(height: 8),
-            Text(
+            const SizedBox(height: 8),
+            const Text(
               'Plateforme d\'alertes citoyennes au Sénégal',
               style: TextStyle(fontSize: 15, color: Colors.grey),
             ),
-            SizedBox(height: 40),
-            CircularProgressIndicator(color: Colors.red),
+            const SizedBox(height: 40),
+            const CircularProgressIndicator(color: Colors.red),
           ],
         ),
       ),
