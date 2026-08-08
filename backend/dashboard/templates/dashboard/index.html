@@ -185,6 +185,13 @@
     }
     .btn-action-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px var(--primary-glow); }
 
+    .btn-secondary {
+      padding: 10px 16px; background: var(--bg-input); border: 1px solid var(--border-color);
+      color: var(--text-muted); border-radius: var(--radius-md); font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: var(--transition);
+    }
+    .btn-secondary:hover { background: var(--bg-card-hover); color: var(--text-main); }
+
     .icon-btn {
       width: 40px; height: 40px; border-radius: var(--radius-md);
       background: var(--bg-card); border: 1px solid var(--border-color);
@@ -324,11 +331,23 @@
         <span>Interventions & Unités</span>
       </div>
 
-      <div class="nav-label">Gestion & Analytics</div>
+      <div class="nav-label">Administration & Système</div>
+      <div class="nav-item" onclick="switchTab('users')">
+        <span class="icon">👥</span>
+        <span>Utilisateurs & Autorités</span>
+      </div>
       <div class="nav-item" onclick="switchTab('analytics')">
         <span class="icon">📈</span>
         <span>Statistiques & Risques</span>
       </div>
+      <div class="nav-item" onclick="switchTab('settings')">
+        <span class="icon">⚙️</span>
+        <span>Paramètres Système</span>
+      </div>
+      <a href="/admin/" target="_blank" class="nav-item" style="text-decoration:none;">
+        <span class="icon">🔑</span>
+        <span>Administration Django ↗</span>
+      </a>
     </div>
 
     <div class="sidebar-footer">
@@ -352,6 +371,9 @@
 
       <div class="topbar-right">
         <div class="clock-display" id="clockDisplay">🕒 --:--:-- GMT</div>
+        <a href="/admin/" target="_blank" class="btn-secondary" style="text-decoration:none; display:flex; align-items:center; gap:6px;">
+          <span>🔑 Admin Django ↗</span>
+        </a>
         <button class="icon-btn" onclick="playSirenSound()" title="Tester alarme sonore">🔊</button>
         <button class="icon-btn" onclick="toggleTheme()">☀️</button>
         <div class="user-profile">
@@ -497,6 +519,56 @@
         </div>
       </section>
 
+      <!-- USERS & AUTHORITIES SECTION -->
+      <section id="sec-users" class="view-section">
+        <div class="card-box" style="padding:24px;">
+          <h3 class="card-title" style="margin-bottom:16px;">👥 Annuaire des Autorités & Intervenants Régionaux</h3>
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Nom du Service</th>
+                  <th>Type d'Autorité</th>
+                  <th>Région Couverte</th>
+                  <th>Contact Téléphone</th>
+                  <th>Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Groupement National Sapeurs-Pompiers</strong></td>
+                  <td>Pompiers (18)</td>
+                  <td>📍 National (Dakar, Thiès, etc.)</td>
+                  <td>📞 18</td>
+                  <td><span class="status-badge status-resolu">Actif</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Police Nationale Sénégal</strong></td>
+                  <td>Police / Gendarmerie</td>
+                  <td>📍 National</td>
+                  <td>📞 17</td>
+                  <td><span class="status-badge status-resolu">Actif</span></td>
+                </tr>
+                <tr>
+                  <td><strong>SAMU National Sénégal</strong></td>
+                  <td>Santé / Urgences</td>
+                  <td>📍 Dakar / Régions</td>
+                  <td>📞 1515</td>
+                  <td><span class="status-badge status-resolu">Actif</span></td>
+                </tr>
+                <tr>
+                  <td><strong>SENELEC Dépannage Urgence</strong></td>
+                  <td>Électricité</td>
+                  <td>📍 National</td>
+                  <td>📞 800 00 20 20</td>
+                  <td><span class="status-badge status-resolu">Actif</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <!-- ANALYTICS SECTION -->
       <section id="sec-analytics" class="view-section">
         <div class="charts-grid">
@@ -507,6 +579,35 @@
           <div class="chart-box">
             <h3 class="card-title" style="margin-bottom:16px;">🍩 Distribution des Urgences</h3>
             <canvas id="chartType" height="240"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS & ADMIN SECTION -->
+      <section id="sec-settings" class="view-section">
+        <div class="card-box" style="padding: 32px; max-width: 720px;">
+          <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 20px;">⚙️ Paramètres du Système & Administration</h2>
+
+          <div style="margin-bottom: 28px; padding: 20px; background: rgba(17, 138, 178, 0.12); border: 1px solid rgba(17, 138, 178, 0.3); border-radius: var(--radius-md);">
+            <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 8px; display:flex; align-items:center; gap:8px;">
+              <span>🔑</span> Administration Console Django (/admin/)
+            </h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+              Gérez les utilisateurs, rôles, autorités régionales et la base de données directement via le panneau d administration Django.
+            </p>
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+              <span style="font-size: 12.5px; color: var(--text-main);">
+                Compte : <strong>Papa</strong> | Mot de passe : <strong>Papa</strong>
+              </span>
+              <a href="/admin/" target="_blank" class="btn-action-primary" style="text-decoration:none;">
+                Ouvrir Administration Django ↗
+              </a>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Adresse de l'API Backend Django</label>
+            <input type="text" id="settingApiUrl" class="form-control" value="http://127.0.0.1:8000/api" />
           </div>
         </div>
       </section>
