@@ -1005,6 +1005,83 @@
       <div class="modal-footer">
         <button class="btn-secondary" onclick="closeModal('modalNewIncident')">Annuler</button>
         <button class="btn-action-primary" onclick="submitNewIncident()">Créer l'Alerte 🚨</button>
+  <!-- ================= MODAL: NEW USER / AUTHORITY ================= -->
+  <div class="modal-backdrop" id="modalNewUser">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3>👥 Ajouter une Autorité / Service Régional</h3>
+        <button class="modal-close" onclick="closeModal('modalNewUser')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Nom du service / Organisme *</label>
+          <input type="text" id="newUserName" class="form-control" placeholder="ex: Centre de Secours Sapeurs-Pompiers Thiès" />
+        </div>
+        <div class="form-group">
+          <label>Type d'Autorité *</label>
+          <select id="newUserType" class="form-control">
+            <option value="Pompiers">Pompiers (Sapeurs-Pompiers)</option>
+            <option value="Police">Police / Gendarmerie</option>
+            <option value="Santé">SAMU / Santé</option>
+            <option value="Électricité">SENELEC (Électricité)</option>
+            <option value="Assainissement">ONAS (Inondations)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Région Couverte *</label>
+          <select id="newUserRegion" class="form-control">
+            <option value="Dakar">Dakar</option>
+            <option value="Thiès">Thiès</option>
+            <option value="Saint-Louis">Saint-Louis</option>
+            <option value="Kaolack">Kaolack</option>
+            <option value="Ziguinchor">Ziguinchor</option>
+            <option value="Tambacounda">Tambacounda</option>
+            <option value="National">National (Toutes Régions)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Téléphone de contact *</label>
+          <input type="text" id="newUserPhone" class="form-control" placeholder="ex: 18 / 33 800 00 00" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal('modalNewUser')">Annuler</button>
+        <button class="btn-action-primary" onclick="submitNewUser()">Enregistrer l'Autorité 👥</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: DISPATCH UNIT ================= -->
+  <div class="modal-backdrop" id="modalDispatchUnit">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3>📢 Mobiliser l'Équipe de Secours</h3>
+        <button class="modal-close" onclick="closeModal('modalDispatchUnit')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="dispatchUnitId" />
+        <div class="form-group">
+          <label>Unité Sélectionnée</label>
+          <input type="text" id="dispatchUnitName" class="form-control" readonly />
+        </div>
+        <div class="form-group">
+          <label>Incident à traiter *</label>
+          <select id="dispatchIncidentSelect" class="form-control">
+            <!-- JS Populated active incidents -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Estimation du Temps d'Arrivée (ETA en minutes) *</label>
+          <input type="number" id="dispatchEta" class="form-control" value="15" min="1" max="180" />
+        </div>
+        <div class="form-group">
+          <label>Consignes particulières pour l'équipe</label>
+          <textarea id="dispatchNotes" class="form-control" rows="2" placeholder="Instructions spécifiques du PC de commandement..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal('modalDispatchUnit')">Annuler</button>
+        <button class="btn-action-primary" onclick="submitDispatchUnit()">Confirmer le Déploiement 🚀</button>
       </div>
     </div>
   </div>
@@ -1357,7 +1434,7 @@
             <div style="font-size:12.5px; color:var(--text-dark); margin-bottom:16px;">
               📞 Urgence: <strong>${u.phone}</strong>
             </div>
-            <button class="btn-action-primary" style="width:100%; justify-content:center;" onclick="showToast('Déploiement de ${u.id} confirmé !')">
+            <button class="btn-action-primary" style="width:100%; justify-content:center;" onclick="openDispatchModal('${u.id}', '${u.service}')">
               📢 Mobiliser l'équipe
             </button>
           </div>
@@ -1600,6 +1677,71 @@
 
     function closeModal(id) {
       document.getElementById(id).classList.remove('active');
+    }
+
+    function openDispatchModal(unitId, unitName) {
+      document.getElementById('dispatchUnitId').value = unitId;
+      document.getElementById('dispatchUnitName').value = `${unitId} — ${unitName}`;
+      
+      const select = document.getElementById('dispatchIncidentSelect');
+      select.innerHTML = '';
+      incidents.filter(i => i.statut !== 'resolu').forEach(inc => {
+        select.innerHTML += `<option value="${inc.id}">#INC-${inc.id} (${typeMeta[inc.type_incident]?.label || inc.type_incident}) - ${inc.region.toUpperCase()}: ${inc.description.substring(0, 35)}...</option>`;
+      });
+      if (select.children.length === 0) {
+        select.innerHTML = '<option value="">Aucun incident actif à traiter</option>';
+      }
+      document.getElementById('modalDispatchUnit').classList.add('active');
+    }
+
+    function submitDispatchUnit() {
+      const unitId = document.getElementById('dispatchUnitId').value;
+      const incId = document.getElementById('dispatchIncidentSelect').value;
+      const eta = document.getElementById('dispatchEta').value;
+
+      const unit = emergencyUnits.find(u => u.id === unitId);
+      if (unit) {
+        unit.status = 'En Mission';
+        unit.incidentId = parseInt(incId);
+      }
+      if (incId) {
+        changeStatus(parseInt(incId), 'en_cours');
+      }
+      closeModal('modalDispatchUnit');
+      showToast(`⚡ Unité ${unitId} déployée ! Arrivée estimée dans ${eta} min.`);
+      renderDispatchGrid();
+    }
+
+    function openNewUserModal() {
+      document.getElementById('modalNewUser').classList.add('active');
+    }
+
+    function submitNewUser() {
+      const name = document.getElementById('newUserName').value.trim();
+      const type = document.getElementById('newUserType').value;
+      const region = document.getElementById('newUserRegion').value;
+      const phone = document.getElementById('newUserPhone').value.trim();
+
+      if (!name || !phone) { alert('Veuillez remplir le nom et le téléphone'); return; }
+
+      systemAuthorities.push({
+        name: name,
+        type: type,
+        region: region,
+        phone: phone,
+        role: 'Intervenant',
+        status: 'Actif'
+      });
+
+      closeModal('modalNewUser');
+      showToast(`Autorité ${name} enregistrée avec succès !`);
+      renderUsersTable();
+    }
+
+    function resetDemoData() {
+      incidents = [...initialDemoIncidents];
+      showToast('Données de démonstration réinitialisées avec succès');
+      renderAllViews();
     }
 
     async function submitNewIncident() {
