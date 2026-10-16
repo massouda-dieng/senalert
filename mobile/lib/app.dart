@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:senalert_mobile/core/constants/app_colors.dart';
 import 'package:senalert_mobile/features/splash/splash_screen.dart';
 import 'package:senalert_mobile/features/onboarding/onboarding_screen.dart';
@@ -10,18 +11,28 @@ import 'package:senalert_mobile/features/incidents/screens/incident_list_screen.
 import 'package:senalert_mobile/features/incidents/screens/incident_detail_screen.dart';
 import 'package:senalert_mobile/features/report/screens/report_screen.dart';
 import 'package:senalert_mobile/features/profile/profile_screen.dart';
+import 'package:senalert_mobile/features/sos/sos_screen.dart';
+import 'package:senalert_mobile/features/first_aid/first_aid_screen.dart';
+import 'package:senalert_mobile/features/agent/screens/agent_dashboard_screen.dart';
+import 'package:senalert_mobile/features/incidents/screens/incidents_map_screen.dart';
+import 'package:senalert_mobile/features/services/proximity_services_screen.dart';
 
 final GoRouter _router = GoRouter(
   initialLocation: '/',
   routes: [
-    GoRoute(path: '/',            builder: (_, __) => const SplashScreen()),
-    GoRoute(path: '/onboarding',  builder: (_, __) => const OnboardingScreen()),
-    GoRoute(path: '/login',       builder: (_, __) => const LoginScreen()),
-    GoRoute(path: '/register',    builder: (_, __) => const RegisterScreen()),
-    GoRoute(path: '/home',        builder: (_, __) => const HomeScreen()),
-    GoRoute(path: '/incidents',   builder: (_, __) => const IncidentListScreen()),
-    GoRoute(path: '/report',      builder: (_, __) => const ReportScreen()),
-    GoRoute(path: '/profile',     builder: (_, __) => const ProfileScreen()),
+    GoRoute(path: '/',                builder: (_, __) => const SplashScreen()),
+    GoRoute(path: '/onboarding',      builder: (_, __) => const OnboardingScreen()),
+    GoRoute(path: '/login',           builder: (_, __) => const LoginScreen()),
+    GoRoute(path: '/register',        builder: (_, __) => const RegisterScreen()),
+    GoRoute(path: '/home',            builder: (_, __) => const HomeScreen()),
+    GoRoute(path: '/incidents',       builder: (_, __) => const IncidentListScreen()),
+    GoRoute(path: '/map',             builder: (_, __) => const IncidentsMapScreen()),
+    GoRoute(path: '/services',        builder: (_, __) => const ProximityServicesScreen()),
+    GoRoute(path: '/report',          builder: (_, __) => const ReportScreen()),
+    GoRoute(path: '/profile',         builder: (_, __) => const ProfileScreen()),
+    GoRoute(path: '/sos',             builder: (_, __) => const SosScreen()),
+    GoRoute(path: '/first-aid',       builder: (_, __) => const FirstAidScreen()),
+    GoRoute(path: '/agent-dashboard', builder: (_, __) => const AgentDashboardScreen()),
     GoRoute(
       path: '/incidents/:id',
       builder: (_, state) => IncidentDetailScreen(
@@ -41,15 +52,17 @@ class SenAlertApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       routerConfig: _router,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.danger),
+        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.crimson),
         scaffoldBackgroundColor: AppColors.background,
-        fontFamily: 'Roboto',
-        appBarTheme: const AppBarTheme(
-          backgroundColor: AppColors.danger,
+        textTheme: GoogleFonts.interTextTheme(
+          ThemeData.light().textTheme,
+        ),
+        appBarTheme: AppBarTheme(
+          backgroundColor: AppColors.darkSlate,
           foregroundColor: AppColors.white,
           elevation: 0,
           centerTitle: true,
-          titleTextStyle: TextStyle(
+          titleTextStyle: GoogleFonts.plusJakartaSans(
             color: AppColors.white,
             fontSize: 18,
             fontWeight: FontWeight.bold,

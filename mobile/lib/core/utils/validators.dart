@@ -1,8 +1,7 @@
 class Validators {
   static String? email(String? v) {
-    if (v == null || v.isEmpty) return 'Email obligatoire';
-    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v))
-      return 'Email invalide';
+    if (v == null || v.trim().isEmpty) return 'Identifiant / Email obligatoire';
+    if (v.trim().length < 3) return 'Minimum 3 caractères';
     return null;
   }
 

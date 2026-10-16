@@ -1,0 +1,13 @@
+# Firebase Admin SDK Credentials
+firebase-adminsdk.json
+
+# Environment & Secrets
+.env
+*.env
+
+# Python / Django
+__pycache__/
+*.pyc
+*.sqlite3
+media/
+staticfiles/

@@ -8,6 +8,8 @@ class Incident {
   final String status;
   final String date;
   final String? photo;
+  final String? eta;
+  final String? responderInfo;
 
   Incident({
     required this.id,
@@ -19,36 +21,56 @@ class Incident {
     required this.status,
     required this.date,
     this.photo,
+    this.eta,
+    this.responderInfo,
   });
 
-  factory Incident.fromJson(Map<String, dynamic> json) => Incident(
-        id: json['id'],
-        type: json['type'] ?? '',
-        description: json['description'] ?? '',
-        location: json['location'] ?? '',
-        latitude: double.tryParse(json['latitude'].toString()) ?? 0.0,
-        longitude: double.tryParse(json['longitude'].toString()) ?? 0.0,
-        status: json['status'] ?? 'en_attente',
-        date: json['created_at'] ?? '',
-        photo: json['photo'],
-      );
+  factory Incident.fromJson(Map<String, dynamic> json) {
+    final rawType = json['type_incident'] ?? json['type'] ?? 'Accident';
+    final rawStatus = json['statut'] ?? json['status'] ?? 'en_attente';
+    final rawLocation = json['location'] ?? json['region'] ?? json['lieu'] ?? 'Dakar';
+    final rawDate = json['date_creation'] ?? json['created_at'] ?? json['date'] ?? '';
+
+    String formattedDate = rawDate.toString();
+    if (formattedDate.contains('T')) {
+      formattedDate = formattedDate.split('T')[0];
+    }
+
+    return Incident(
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
+      type: rawType.toString(),
+      description: json['description']?.toString() ?? '',
+      location: rawLocation.toString(),
+      latitude: double.tryParse(json['latitude']?.toString() ?? '0') ?? 0.0,
+      longitude: double.tryParse(json['longitude']?.toString() ?? '0') ?? 0.0,
+      status: rawStatus.toString(),
+      date: formattedDate,
+      photo: json['photo']?.toString(),
+      eta: json['eta']?.toString(),
+      responderInfo: json['responder_info']?.toString(),
+    );
+  }
 
   String get statusLabel {
-    switch (status) {
-      case 'en_attente': return 'En attente';
-      case 'en_cours':   return 'En cours';
-      case 'traite':     return 'Traitée';
+    switch (status.toLowerCase()) {
+      case 'nouveau':
+      case 'en_attente': return '⏳ En attente de confirmation';
+      case 'en_cours':   return eta != null ? '🚒 Urgence Acceptée (Arrivée : $eta)' : '🚒 Urgence Acceptée / En route';
+      case 'refuse':     return '❌ Alerte Classée / Refusée';
+      case 'resolu':
+      case 'traite':     return '✓ Traitée par les secours';
       default:           return status;
     }
   }
 
   String get typeIcon {
-    switch (type.toLowerCase()) {
-      case 'accident':         return '🚗';
-      case 'incendie':         return '🔥';
-      case 'inondation':       return '🌊';
-      case 'urgence médicale': return '🏥';
-      default:                 return '⚠️';
-    }
+    final t = type.toLowerCase();
+    if (t.contains('accident')) return '🚗';
+    if (t.contains('incendie')) return '🔥';
+    if (t.contains('inondation')) return '🌊';
+    if (t.contains('urgence') || t.contains('medical')) return '🏥';
+    if (t.contains('electricite')) return '⚡';
+    if (t.contains('insecu') || t.contains('vol') || t.contains('crime')) return '⚠️';
+    return '📋';
   }
 }

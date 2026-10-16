@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "553328299699",
+    "project_id": "senalert-1042c",
+    "storage_bucket": "senalert-1042c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:553328299699:android:ede118833b81083b98eac6",
+        "android_client_info": {
+          "package_name": "com.senalert.senalert_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDwzMvAFzJDl57Ic8fdaV7hfWeWYZkaHps"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
