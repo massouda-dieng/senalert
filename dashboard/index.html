@@ -3,50 +3,82 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SenAlert — Dashboard</title>
+  <title>SenAlert — Dashboard National</title>
+  
+  <!-- Fonts Google: Plus Jakarta Sans (Display/Titres) & Inter (Corps de texte) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Leaflet & Lucide Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    
     :root {
-      --rouge:   #e53935;
-      --sidebar: #1a2035;
-      --sidebar-w: 220px;
-      --gris:    #f4f6f9;
+      --font-display: 'Plus Jakarta Sans', sans-serif;
+      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      
+      /* Charte Graphique SenAlert Officielle */
+      --rouge:   #E11D48; /* Primary Crimson Red */
+      --sidebar: #0F172A; /* Dark Slate Navy */
+      --sidebar-w: 230px;
+      --gris:    #F8FAFC; /* Light Canvas */
       --blanc:   #ffffff;
-      --texte:   #2d3748;
-      --muted:   #8492a6;
-      --bordure: #e8ecf0;
+      --texte:   #0F172A;
+      --muted:   #64748B;
+      --bordure: #E2E8F0;
+      --vert:    #10B981;
+      --orange:  #F59E0B;
     }
-    body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--gris); display: flex; min-height: 100vh; }
+    
+    body {
+      font-family: var(--font-body);
+      background: var(--gris);
+      color: var(--texte);
+      display: flex;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, h4, .sc-val, .btn-f, button {
+      font-family: var(--font-display);
+    }
 
     /* LOGIN */
     .login-wrap {
       width: 100%; min-height: 100vh; display: flex;
       align-items: center; justify-content: center;
-      background: linear-gradient(135deg, #1a2035, #2d3748);
+      background: radial-gradient(circle at 50% 30%, #1E293B, #0F172A);
+      position: relative;
     }
     .login-box {
-      background: white; border-radius: 16px; padding: 40px;
-      width: 380px; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+      background: white; border-radius: 20px; padding: 44px 40px;
+      width: 400px; box-shadow: 0 25px 60px rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.1);
     }
-    .login-box .logo { text-align: center; font-size: 40px; margin-bottom: 8px; }
-    .login-box h2 { text-align: center; font-size: 22px; font-weight: 800; color: var(--rouge); margin-bottom: 4px; }
+    .login-box .logo-img { text-align: center; margin-bottom: 12px; }
+    .login-box .logo-img img { height: 64px; width: 64px; object-fit: contain; }
+    .login-box h2 { text-align: center; font-size: 24px; font-weight: 800; color: var(--texte); margin-bottom: 4px; letter-spacing: -0.5px; }
+    .login-box h2 span { color: var(--rouge); }
     .login-box p { text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 24px; }
-    .login-box label { font-size: 12px; font-weight: 600; color: var(--texte); display: block; margin-bottom: 6px; }
+    .login-box label { font-size: 12px; font-weight: 700; color: var(--texte); display: block; margin-bottom: 6px; }
     .login-box input {
-      width: 100%; padding: 11px 14px; border: 1px solid var(--bordure);
-      border-radius: 8px; font-size: 14px; margin-bottom: 16px; outline: none;
+      width: 100%; padding: 12px 14px; border: 1px solid var(--bordure);
+      border-radius: 10px; font-size: 14px; margin-bottom: 16px; outline: none;
+      font-family: var(--font-body); transition: border 0.2s;
     }
     .login-box input:focus { border-color: var(--rouge); }
     .login-box button {
-      width: 100%; padding: 12px; border: none; border-radius: 8px;
-      background: var(--rouge); color: white; font-size: 14px; font-weight: 700;
-      cursor: pointer; margin-top: 4px;
+      width: 100%; padding: 13px; border: none; border-radius: 10px;
+      background: var(--rouge); color: white; font-size: 14px; font-weight: 800;
+      cursor: pointer; margin-top: 6px; letter-spacing: 0.5px; transition: background 0.2s;
     }
-    .login-box button:hover { background: #c62828; }
-    .login-error { color: var(--rouge); font-size: 12px; margin-top: 10px; text-align: center; min-height: 16px; }
+    .login-box button:hover { background: #BE123C; }
+    .login-error { color: var(--rouge); font-size: 12px; margin-top: 12px; text-align: center; min-height: 16px; font-weight: 600; }
     .dashboard-hidden { display: none; }
 
     /* SIDEBAR */
@@ -54,153 +86,165 @@
       width: var(--sidebar-w); background: var(--sidebar);
       display: flex; flex-direction: column;
       position: fixed; top: 0; left: 0; height: 100vh; z-index: 100;
+      background-image: radial-gradient(circle at 10% 90%, rgba(225, 29, 72, 0.08) 0%, transparent 60%);
     }
     .sidebar-header {
-      background: var(--rouge);
-      padding: 18px 20px;
-      display: flex; align-items: center; gap: 10px;
+      background: var(--sidebar);
+      padding: 20px 22px;
+      display: flex; align-items: center; gap: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
     }
-    .sidebar-header .logo-icone { font-size: 24px; }
-    .sidebar-header h1 { font-size: 20px; font-weight: 800; color: white; letter-spacing: 0.5px; }
-    .sidebar-header h1 span { font-weight: 400; }
+    .sidebar-header .logo-img img { height: 32px; width: 32px; object-fit: contain; }
+    .sidebar-header h1 { font-size: 20px; font-weight: 800; color: white; letter-spacing: -0.4px; }
+    .sidebar-header h1 span { color: var(--rouge); }
 
-    .sidebar-menu { padding: 16px 12px; flex: 1; }
+    .sidebar-menu { padding: 20px 14px; flex: 1; }
     .menu-item {
       display: flex; align-items: center; gap: 12px;
-      padding: 11px 14px; border-radius: 8px;
-      font-size: 14px; color: rgba(255,255,255,0.55);
+      padding: 12px 14px; border-radius: 10px;
+      font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.6);
       cursor: pointer; transition: all 0.2s; margin-bottom: 4px;
     }
     .menu-item:hover { background: rgba(255,255,255,0.07); color: white; }
     .menu-item.actif { background: var(--rouge); color: white; }
-    .menu-item .mi { font-size: 18px; width: 22px; text-align: center; }
+    .menu-item .mi { width: 18px; height: 18px; stroke-width: 2.2; flex-shrink: 0; }
 
-    .sidebar-bas { padding: 14px 12px; border-top: 1px solid rgba(255,255,255,0.07); }
+    .sidebar-bas { padding: 16px 14px; border-top: 1px solid rgba(255,255,255,0.07); }
     .deconnexion {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 14px; border-radius: 8px;
-      font-size: 14px; color: rgba(255,255,255,0.45); cursor: pointer;
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 14px; border-radius: 10px;
+      font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.5); cursor: pointer;
+      transition: all 0.2s;
     }
-    .deconnexion:hover { background: rgba(255,255,255,0.07); color: white; }
+    .deconnexion:hover { background: rgba(225,29,72,0.15); color: #FCA5A5; }
 
     /* MAIN */
     .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; }
 
     /* TOPBAR */
     .topbar {
-      background: var(--rouge); padding: 14px 28px;
+      background: var(--sidebar); padding: 16px 32px;
       display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
     }
-    .topbar h2 { font-size: 18px; font-weight: 700; color: white; }
+    .topbar h2 { font-size: 18px; font-weight: 800; color: white; letter-spacing: -0.3px; }
     .topbar-droite { display: flex; align-items: center; gap: 14px; }
     .notif-btn {
-      background: rgba(255,255,255,0.2); border: none;
-      color: white; padding: 7px 12px; border-radius: 8px; font-size: 16px; cursor: pointer;
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.12);
+      color: white; padding: 8px 12px; border-radius: 10px; font-size: 14px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
     }
     .user-chip {
-      display: flex; align-items: center; gap: 8px;
-      background: rgba(255,255,255,0.15); padding: 6px 12px; border-radius: 20px;
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(255,255,255,0.1); padding: 6px 14px; border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.12);
     }
     .user-chip .av {
-      width: 28px; height: 28px; border-radius: 50%;
-      background: white; color: var(--rouge);
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--rouge); color: white;
       display: flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: 12px;
+      font-weight: 800; font-size: 11px;
     }
     .user-chip span { color: white; font-size: 13px; font-weight: 600; }
 
-    .page { padding: 24px 28px; }
+    .page { padding: 28px 32px; }
 
     /* STATS */
-    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
-    .stat-card { border-radius: 14px; padding: 24px 20px; color: white; position: relative; overflow: hidden; }
-    .stat-card.bleu   { background: linear-gradient(135deg, #1a73e8, #0d47a1); }
-    .stat-card.orange { background: linear-gradient(135deg, #ff9800, #e65100); }
-    .stat-card.vert   { background: linear-gradient(135deg, #43a047, #1b5e20); }
-    .stat-card .sc-icone { font-size: 32px; margin-bottom: 10px; display: block; }
-    .stat-card .sc-val { font-size: 42px; font-weight: 800; line-height: 1; }
-    .stat-card .sc-label { font-size: 14px; opacity: 0.85; margin-top: 6px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+    .stat-card { border-radius: 16px; padding: 24px 20px; color: white; position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
+    .stat-card.bleu   { background: linear-gradient(135deg, #1E293B, #0F172A); }
+    .stat-card.orange { background: linear-gradient(135deg, #D97706, #B45309); }
+    .stat-card.vert   { background: linear-gradient(135deg, #059669, #047857); }
+    .stat-card.rouge  { background: linear-gradient(135deg, #E11D48, #991B1B); }
+    
+    .stat-card .sc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .stat-card .sc-icone { width: 28px; height: 28px; opacity: 0.9; stroke-width: 2.2; }
+    .stat-card .sc-val { font-size: 38px; font-weight: 800; line-height: 1; letter-spacing: -1px; }
+    .stat-card .sc-label { font-size: 13px; opacity: 0.85; margin-top: 6px; font-weight: 500; }
     .stat-card::after {
       content: ''; position: absolute; right: -20px; top: -20px;
-      width: 100px; height: 100px; border-radius: 50%; background: rgba(255,255,255,0.08);
+      width: 100px; height: 100px; border-radius: 50%; background: rgba(255,255,255,0.06);
     }
 
     /* FILTRES */
     .filtres-bar {
-      background: var(--blanc); border-radius: 14px;
-      border: 1px solid var(--bordure); padding: 14px 18px;
-      display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 20px;
+      background: var(--blanc); border-radius: 16px;
+      border: 1px solid var(--bordure); padding: 16px 20px;
+      display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
     }
     .filtres-bar select {
-      padding: 8px 12px; border: 1px solid var(--bordure);
-      border-radius: 8px; font-size: 13px; background: var(--gris);
-      cursor: pointer; outline: none; color: var(--texte);
+      padding: 9px 14px; border: 1px solid var(--bordure);
+      border-radius: 10px; font-size: 13px; background: var(--gris);
+      cursor: pointer; outline: none; color: var(--texte); font-family: var(--font-body);
     }
     .filtres-bar select:focus { border-color: var(--rouge); }
-    .btn-f { padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; }
+    .btn-f { padding: 9px 20px; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 6px; }
     .btn-f.p { background: var(--rouge); color: white; }
-    .btn-f.p:hover { background: #c62828; }
+    .btn-f.p:hover { background: #BE123C; }
     .btn-f.s { background: var(--gris); color: var(--muted); border: 1px solid var(--bordure); }
 
     /* GRILLE MILIEU */
-    .grille-milieu { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .grille-milieu { display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; margin-bottom: 28px; }
     .carte-box, .alertes-box {
-      background: var(--blanc); border-radius: 14px; border: 1px solid var(--bordure); overflow: hidden;
+      background: var(--blanc); border-radius: 16px; border: 1px solid var(--bordure); overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
     }
     .box-header {
-      padding: 14px 18px; border-bottom: 1px solid var(--bordure);
+      padding: 16px 20px; border-bottom: 1px solid var(--bordure);
       display: flex; justify-content: space-between; align-items: center;
     }
-    .box-header h3 { font-size: 15px; font-weight: 700; }
-    .box-header span, .box-header a { font-size: 12px; color: var(--muted); }
-    .voir-tout { color: var(--rouge) !important; font-weight: 600; cursor: pointer; }
-    #map { height: 320px; }
+    .box-header h3 { font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+    .box-header span, .box-header a { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .voir-tout { color: var(--rouge) !important; font-weight: 700; cursor: pointer; text-decoration: none; }
+    #map { height: 330px; }
 
     /* ALERTES RECENTES */
     .alerte-item {
-      display: flex; align-items: center; gap: 12px;
-      padding: 13px 18px; border-bottom: 1px solid var(--bordure); transition: background 0.15s;
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 20px; border-bottom: 1px solid var(--bordure); transition: background 0.15s;
     }
     .alerte-item:last-child { border-bottom: none; }
-    .alerte-item:hover { background: #fafbfc; }
+    .alerte-item:hover { background: #F8FAFC; }
     .alerte-icone {
-      width: 38px; height: 38px; border-radius: 10px;
-      display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+      width: 40px; height: 40px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    .alerte-icone.accident    { background: #fff3e0; }
-    .alerte-icone.incendie    { background: #fce4ec; }
-    .alerte-icone.inondation  { background: #e3f2fd; }
-    .alerte-icone.electricite { background: #fff8e1; }
-    .alerte-icone.insecurite  { background: #f3e5f5; }
-    .alerte-icone.autre       { background: #eceff1; }
+    .alerte-icone.accident    { background: #FFF3E0; color: #D97706; }
+    .alerte-icone.incendie    { background: #FFE4E6; color: #E11D48; }
+    .alerte-icone.inondation  { background: #E0F2FE; color: #0284C7; }
+    .alerte-icone.electricite { background: #FEF3C7; color: #D97706; }
+    .alerte-icone.insecurite  { background: #F3E8FF; color: #7C3AED; }
+    .alerte-icone.autre       { background: #F1F5F9; color: #64748B; }
     .alerte-info { flex: 1; }
-    .alerte-info .titre { font-size: 14px; font-weight: 600; color: var(--texte); }
+    .alerte-info .titre { font-size: 14px; font-weight: 700; color: var(--texte); }
     .alerte-info .lieu  { font-size: 12px; color: var(--muted); margin-top: 2px; }
     .alerte-droite { text-align: right; }
-    .alerte-droite .date { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .alerte-droite .date { font-size: 11px; color: var(--muted); margin-top: 4px; font-weight: 500; }
 
     /* STATUT BADGES */
-    .statut-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-block; }
-    .statut-badge.nouveau  { background: #fff3e0; color: #e65100; }
-    .statut-badge.en_cours { background: #e3f2fd; color: #1565c0; }
-    .statut-badge.resolu   { background: #e8f5e9; color: #2e7d32; }
+    .statut-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; display: inline-block; }
+    .statut-badge.nouveau  { background: #FEF3C7; color: #B45309; }
+    .statut-badge.en_cours { background: #E0F2FE; color: #0369A1; }
+    .statut-badge.resolu   { background: #D1FAE5; color: #047857; }
 
     /* TABLEAU */
     .tableau-box {
-      background: var(--blanc); border-radius: 14px;
-      border: 1px solid var(--bordure); overflow: hidden; margin-bottom: 24px;
+      background: var(--blanc); border-radius: 16px;
+      border: 1px solid var(--bordure); overflow: hidden; margin-bottom: 28px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
     }
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    thead tr { background: var(--gris); }
+    thead tr { background: #F1F5F9; }
     th {
-      padding: 12px 16px; text-align: left;
-      font-size: 11px; font-weight: 700; color: var(--muted);
-      text-transform: uppercase; letter-spacing: 0.5px;
+      padding: 14px 20px; text-align: left;
+      font-size: 11px; font-weight: 800; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.8px;
     }
-    td { padding: 13px 16px; border-bottom: 1px solid var(--bordure); }
+    td { padding: 14px 20px; border-bottom: 1px solid var(--bordure); }
     tr:last-child td { border-bottom: none; }
-    tbody tr:hover { background: #fafbfc; }
-    .type-ic { font-size: 16px; margin-right: 6px; }
+    tbody tr:hover { background: #F8FAFC; }
+    .type-ic-wrap { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
   </style>
 </head>
 <body>
@@ -208,9 +252,11 @@
   <!-- ÉCRAN DE CONNEXION -->
   <div class="login-wrap" id="loginWrap">
     <div class="login-box">
-      <div class="logo">🔔</div>
-      <h2>SenAlert</h2>
-      <p>Connexion administrateur / autorité</p>
+      <div class="logo-img">
+        <img src="../mobile/assets/images/senalert_logo.png" alt="SenAlert Logo" error="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23E11D48\'><path d=\'M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z\'/></svg>'"/>
+      </div>
+      <h2>Sen<span>Alert</span></h2>
+      <p>Portail d'Administration & d'Urgence Nationale</p>
       <label>Nom d'utilisateur</label>
       <input type="text" id="loginUsername" placeholder="ex: admin" />
       <label>Mot de passe</label>
@@ -226,28 +272,30 @@
     <!-- SIDEBAR -->
     <div class="sidebar">
       <div class="sidebar-header">
-        <span class="logo-icone">🔔</span>
+        <div class="logo-img">
+          <img src="../mobile/assets/images/senalert_logo.png" alt="SenAlert Logo"/>
+        </div>
         <h1>Sen<span>Alert</span></h1>
       </div>
       <div class="sidebar-menu">
-        <div class="menu-item actif"><span class="mi">📊</span> Tableau de bord</div>
-        <div class="menu-item"><span class="mi">🚨</span> Alertes</div>
-        <div class="menu-item"><span class="mi">🛠️</span> Interventions</div>
-        <div class="menu-item"><span class="mi">👥</span> Utilisateurs</div>
-        <div class="menu-item"><span class="mi">📈</span> Statistiques</div>
-        <div class="menu-item"><span class="mi">⚙️</span> Paramètres</div>
+        <div class="menu-item actif"><i data-lucide="layout-dashboard" class="mi"></i> Tableau de bord</div>
+        <div class="menu-item"><i data-lucide="siren" class="mi"></i> Alertes SOS</div>
+        <div class="menu-item"><i data-lucide="shield-alert" class="mi"></i> Interventions</div>
+        <div class="menu-item"><i data-lucide="users" class="mi"></i> Utilisateurs</div>
+        <div class="menu-item"><i data-lucide="trending-up" class="mi"></i> Statistiques</div>
+        <div class="menu-item"><i data-lucide="settings" class="mi"></i> Paramètres</div>
       </div>
       <div class="sidebar-bas">
-        <div class="deconnexion" onclick="deconnexion()"><span class="mi">🚪</span> Déconnexion</div>
+        <div class="deconnexion" onclick="deconnexion()"><i data-lucide="log-out" class="mi"></i> Déconnexion</div>
       </div>
     </div>
 
     <!-- MAIN -->
     <div class="main">
       <div class="topbar">
-        <h2>Tableau de bord</h2>
+        <h2>Tableau de Bord National & Commandement de Sécurité</h2>
         <div class="topbar-droite">
-          <button class="notif-btn">🔔</button>
+          <button class="notif-btn" tooltip="Notifications"><i data-lucide="bell" style="width: 18px; height: 18px;"></i></button>
           <div class="user-chip">
             <div class="av" id="userAvatar">A</div>
             <span id="userName">Utilisateur</span>
@@ -260,19 +308,32 @@
         <!-- STATS -->
         <div class="stats-grid">
           <div class="stat-card bleu">
-            <span class="sc-icone">📋</span>
+            <div class="sc-header">
+              <i data-lucide="clipboard-list" class="sc-icone"></i>
+            </div>
             <div class="sc-val" id="totalAlertes">0</div>
-            <div class="sc-label">Total alertes</div>
+            <div class="sc-label">Total alertes enregistrées</div>
           </div>
           <div class="stat-card orange">
-            <span class="sc-icone">⏳</span>
+            <div class="sc-header">
+              <i data-lucide="clock" class="sc-icone"></i>
+            </div>
             <div class="sc-val" id="enAttente">0</div>
-            <div class="sc-label">En attente</div>
+            <div class="sc-label">Alertes en attente</div>
           </div>
           <div class="stat-card vert">
-            <span class="sc-icone">✅</span>
+            <div class="sc-header">
+              <i data-lucide="check-circle-2" class="sc-icone"></i>
+            </div>
             <div class="sc-val" id="traitees">0</div>
-            <div class="sc-label">Traitées</div>
+            <div class="sc-label">Alertes traitées & résolues</div>
+          </div>
+          <div class="stat-card rouge">
+            <div class="sc-header">
+              <i data-lucide="siren" class="sc-icone"></i>
+            </div>
+            <div class="sc-val" id="sosTotal">0</div>
+            <div class="sc-label">Alertes SOS (<span id="sosNouvelles">0</span> nouvelles)</div>
           </div>
         </div>
 
@@ -307,24 +368,24 @@
             <option value="en_cours">En cours</option>
             <option value="resolu">Résolu</option>
           </select>
-          <button class="btn-f p" onclick="filtrer()">🔍 Filtrer</button>
-          <button class="btn-f s" onclick="reinit()">↺ Réinitialiser</button>
+          <button class="btn-f p" onclick="filtrer()"><i data-lucide="search" style="width:14px; height:14px;"></i> Filtrer</button>
+          <button class="btn-f s" onclick="reinit()"><i data-lucide="rotate-ccw" style="width:14px; height:14px;"></i> Réinitialiser</button>
         </div>
 
         <!-- CARTE + ALERTES RECENTES -->
         <div class="grille-milieu">
           <div class="carte-box">
             <div class="box-header">
-              <h3>🗺️ Carte des incidents</h3>
-              <span>Temps réel</span>
+              <h3><i data-lucide="map-pin" style="width:18px; height:18px; color:var(--rouge);"></i> Carte GPS en Temps Réel</h3>
+              <span>Localisation active</span>
             </div>
             <div id="map"></div>
           </div>
 
           <div class="alertes-box">
             <div class="box-header">
-              <h3>🚨 Alertes récentes</h3>
-              <a class="voir-tout">Voir tout</a>
+              <h3><i data-lucide="bell-ring" style="width:18px; height:18px; color:var(--rouge);"></i> Alertes Récents</h3>
+              <a class="voir-tout">Fil direct</a>
             </div>
             <div id="alertesRecentes"></div>
           </div>
@@ -333,13 +394,13 @@
         <!-- TABLEAU -->
         <div class="tableau-box">
           <div class="box-header">
-            <h3>📋 Toutes les alertes</h3>
+            <h3><i data-lucide="list-filter" style="width:18px; height:18px; color:var(--rouge);"></i> Toutes les alertes nationales</h3>
             <span id="compteur">0 alerte</span>
           </div>
           <table>
             <thead>
               <tr>
-                <th>#</th><th>Type</th><th>Région</th><th>Description</th><th>Date</th><th>Statut</th>
+                <th>#</th><th>Type</th><th>Région</th><th>Description</th><th>Date & Heure</th><th>Statut</th>
               </tr>
             </thead>
             <tbody id="corpsTableau"></tbody>
@@ -351,22 +412,25 @@
   </div>
 
   <script>
-    const API_BASE = 'http://127.0.0.1:8000/api';
+    const API_BASE = window.API_BASE_URL || 'http://127.0.0.1:8000/api';
     let incidents = [];
     let map = null;
 
     const couleursType = {
-      accident:'#ff9800', incendie:'#e53935', inondation:'#1a73e8',
-      electricite:'#fbc02d', insecurite:'#9c27b0', autre:'#607d8b'
+      accident:'#D97706', incendie:'#E11D48', inondation:'#0284C7',
+      electricite:'#D97706', insecurite:'#7C3AED', autre:'#64748B'
     };
-    const iconesType = {
-      accident:'🚗', incendie:'🔥', inondation:'🌊',
-      electricite:'⚡', insecurite:'🚨', autre:'⚠️'
+    
+    const lucideType = {
+      accident:'car', incendie:'flame', inondation:'droplets',
+      electricite:'zap', insecurite:'shield-alert', autre:'alert-triangle'
     };
+
     const labelType = {
       accident:'Accident', incendie:'Incendie', inondation:'Inondation',
       electricite:'Coupure électricité', insecurite:'Insécurité', autre:'Autre'
     };
+
     const statutLabel = { nouveau:'Nouveau', en_cours:'En cours', resolu:'Résolu' };
 
     // ===== CONNEXION =====
@@ -404,6 +468,7 @@
 
         initCarte();
         chargerIncidents();
+        setTimeout(() => lucide.createIcons(), 100);
       } catch (e) {
         errorDiv.textContent = 'Impossible de contacter le serveur';
       }
@@ -430,10 +495,10 @@
       liste.forEach(inc => {
         if (!inc.latitude || !inc.longitude) return;
         L.circleMarker([inc.latitude, inc.longitude], {
-          radius:11, fillColor:couleursType[inc.type_incident] || '#607d8b',
-          color:'#fff', weight:2.5, fillOpacity:0.9
+          radius:11, fillColor:couleursType[inc.type_incident] || '#64748B',
+          color:'#fff', weight:2.5, fillOpacity:0.95
         }).addTo(map).bindPopup(
-          `<b>${iconesType[inc.type_incident] || '⚠️'} ${labelType[inc.type_incident] || inc.type_incident}</b><br>📍 ${inc.region}<br>${inc.description || ''}`
+          `<b>${labelType[inc.type_incident] || inc.type_incident}</b><br>📍 ${inc.region}<br>${inc.description || ''}`
         );
       });
     }
@@ -442,9 +507,12 @@
       const div = document.getElementById('alertesRecentes');
       div.innerHTML = '';
       liste.slice(0,5).forEach(inc => {
+        const iconName = lucideType[inc.type_incident] || 'alert-triangle';
         div.innerHTML += `
           <div class="alerte-item">
-            <div class="alerte-icone ${inc.type_incident}">${iconesType[inc.type_incident] || '⚠️'}</div>
+            <div class="alerte-icone ${inc.type_incident}">
+              <i data-lucide="${iconName}" style="width:20px; height:20px;"></i>
+            </div>
             <div class="alerte-info">
               <div class="titre">${labelType[inc.type_incident] || inc.type_incident}</div>
               <div class="lieu">📍 ${inc.region}</div>
@@ -455,23 +523,31 @@
             </div>
           </div>`;
       });
+      lucide.createIcons();
     }
 
     function afficherTableau(liste) {
       const tbody = document.getElementById('corpsTableau');
       tbody.innerHTML = '';
       liste.forEach(inc => {
+        const iconName = lucideType[inc.type_incident] || 'alert-triangle';
         tbody.innerHTML += `
           <tr>
-            <td style="color:#8492a6;font-weight:600;">#${inc.id}</td>
-            <td><span class="type-ic">${iconesType[inc.type_incident] || '⚠️'}</span>${labelType[inc.type_incident] || inc.type_incident}</td>
+            <td style="color:#64748B;font-weight:700;">#${inc.id}</td>
+            <td>
+              <div class="type-ic-wrap">
+                <i data-lucide="${iconName}" style="width:16px; height:16px; color:${couleursType[inc.type_incident] || '#64748B'}"></i>
+                <span>${labelType[inc.type_incident] || inc.type_incident}</span>
+              </div>
+            </td>
             <td>📍 ${inc.region}</td>
             <td>${inc.description || ''}</td>
-            <td style="color:#8492a6;">${formaterDate(inc.date_creation)}</td>
+            <td style="color:#64748B;">${formaterDate(inc.date_creation)}</td>
             <td><span class="statut-badge ${inc.statut}">${statutLabel[inc.statut] || inc.statut}</span></td>
           </tr>`;
       });
       document.getElementById('compteur').textContent = liste.length + ' alerte(s)';
+      lucide.createIcons();
     }
 
     function mettreAjourStats(liste) {
@@ -511,7 +587,23 @@
       mettreAjourStats(incidents);
     }
 
+    // Statistiques globales (endpoint /dashboard/stats/, hors préfixe /api)
+    async function chargerStats() {
+      const token = localStorage.getItem('token');
+      const statsUrl = API_BASE.replace(/\/api\/?$/, '') + '/dashboard/stats/';
+      try {
+        const res = await fetch(statsUrl, { headers: { 'Authorization': 'Bearer ' + token } });
+        if (!res.ok) { console.error('Erreur API stats:', res.status); return; }
+        const data = await res.json();
+        document.getElementById('sosTotal').textContent = data.resume.total_alertes_sos;
+        document.getElementById('sosNouvelles').textContent = data.resume.alertes_sos_nouvelles;
+      } catch (e) {
+        console.error('Erreur stats:', e);
+      }
+    }
+
     async function chargerIncidents() {
+      chargerStats();
       const token = localStorage.getItem('token');
       try {
         const res = await fetch(`${API_BASE}/incidents/`, {
@@ -533,6 +625,7 @@
 
     // ===== AU CHARGEMENT DE LA PAGE =====
     window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
       const token = localStorage.getItem('token');
       const username = localStorage.getItem('username');
       if (token && username) {
