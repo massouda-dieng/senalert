@@ -117,7 +117,7 @@ class IncidentProvider extends ChangeNotifier {
     return true;
   }
 
-  void updateIncidentStatus(int id, String newStatus, {String? eta, String? responderInfo}) {
+  Future<bool> updateIncidentStatus(int id, String newStatus, {String? eta, String? responderInfo}) {
     // Mettre à jour dans _userCreatedIncidents si présent
     final uIdx = _userCreatedIncidents.indexWhere((i) => i.id == id);
     if (uIdx != -1) {
@@ -154,6 +154,38 @@ class IncidentProvider extends ChangeNotifier {
         responderInfo: responderInfo ?? old.responderInfo,
       );
       notifyListeners();
+    }
+
+    return _syncStatusToServer(id, newStatus);
+  }
+
+  /// Statuts mobile → statuts backend (Incident.STATUT_CHOICES).
+  /// « refuse » n'existe pas côté serveur : il reste local.
+  static String? statusToApi(String s) {
+    switch (s) {
+      case 'en_attente':
+      case 'nouveau':
+        return 'nouveau';
+      case 'en_cours':
+        return 'en_cours';
+      case 'traite':
+      case 'resolu':
+        return 'resolu';
+      default:
+        return null;
+    }
+  }
+
+  Future<bool> _syncStatusToServer(int id, String newStatus) async {
+    final apiStatus = statusToApi(newStatus);
+    if (apiStatus == null) return false;
+    try {
+      await _api.dio.patch('${ApiConstants.incidents}$id/', data: {'statut': apiStatus});
+      return true;
+    } catch (_) {
+      lastError = 'Statut mis à jour localement, mais pas sur le serveur.';
+      notifyListeners();
+      return false;
     }
   }
 
