@@ -68,7 +68,7 @@ class _IncidentListScreenState extends State<IncidentListScreen> {
         }
         final incidents = _selectedFilter == 'tous'
             ? p.incidents
-            : p.incidents.where((i) => i.statut == _selectedFilter).toList();
+            : p.incidents.where((i) => i.status == _selectedFilter).toList();
 
         return Column(
           children: [
@@ -115,13 +115,13 @@ class _IncidentListScreenState extends State<IncidentListScreen> {
             ),
             // Liste
             Expanded(
-              child: p.incidents.isEmpty
-                  ? const Center(child: Text('Aucun incident'))
+              child: incidents.isEmpty
+                  ? Center(child: Text(_selectedFilter == 'tous' ? 'Aucun incident' : 'Aucun incident avec ce statut'))
                   : ListView.builder(
                       padding: const EdgeInsets.all(16),
-                      itemCount: p.incidents.length,
+                      itemCount: incidents.length,
                       itemBuilder: (_, i) {
-                        final inc = p.incidents[i];
+                        final inc = incidents[i];
                         return _IncidentCard(
                           incident: inc,
                           statusColor: _statusColor(inc.status),
