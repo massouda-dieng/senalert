@@ -169,7 +169,9 @@ class _SosScreenState extends State<SosScreen>
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'ALERTE SOS DÉCLENCHÉE AVEC SUCCÈS ! Coordonnées GPS ($lat, $lng) transmises au SAMU (15) & Pompiers (18).',
+                    _latitude != null
+                        ? 'ALERTE SOS DÉCLENCHÉE AVEC SUCCÈS ! Coordonnées GPS ($lat, $lng) transmises au SAMU (15) & Pompiers (18).'
+                        : 'ALERTE SOS ENVOYÉE — GPS indisponible : position approximative (Dakar). Appelez aussi le 15 / 17 / 18.',
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                   ),
                 ),
