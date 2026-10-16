@@ -7,94 +7,188 @@ class IncidentProvider extends ChangeNotifier {
   final ApiService _api = ApiService();
 
   List<Incident> _incidents = [];
+  final List<Incident> _userCreatedIncidents = [];
   bool _isLoading = false;
   String? _error;
 
   List<Incident> get incidents => _incidents;
-  bool get isLoading           => _isLoading;
+  bool get isLoading          => _isLoading;
   String? get error            => _error;
+
+  IncidentProvider() {
+    fetchIncidents();
+  }
 
   Future<void> fetchIncidents() async {
     _isLoading = true;
     _error = null;
     notifyListeners();
+
+    List<Incident> fetchedList = [];
     try {
       final res = await _api.dio.get(ApiConstants.incidents);
-      _incidents = (res.data as List).map((e) => Incident.fromJson(e)).toList();
+      fetchedList = (res.data as List).map((e) => Incident.fromJson(e)).toList();
     } catch (_) {
-      _incidents = _demoData();
+      fetchedList = _demoData();
     }
+
+    // Fusionner les alertes créées par l'utilisateur tout en haut de la liste
+    final Map<int, Incident> map = {};
+    for (var item in _userCreatedIncidents) {
+      map[item.id] = item;
+    }
+    for (var item in fetchedList) {
+      if (!map.containsKey(item.id)) {
+        map[item.id] = item;
+      }
+    }
+
+    _incidents = map.values.toList();
     _isLoading = false;
     notifyListeners();
   }
 
+  /// Convertit un libellé affiché (ex. « Urgence médicale ») en code backend
+  /// accepté par Incident.TYPE_CHOICES.
+  static String typeToApi(String label) {
+    final t = _normalize(label);
+    if (t.contains('accident')) return 'accident';
+    if (t.contains('incendie')) return 'incendie';
+    if (t.contains('inondation')) return 'inondation';
+    if (t.contains('electricite') || t.contains('panne')) return 'electricite';
+    if (t.contains('insecurite') || t.contains('vol')) return 'insecurite';
+    return 'autre';
+  }
+
+  /// Convertit un nom de région (ex. « Saint-Louis ») en code backend.
+  static String regionToApi(String label) =>
+      _normalize(label).replaceAll('-', '_').replaceAll(' ', '_');
+
+  static String _normalize(String s) {
+    const accents = {'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e', 'à': 'a', 'â': 'a',
+      'î': 'i', 'ï': 'i', 'ô': 'o', 'ù': 'u', 'û': 'u', 'ç': 'c'};
+    var r = s.toLowerCase().trim();
+    accents.forEach((k, v) => r = r.replaceAll(k, v));
+    return r;
+  }
+
+  String? lastError;
+
   Future<bool> createIncident({
     required String type,
+    required String region,
     required String description,
     required String location,
     required double latitude,
     required double longitude,
   }) async {
     _isLoading = true;
+    lastError = null;
     notifyListeners();
+
     try {
       await _api.dio.post(ApiConstants.incidents, data: {
-        'type': type,
+        'type_incident': typeToApi(type),
+        'region': regionToApi(region),
         'description': description,
-        'location': location,
         'latitude': latitude,
         'longitude': longitude,
       });
-      await fetchIncidents();
-      return true;
-    } catch (_) {
-      _error = 'Erreur lors du signalement';
+    } catch (e) {
+      // Échec réel : on ne simule pas un succès
+      lastError = 'Envoi impossible. Vérifiez votre connexion et réessayez.';
+      _isLoading = false;
+      notifyListeners();
+      return false;
     }
-    _isLoading = false;
-    notifyListeners();
-    return false;
+
+    _userCreatedIncidents.insert(0, Incident(
+      id: DateTime.now().millisecondsSinceEpoch,
+      type: type,
+      description: description,
+      location: location,
+      latitude: latitude,
+      longitude: longitude,
+      status: 'nouveau',
+      date: 'À l\'instant',
+    ));
+
+    await fetchIncidents();
+    return true;
+  }
+
+  void updateIncidentStatus(int id, String newStatus, {String? eta, String? responderInfo}) {
+    // Mettre à jour dans _userCreatedIncidents si présent
+    final uIdx = _userCreatedIncidents.indexWhere((i) => i.id == id);
+    if (uIdx != -1) {
+      final old = _userCreatedIncidents[uIdx];
+      _userCreatedIncidents[uIdx] = Incident(
+        id: old.id,
+        type: old.type,
+        description: old.description,
+        location: old.location,
+        latitude: old.latitude,
+        longitude: old.longitude,
+        status: newStatus,
+        date: old.date,
+        photo: old.photo,
+        eta: eta ?? old.eta,
+        responderInfo: responderInfo ?? old.responderInfo,
+      );
+    }
+
+    final idx = _incidents.indexWhere((i) => i.id == id);
+    if (idx != -1) {
+      final old = _incidents[idx];
+      _incidents[idx] = Incident(
+        id: old.id,
+        type: old.type,
+        description: old.description,
+        location: old.location,
+        latitude: old.latitude,
+        longitude: old.longitude,
+        status: newStatus,
+        date: old.date,
+        photo: old.photo,
+        eta: eta ?? old.eta,
+        responderInfo: responderInfo ?? old.responderInfo,
+      );
+      notifyListeners();
+    }
   }
 
   List<Incident> _demoData() => [
         Incident(
           id: 1,
           type: 'Accident',
-          description: 'Collision entre deux véhicules sur la route de Pikine',
-          location: 'Pikine, Dakar',
-          latitude: 14.7645,
-          longitude: -17.3660,
+          description: 'Collision grave entre un car Ndiaga Ndiaye et un taxi',
+          location: 'Dakar - Autoroute à Péage, Sortie Pikine',
+          latitude: 14.75,
+          longitude: -17.39,
           status: 'en_attente',
-          date: '12 Mai 2024 à 14:30',
+          date: 'Il y a 10 min',
         ),
         Incident(
           id: 2,
           type: 'Incendie',
-          description: 'Incendie dans un marché local',
-          location: 'Guédiawaye',
-          latitude: 14.7833,
-          longitude: -17.4000,
+          description: 'Départ de feu dans un magasin au marché Sandaga',
+          location: 'Dakar - Marché Sandaga, Centre Ville',
+          latitude: 14.67,
+          longitude: -17.43,
           status: 'en_cours',
-          date: '12 Mai 2024',
+          date: 'Il y a 25 min',
+          eta: '7 min',
+          responderInfo: 'Capitaine Faye (Sapeurs-Pompiers)',
         ),
         Incident(
           id: 3,
           type: 'Inondation',
-          description: 'Inondation suite aux fortes pluies',
-          location: 'Keur Massar',
-          latitude: 14.7500,
-          longitude: -17.3333,
+          description: 'Montée des eaux importante suite aux pluies à la Cité Lamy',
+          location: 'Thiès - Cité Lamy',
+          latitude: 14.78,
+          longitude: -16.93,
           status: 'en_attente',
-          date: '12 Mai 2024',
-        ),
-        Incident(
-          id: 4,
-          type: 'Urgence médicale',
-          description: 'Personne en malaise dans la rue',
-          location: 'Dakar Plateau',
-          latitude: 14.6928,
-          longitude: -17.4467,
-          status: 'traite',
-          date: '12 Mai 2024',
+          date: 'Il y a 1h',
         ),
       ];
 }

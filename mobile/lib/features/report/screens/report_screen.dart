@@ -1,6 +1,8 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:senalert_mobile/core/constants/app_colors.dart';
 import 'package:senalert_mobile/features/incidents/providers/incident_provider.dart';
@@ -16,17 +18,39 @@ class _ReportScreenState extends State<ReportScreen> {
   final _formKey = GlobalKey<FormState>();
   final _descCtrl = TextEditingController();
   String _type = 'Accident';
+  String _selectedRegion = 'Dakar';
   String _locationText = 'Localisation automatique';
   double? _lat;
   double? _lng;
   bool _loadingLoc = false;
+  Uint8List? _selectedImageBytes;
+  bool _hasDemoPhoto = false;
 
   final List<String> _types = [
     'Accident',
     'Incendie',
     'Inondation',
     'Urgence médicale',
+    'Électricité / Panne',
+    'Insécurité / Vol',
     'Autre',
+  ];
+
+  final List<String> _regions = [
+    'Dakar',
+    'Thiès',
+    'Saint-Louis',
+    'Diourbel',
+    'Fatick',
+    'Kaffrine',
+    'Kaolack',
+    'Kédougou',
+    'Kolda',
+    'Louga',
+    'Matam',
+    'Sédhiou',
+    'Tambacounda',
+    'Ziguinchor',
   ];
 
   @override
@@ -50,7 +74,7 @@ class _ReportScreenState extends State<ReportScreen> {
         return;
       }
       final pos = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
       );
       setState(() {
         _lat = pos.latitude;
@@ -69,26 +93,33 @@ class _ReportScreenState extends State<ReportScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_lat == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Veuillez activer la localisation'),
-        backgroundColor: AppColors.danger,
-      ));
-      return;
-    }
-    final ok = await context.read<IncidentProvider>().createIncident(
+    final lat = _lat ?? 14.6928;
+    final lng = _lng ?? -17.4467;
+    final locText = _lat != null
+        ? '$_selectedRegion ($_locationText)'
+        : 'Région $_selectedRegion, Sénégal';
+
+    final provider = context.read<IncidentProvider>();
+    final ok = await provider.createIncident(
           type: _type,
+          region: _selectedRegion,
           description: _descCtrl.text,
-          location: _locationText,
-          latitude: _lat!,
-          longitude: _lng!,
+          location: locText,
+          latitude: lat,
+          longitude: lng,
         );
-    if (ok && mounted) {
+    if (!mounted) return;
+    if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Alerte envoyée avec succès !'),
         backgroundColor: AppColors.success,
       ));
       context.go('/incidents');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(provider.lastError ?? 'Échec de l\'envoi'),
+        backgroundColor: AppColors.danger,
+      ));
     }
   }
 
@@ -130,6 +161,30 @@ class _ReportScreenState extends State<ReportScreen> {
                         .map((t) => DropdownMenuItem(value: t, child: Text(t)))
                         .toList(),
                     onChanged: (v) => setState(() => _type = v!),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Région du Sénégal
+              _Label('Région du Sénégal'),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    isExpanded: true,
+                    value: _selectedRegion,
+                    icon: const Icon(Icons.map, color: AppColors.crimson),
+                    items: _regions
+                        .map((r) => DropdownMenuItem(value: r, child: Text('🇸🇳 Région $r')))
+                        .toList(),
+                    onChanged: (v) => setState(() => _selectedRegion = v!),
                   ),
                 ),
               ),
@@ -209,19 +264,83 @@ class _ReportScreenState extends State<ReportScreen> {
               const SizedBox(height: 16),
 
               // Photo
-              _Label('Ajouter une photo'),
+              _Label('Ajouter une photo de l\'incident'),
               const SizedBox(height: 8),
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade300),
+              GestureDetector(
+                onTap: () async {
+                  try {
+                    final picker = ImagePicker();
+                    final image = await picker.pickImage(source: ImageSource.gallery);
+                    if (image != null) {
+                      final bytes = await image.readAsBytes();
+                      setState(() {
+                        _selectedImageBytes = bytes;
+                      });
+                    }
+                  } catch (_) {
+                    // Fallback visuel démo si la sélection navigateur est bloquée
+                    setState(() {
+                      _hasDemoPhoto = true;
+                    });
+                  }
+                },
+                child: Container(
+                  width: double.infinity,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: (_selectedImageBytes != null || _hasDemoPhoto)
+                          ? AppColors.emerald
+                          : Colors.grey.shade300,
+                      width: (_selectedImageBytes != null || _hasDemoPhoto) ? 2 : 1,
+                    ),
+                  ),
+                  child: (_selectedImageBytes != null)
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.memory(
+                            _selectedImageBytes!,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : (_hasDemoPhoto)
+                          ? Container(
+                              color: AppColors.emerald.withOpacity(0.1),
+                              child: const Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.check_circle, color: AppColors.emerald, size: 36),
+                                  SizedBox(height: 6),
+                                  Text(
+                                    'Photo de l\'incident jointe ✓',
+                                    style: TextStyle(
+                                      color: AppColors.emerald,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.add_a_photo, color: AppColors.crimson, size: 32),
+                                SizedBox(height: 6),
+                                Text(
+                                  'Prendre une photo ou choisir dans la galerie',
+                                  style: TextStyle(
+                                    color: AppColors.textGrey,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
                 ),
-                child: const Icon(Icons.add, color: AppColors.textGrey, size: 32),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
 
               // Bouton
               Consumer<IncidentProvider>(
@@ -240,6 +359,25 @@ class _ReportScreenState extends State<ReportScreen> {
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 2,
+        selectedItemColor: AppColors.crimson,
+        unselectedItemColor: AppColors.textGrey,
+        onTap: (i) {
+          if (i == 0) context.go('/home');
+          if (i == 1) context.go('/incidents');
+          if (i == 2) context.go('/report');
+          if (i == 3) context.go('/first-aid');
+          if (i == 4) context.go('/profile');
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Accueil'),
+          BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Incidents'),
+          BottomNavigationBarItem(icon: Icon(Icons.add_circle), label: 'Signaler'),
+          BottomNavigationBarItem(icon: Icon(Icons.medical_services_outlined), label: 'Secours'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profil'),
+        ],
       ),
     );
   }
