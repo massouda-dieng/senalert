@@ -1,8 +1,15 @@
 from rest_framework import generics, permissions
 from .models import Incident
 from .serializers import IncidentSerializer
+from .permissions import IsOwnerOrAdminOrReadOnly
+
 
 class IncidentListCreateView(generics.ListCreateAPIView):
+    """
+    GET  : Liste de tous les incidents (public en lecture, authentifié pour créer)
+    POST : Création d'un incident (authentification requise)
+    Filtres disponibles : ?region=dakar&type_incident=incendie&statut=nouveau
+    """
     serializer_class = IncidentSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
@@ -20,9 +27,17 @@ class IncidentListCreateView(generics.ListCreateAPIView):
         return queryset
 
     def perform_create(self, serializer):
+        # Associe l'incident au citoyen connecté
         serializer.save(citoyen=self.request.user)
 
+
 class IncidentDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    GET    : Détail d'un incident (public)
+    PUT/PATCH : Modification (propriétaire ou admin uniquement)
+    DELETE : Suppression (propriétaire ou admin uniquement)
+    Les autorités peuvent mettre à jour le statut via PATCH.
+    """
     queryset = Incident.objects.all()
     serializer_class = IncidentSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [IsOwnerOrAdminOrReadOnly]
