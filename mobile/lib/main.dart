@@ -1,42 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'screens/splash_screen.dart';
+import 'package:senalert_mobile/app.dart';
+import 'package:senalert_mobile/features/auth/providers/auth_provider.dart';
+import 'package:senalert_mobile/features/incidents/providers/incident_provider.dart';
 import 'services/auth_service.dart';
 
 void main() {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider<AuthProvider>(create: (_) => AuthProvider()),
+        ChangeNotifierProvider<IncidentProvider>(create: (_) => IncidentProvider()),
         Provider<AuthService>(create: (_) => AuthService()),
       ],
-      child: const MyApp(),
+      child: const SenAlertApp(),
     ),
   );
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'SenAlert',
-      theme: ThemeData(
-        primarySwatch: Colors.red,
-        scaffoldBackgroundColor: Colors.white,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.red,
-          foregroundColor: Colors.white,
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red,
-            foregroundColor: Colors.white,
-          ),
-        ),
-      ),
-      home: const SplashScreen(),
-      debugShowCheckedModeBanner: false,
-    );
-  }
 }

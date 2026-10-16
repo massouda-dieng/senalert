@@ -16,22 +16,29 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+  bool _isAgent = false;
 
   @override
   void dispose() {
-    _emailCtrl.dispose();
+    _nameCtrl.dispose();
     _passCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
-    final ok = await context
-        .read<AuthProvider>()
-        .login(_emailCtrl.text.trim(), _passCtrl.text);
-    if (ok && mounted) context.go('/home');
+    final name = _nameCtrl.text.trim();
+    final pass = _passCtrl.text;
+    final ok = await context.read<AuthProvider>().login(name, pass);
+    if (ok && mounted) {
+      if (_isAgent) {
+        context.go('/agent-dashboard');
+      } else {
+        context.go('/home');
+      }
+    }
   }
 
   @override
@@ -48,9 +55,9 @@ class _LoginScreenState extends State<LoginScreen> {
         title: const Text(
           'Connexion',
           style: TextStyle(
-            color: AppColors.danger,
+            color: AppColors.crimson,
             fontWeight: FontWeight.bold,
-            fontSize: 20,
+            fontSize: 18,
           ),
         ),
       ),
@@ -60,69 +67,128 @@ class _LoginScreenState extends State<LoginScreen> {
           key: _formKey,
           child: Column(
             children: [
-              const SizedBox(height: 16),
-              // Logo
+              const SizedBox(height: 12),
+              // Official Logo
               Container(
                 width: 90,
                 height: 90,
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.danger,
+                  color: AppColors.darkSlate,
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.danger.withOpacity(0.3),
-                      blurRadius: 16,
+                      color: AppColors.crimson.withOpacity(0.3),
+                      blurRadius: 20,
                       spreadRadius: 4,
                     )
                   ],
                 ),
-                child: const Icon(
-                  Icons.notifications_active,
-                  color: AppColors.white,
-                  size: 44,
+                child: Image.asset(
+                  'assets/images/senalert_logo.png',
+                  errorBuilder: (_, __, ___) => const Icon(Icons.shield, color: AppColors.white, size: 45),
                 ),
               ),
-              const SizedBox(height: 36),
-              // Email
-              CustomTextField(
-                hint: 'Email',
-                prefixIcon: Icons.email_outlined,
-                controller: _emailCtrl,
-                keyboardType: TextInputType.emailAddress,
-                validator: Validators.email,
+
+              const SizedBox(height: 20),
+
+              // Role Selector
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _isAgent = false),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: !_isAgent ? AppColors.white : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: !_isAgent
+                                ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)]
+                                : [],
+                          ),
+                          child: Text(
+                            '👤 Citoyen',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontWeight: !_isAgent ? FontWeight.bold : FontWeight.normal,
+                              color: !_isAgent ? AppColors.crimson : AppColors.textGrey,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _isAgent = true),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: _isAgent ? AppColors.darkSlate : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: _isAgent
+                                ? [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)]
+                                : [],
+                          ),
+                          child: Text(
+                            '👮‍♂️ Agent / Secours',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontWeight: _isAgent ? FontWeight.bold : FontWeight.normal,
+                              color: _isAgent ? AppColors.white : AppColors.textGrey,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+
+              const SizedBox(height: 20),
+
+              // Full Name input
+              CustomTextField(
+                hint: _isAgent ? 'Nom complet ou Identifiant Agent' : 'Nom complet',
+                prefixIcon: Icons.person_outline_rounded,
+                controller: _nameCtrl,
+                validator: (v) => Validators.required(v, 'Nom complet'),
+              ),
+
               const SizedBox(height: 14),
-              // Mot de passe
+
+              // Password input
               CustomTextField(
                 hint: 'Mot de passe',
-                prefixIcon: Icons.lock_outline,
+                prefixIcon: Icons.lock_outline_rounded,
                 controller: _passCtrl,
                 isPassword: true,
                 validator: Validators.password,
               ),
-              // Mot de passe oublié
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  child: const Text(
-                    'Mot de passe oublié ?',
-                    style: TextStyle(color: AppColors.danger, fontSize: 13),
-                  ),
-                ),
-              ),
-              // Erreur
+
+              const SizedBox(height: 16),
+
+              // Error notification
               Consumer<AuthProvider>(builder: (_, auth, __) {
                 if (auth.error == null) return const SizedBox.shrink();
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Text(
                     auth.error!,
-                    style: const TextStyle(color: AppColors.danger, fontSize: 13),
+                    style: const TextStyle(color: AppColors.crimson, fontSize: 13),
                   ),
                 );
               }),
-              // Bouton connexion
+
+              // Submit Button
               Consumer<AuthProvider>(
                 builder: (_, auth, __) => CustomButton(
                   text: 'SE CONNECTER',
@@ -130,13 +196,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   isLoading: auth.isLoading,
                 ),
               ),
-              const SizedBox(height: 28),
-              // Lien inscription
+
+              const SizedBox(height: 24),
+
+              // Register Link
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
-                    'Pas de compte ? ',
+                    'Nouveau sur SenAlert ? ',
                     style: TextStyle(color: AppColors.textGrey),
                   ),
                   GestureDetector(
@@ -144,7 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Text(
                       'S\'inscrire',
                       style: TextStyle(
-                        color: AppColors.danger,
+                        color: AppColors.crimson,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

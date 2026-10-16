@@ -52,25 +52,30 @@ class _SplashScreenState extends State<SplashScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo cloche rouge
+                // Official SenAlert Logo Asset
                 Container(
-                  width: 130,
-                  height: 130,
+                  width: 140,
+                  height: 140,
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppColors.danger,
+                    color: AppColors.darkSlate,
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.danger.withOpacity(0.35),
-                        blurRadius: 24,
+                        color: AppColors.crimson.withOpacity(0.35),
+                        blurRadius: 28,
                         spreadRadius: 6,
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.notifications_active,
-                    color: AppColors.white,
-                    size: 65,
+                  child: Image.asset(
+                    'assets/images/senalert_logo.png',
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.shield,
+                      color: AppColors.white,
+                      size: 65,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 28),

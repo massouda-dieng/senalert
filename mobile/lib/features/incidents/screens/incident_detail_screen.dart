@@ -107,6 +107,52 @@ class IncidentDetailScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
+            // Suivi de l'Intervenant & ETA
+            if (incident.responderInfo != null || incident.status == 'en_cours') ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.emerald.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.emerald),
+                ),
+                child: Row(
+                  children: [
+                    const CircleAvatar(
+                      backgroundColor: AppColors.emerald,
+                      child: Icon(Icons.support_agent, color: AppColors.white),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Équipe de Secours en Route 🚒',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.emerald),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Intervenant : ${incident.responderInfo ?? "Brigade de Secours"}',
+                            style: const TextStyle(fontSize: 13, color: AppColors.textDark),
+                          ),
+                          if (incident.eta != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              'Temps d\'arrivée estimé : ${incident.eta}',
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.crimson),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+
             // Description
             _Section(
               title: 'Description',
@@ -175,7 +221,16 @@ class IncidentDetailScreen extends StatelessWidget {
 
             // Bouton
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                if (incident.id != 0) {
+                  context.read<IncidentProvider>().updateIncidentStatus(incident.id, 'traite');
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('Alerte marquée comme traitée avec succès !'),
+                    backgroundColor: AppColors.success,
+                  ));
+                  context.go('/incidents');
+                }
+              },
               child: const Text('MARQUER COMME TRAITÉ'),
             ),
             const SizedBox(height: 16),
