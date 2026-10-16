@@ -16,16 +16,30 @@ class _IncidentListScreenState extends State<IncidentListScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(
-        () => context.read<IncidentProvider>().fetchIncidents());
+    Future.microtask(() {
+      if (mounted) context.read<IncidentProvider>().fetchIncidents();
+    });
   }
+
+  String _selectedFilter = 'tous';
 
   Color _statusColor(String s) {
     switch (s) {
-      case 'en_attente': return AppColors.warning;
+      case 'nouveau':    return AppColors.warning;
       case 'en_cours':   return AppColors.info;
-      case 'traite':     return AppColors.success;
+      case 'resolu':     return AppColors.success;
+      case 'refuse':     return AppColors.danger;
       default:           return AppColors.textGrey;
+    }
+  }
+
+  String _statusLabel(String s) {
+    switch (s) {
+      case 'nouveau':    return 'Nouveau';
+      case 'en_cours':   return 'En cours';
+      case 'resolu':     return 'Résolu';
+      case 'refuse':     return 'Refusé';
+      default:           return s;
     }
   }
 
@@ -34,13 +48,17 @@ class _IncidentListScreenState extends State<IncidentListScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Carte des incidents'),
+        title: const Text('Mes signalements'),
         leading: IconButton(
           icon: const Icon(Icons.menu),
           onPressed: () {},
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.filter_list), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Actualiser',
+            onPressed: () => context.read<IncidentProvider>().fetchIncidents(),
+          ),
         ],
       ),
       body: Consumer<IncidentProvider>(builder: (_, p, __) {
@@ -48,13 +66,43 @@ class _IncidentListScreenState extends State<IncidentListScreen> {
           return const Center(
               child: CircularProgressIndicator(color: AppColors.danger));
         }
+        final incidents = _selectedFilter == 'tous'
+            ? p.incidents
+            : p.incidents.where((i) => i.statut == _selectedFilter).toList();
+
         return Column(
           children: [
+            // Filtres rapides
+            Container(
+              color: AppColors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    for (final f in [
+                      ('tous', 'Tous'),
+                      ('nouveau', 'Nouveaux'),
+                      ('en_cours', 'En cours'),
+                      ('resolu', 'Résolus'),
+                    ])
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(f.$2),
+                          selected: _selectedFilter == f.$1,
+                          selectedColor: AppColors.danger.withOpacity(0.15),
+                          onSelected: (_) => setState(() => _selectedFilter = f.$1),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
             // Légende
             Container(
               color: AppColors.white,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: const [
@@ -93,20 +141,21 @@ class _IncidentListScreenState extends State<IncidentListScreen> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 1,
-        selectedItemColor: AppColors.danger,
+        selectedItemColor: AppColors.crimson,
         unselectedItemColor: AppColors.textGrey,
         onTap: (i) {
           if (i == 0) context.go('/home');
+          if (i == 1) context.go('/incidents');
           if (i == 2) context.go('/report');
-          if (i == 3) context.go('/profile');
+          if (i == 3) context.go('/first-aid');
+          if (i == 4) context.go('/profile');
         },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Accueil'),
-          BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Incidents'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.add_circle_outline), label: 'Signaler'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline), label: 'Profil'),
+          BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Incidents'),
+          BottomNavigationBarItem(icon: Icon(Icons.add_circle), label: 'Signaler'),
+          BottomNavigationBarItem(icon: Icon(Icons.medical_services_outlined), label: 'Secours'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profil'),
         ],
       ),
     );
