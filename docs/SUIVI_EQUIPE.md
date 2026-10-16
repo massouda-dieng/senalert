@@ -216,3 +216,32 @@ Pour éviter les conflits, respecter les règles suivantes :
 | S2 | Captures d'écran | Toute l'équipe |
 | S2 | Intégration finale sur `main` | Massouda |
 | S3 | Préparation soutenance | Toute l'équipe |
+
+---
+
+## Mise à jour du 16 octobre 2026 — corrections intégrées sur `main`
+
+Dépôt officiel : https://github.com/massouda-dieng/senalert-pff
+
+| Commit | Correction | Concerne |
+|---|---|---|
+| `1799363` | `db.sqlite3` retirée du dépôt public (`*.sqlite3` ignoré) | Toutes |
+| `477d5b1` | Dashboard : carte « Alertes SOS » réelle via `/dashboard/stats/` (suppression du « 8.4 min » fictif) | Massouda |
+| `c0475ee` | Mobile : le signalement envoie `region` + codes type/région valides ; erreur affichée au lieu d'un faux succès | Dieynaba |
+| `2044df0` / `da61d50` | Mobile SOS : pas de crash si l'écran est quitté ; message honnête si GPS indisponible | Dieynaba |
+| `ce65ce0` | Mobile agent : le changement de statut est synchronisé avec le serveur (PATCH) | Asmaou |
+
+Vérifications : backend 22/22 tests · `flutter analyze` 0 erreur · `flutter test` 4/4.
+
+### À faire par chaque membre avant de reprendre le travail
+```bash
+git clone https://github.com/massouda-dieng/senalert-pff.git   # première fois seulement
+cd senalert-pff
+git checkout feature/<votre-branche>
+git pull origin main          # récupère les corrections ci-dessus
+```
+
+### Points ouverts
+- Statut « refusé » (agent) : n'existe pas côté backend → reste local. À ajouter à `Incident.STATUT_CHOICES` si nécessaire (Ndèye).
+- Type « Urgence médicale » (mobile) : envoyé comme `autre` faute de choix backend équivalent (Ndèye / Dieynaba).
+- `backend/analyse/test_flutter.dart` : test Dart placé dans le backend ; à déplacer dans `mobile/test/` avec la dépendance `http` en dev (Asmaou).
