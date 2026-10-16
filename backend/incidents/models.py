@@ -8,12 +8,14 @@ class Incident(models.Model):
         ('incendie', 'Incendie'),
         ('electricite', 'Coupure electricite'),
         ('insecurite', 'Insecurite'),
+        ('urgence_medicale', 'Urgence medicale'),
         ('autre', 'Autre'),
     ]
     STATUT_CHOICES = [
         ('nouveau', 'Nouveau'),
         ('en_cours', 'En cours'),
         ('resolu', 'Resolu'),
+        ('refuse', 'Refuse'),
     ]
     REGION_CHOICES = [
         ('dakar', 'Dakar'),

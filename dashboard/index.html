@@ -227,6 +227,7 @@
     .statut-badge.nouveau  { background: #FEF3C7; color: #B45309; }
     .statut-badge.en_cours { background: #E0F2FE; color: #0369A1; }
     .statut-badge.resolu   { background: #D1FAE5; color: #047857; }
+    .statut-badge.refuse   { background: #F1F5F9; color: #475569; }
 
     /* TABLEAU */
     .tableau-box {
@@ -360,6 +361,7 @@
             <option value="inondation">Inondation</option>
             <option value="electricite">Coupure électricité</option>
             <option value="insecurite">Insécurité</option>
+            <option value="urgence_medicale">Urgence médicale</option>
             <option value="autre">Autre</option>
           </select>
           <select id="filtreStatut">
@@ -367,6 +369,7 @@
             <option value="nouveau">Nouveau</option>
             <option value="en_cours">En cours</option>
             <option value="resolu">Résolu</option>
+            <option value="refuse">Refusé</option>
           </select>
           <button class="btn-f p" onclick="filtrer()"><i data-lucide="search" style="width:14px; height:14px;"></i> Filtrer</button>
           <button class="btn-f s" onclick="reinit()"><i data-lucide="rotate-ccw" style="width:14px; height:14px;"></i> Réinitialiser</button>
@@ -418,20 +421,20 @@
 
     const couleursType = {
       accident:'#D97706', incendie:'#E11D48', inondation:'#0284C7',
-      electricite:'#D97706', insecurite:'#7C3AED', autre:'#64748B'
+      electricite:'#D97706', insecurite:'#7C3AED', urgence_medicale:'#059669', autre:'#64748B'
     };
     
     const lucideType = {
       accident:'car', incendie:'flame', inondation:'droplets',
-      electricite:'zap', insecurite:'shield-alert', autre:'alert-triangle'
+      electricite:'zap', insecurite:'shield-alert', urgence_medicale:'heart-pulse', autre:'alert-triangle'
     };
 
     const labelType = {
       accident:'Accident', incendie:'Incendie', inondation:'Inondation',
-      electricite:'Coupure électricité', insecurite:'Insécurité', autre:'Autre'
+      electricite:'Coupure électricité', insecurite:'Insécurité', urgence_medicale:'Urgence médicale', autre:'Autre'
     };
 
-    const statutLabel = { nouveau:'Nouveau', en_cours:'En cours', resolu:'Résolu' };
+    const statutLabel = { nouveau:'Nouveau', en_cours:'En cours', resolu:'Résolu', refuse:'Refusé' };
 
     // ===== CONNEXION =====
     async function connexion() {

@@ -119,6 +119,32 @@ class IncidentPermissionTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def test_autorite_can_refuse_incident(self):
+        """Un agent (rôle autorite) peut passer un incident au statut 'refuse'."""
+        agent = User.objects.create_user(username='agent', password='pass123', role='autorite')
+        self.client.force_authenticate(user=agent)
+        url = f'/api/incidents/{self.incident.id}/'
+        response = self.client.patch(url, {'statut': 'refuse'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.incident.refresh_from_db()
+        self.assertEqual(self.incident.statut, 'refuse')
+
+    def test_autorite_cannot_delete_incident(self):
+        """Un agent ne peut pas supprimer un incident."""
+        agent = User.objects.create_user(username='agent2', password='pass123', role='autorite')
+        self.client.force_authenticate(user=agent)
+        response = self.client.delete(f'/api/incidents/{self.incident.id}/')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_create_urgence_medicale(self):
+        """Le type 'urgence_medicale' envoyé par le mobile est accepté."""
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.post('/api/incidents/', {
+            'type_incident': 'urgence_medicale', 'description': 'Malaise',
+            'latitude': 14.7, 'longitude': -17.4, 'region': 'saint_louis',
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
 
 class DashboardStatsTests(TestCase):
     """Tests de l'endpoint /dashboard/stats/."""

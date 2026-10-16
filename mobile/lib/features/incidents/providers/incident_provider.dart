@@ -57,6 +57,7 @@ class IncidentProvider extends ChangeNotifier {
     if (t.contains('inondation')) return 'inondation';
     if (t.contains('electricite') || t.contains('panne')) return 'electricite';
     if (t.contains('insecurite') || t.contains('vol')) return 'insecurite';
+    if (t.contains('medical')) return 'urgence_medicale';
     return 'autre';
   }
 
@@ -160,9 +161,10 @@ class IncidentProvider extends ChangeNotifier {
   }
 
   /// Statuts mobile → statuts backend (Incident.STATUT_CHOICES).
-  /// « refuse » n'existe pas côté serveur : il reste local.
   static String? statusToApi(String s) {
     switch (s) {
+      case 'refuse':
+        return 'refuse';
       case 'en_attente':
       case 'nouveau':
         return 'nouveau';
