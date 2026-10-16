@@ -279,12 +279,12 @@
         <h1>Sen<span>Alert</span></h1>
       </div>
       <div class="sidebar-menu">
-        <div class="menu-item actif"><i data-lucide="layout-dashboard" class="mi"></i> Tableau de bord</div>
-        <div class="menu-item"><i data-lucide="siren" class="mi"></i> Alertes SOS</div>
-        <div class="menu-item"><i data-lucide="shield-alert" class="mi"></i> Interventions</div>
-        <div class="menu-item"><i data-lucide="users" class="mi"></i> Utilisateurs</div>
-        <div class="menu-item"><i data-lucide="trending-up" class="mi"></i> Statistiques</div>
-        <div class="menu-item"><i data-lucide="settings" class="mi"></i> Paramètres</div>
+        <div class="menu-item actif" onclick="navVers('dashboard')"><i data-lucide="layout-dashboard" class="mi"></i> Tableau de bord</div>
+        <div class="menu-item" onclick="navVers('sos')"><i data-lucide="siren" class="mi"></i> Alertes SOS</div>
+        <div class="menu-item" onclick="navVers('interventions')"><i data-lucide="shield-alert" class="mi"></i> Interventions</div>
+        <div class="menu-item" onclick="navVers('utilisateurs')"><i data-lucide="users" class="mi"></i> Utilisateurs</div>
+        <div class="menu-item" onclick="navVers('statistiques')"><i data-lucide="trending-up" class="mi"></i> Statistiques</div>
+        <div class="menu-item" onclick="navVers('parametres')"><i data-lucide="settings" class="mi"></i> Paramètres</div>
       </div>
       <div class="sidebar-bas">
         <div class="deconnexion" onclick="deconnexion()"><i data-lucide="log-out" class="mi"></i> Déconnexion</div>
@@ -411,6 +411,59 @@
         </div>
 
       </div>
+
+      <!-- SECTION SOS -->
+      <div id="section-sos" class="page" style="display:none;">
+        <div class="tableau-box">
+          <div class="box-header"><h3><i data-lucide="siren" style="width:18px;height:18px;color:var(--rouge);"></i> Alertes SOS reçues</h3><span id="sosCompteur">—</span></div>
+          <table><thead><tr><th>#</th><th>Citoyen</th><th>Latitude</th><th>Longitude</th><th>Date</th><th>Statut</th></tr></thead><tbody id="sosList"></tbody></table>
+        </div>
+      </div>
+
+      <!-- SECTION INTERVENTIONS -->
+      <div id="section-interventions" class="page" style="display:none;">
+        <div class="tableau-box">
+          <div class="box-header"><h3><i data-lucide="shield-alert" style="width:18px;height:18px;color:var(--rouge);"></i> Interventions en cours</h3></div>
+          <table><thead><tr><th>#</th><th>Type</th><th>Région</th><th>Description</th><th>Statut</th></tr></thead>
+          <tbody id="interventionsList"></tbody></table>
+        </div>
+      </div>
+
+      <!-- SECTION UTILISATEURS -->
+      <div id="section-utilisateurs" class="page" style="display:none;">
+        <div class="tableau-box">
+          <div class="box-header"><h3><i data-lucide="users" style="width:18px;height:18px;color:var(--rouge);"></i> Utilisateurs enregistrés</h3><span id="usersCompteur">—</span></div>
+          <p style="padding:20px;color:#64748B;">Cette section affichera la liste des citoyens et agents. Endpoint <code>/api/auth/users/</code> à connecter.</p>
+        </div>
+      </div>
+
+      <!-- SECTION STATISTIQUES -->
+      <div id="section-statistiques" class="page" style="display:none;">
+        <div class="stats-grid">
+          <div class="stat-card bleu"><div class="sc-header"><i data-lucide="clipboard-list" class="sc-icone"></i></div><div class="sc-val" id="statTotal2">—</div><div class="sc-label">Total incidents</div></div>
+          <div class="stat-card orange"><div class="sc-header"><i data-lucide="clock" class="sc-icone"></i></div><div class="sc-val" id="statEnCours">—</div><div class="sc-label">En cours</div></div>
+          <div class="stat-card vert"><div class="sc-header"><i data-lucide="check-circle-2" class="sc-icone"></i></div><div class="sc-val" id="statResolus">—</div><div class="sc-label">Résolus</div></div>
+          <div class="stat-card rouge"><div class="sc-header"><i data-lucide="siren" class="sc-icone"></i></div><div class="sc-val" id="statSos2">—</div><div class="sc-label">Alertes SOS</div></div>
+        </div>
+        <div class="tableau-box" style="margin-top:20px;">
+          <div class="box-header"><h3>Répartition par type</h3></div>
+          <div id="parType" style="padding:16px;"></div>
+        </div>
+      </div>
+
+      <!-- SECTION PARAMÈTRES -->
+      <div id="section-parametres" class="page" style="display:none;">
+        <div class="tableau-box">
+          <div class="box-header"><h3><i data-lucide="settings" style="width:18px;height:18px;"></i> Paramètres</h3></div>
+          <div style="padding:20px;">
+            <p><b>URL API :</b> <code id="apiUrlAffichage"></code></p>
+            <p style="margin-top:12px;"><b>Version backend :</b> Django 5.2 · DRF · JWT</p>
+            <p style="margin-top:12px;"><b>Version dashboard :</b> SenAlert v1.0 · ISEP 2026</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
     </div>
   </div>
 
@@ -627,7 +680,92 @@
     }
 
     // ===== AU CHARGEMENT DE LA PAGE =====
+    // ===== NAVIGATION SIDEBAR =====
+    const SECTIONS = ['dashboard','sos','interventions','utilisateurs','statistiques','parametres'];
+
+    function navVers(cible) {
+      // Mettre à jour les items du menu
+      document.querySelectorAll('.menu-item').forEach((el, i) => {
+        el.classList.toggle('actif', SECTIONS[i] === cible);
+      });
+      // Masquer la page principale et les sections
+      document.querySelector('.page').style.display = cible === 'dashboard' ? '' : 'none';
+      SECTIONS.filter(s => s !== 'dashboard').forEach(s => {
+        const el = document.getElementById('section-' + s);
+        if (el) el.style.display = s === cible ? '' : 'none';
+      });
+      // Charger les données de la section si nécessaire
+      const token = localStorage.getItem('token');
+      if (cible === 'sos') chargerSOS(token);
+      if (cible === 'interventions') chargerInterventions(token);
+      if (cible === 'statistiques') chargerStatistiques(token);
+      if (cible === 'parametres') document.getElementById('apiUrlAffichage').textContent = API_BASE;
+    }
+
+    async function chargerSOS(token) {
+      try {
+        const res = await fetch(`${API_BASE}/alerts/sos/`, { headers: { 'Authorization': 'Bearer ' + token } });
+        if (!res.ok) return;
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data.results || []);
+        document.getElementById('sosCompteur').textContent = list.length + ' alerte(s)';
+        document.getElementById('sosList').innerHTML = list.map(a => `
+          <tr>
+            <td style="color:#64748B;font-weight:700;">#${a.id}</td>
+            <td>${a.username || a.user}</td>
+            <td>${parseFloat(a.latitude).toFixed(4)}</td>
+            <td>${parseFloat(a.longitude).toFixed(4)}</td>
+            <td style="color:#64748B;">${formaterDate(a.date_creation)}</td>
+            <td><span class="statut-badge ${a.statut}">${statutLabel[a.statut] || a.statut}</span></td>
+          </tr>`).join('');
+        lucide.createIcons();
+      } catch(e) { console.error('SOS:', e); }
+    }
+
+    async function chargerInterventions(token) {
+      try {
+        const res = await fetch(`${API_BASE}/incidents/?statut=en_cours`, { headers: { 'Authorization': 'Bearer ' + token } });
+        if (!res.ok) return;
+        const list = await res.json();
+        document.getElementById('interventionsList').innerHTML = (Array.isArray(list) ? list : list.results || []).map(inc => `
+          <tr>
+            <td style="color:#64748B;font-weight:700;">#${inc.id}</td>
+            <td>${labelType[inc.type_incident] || inc.type_incident}</td>
+            <td>📍 ${inc.region}</td>
+            <td>${inc.description || ''}</td>
+            <td><span class="statut-badge ${inc.statut}">${statutLabel[inc.statut] || inc.statut}</span></td>
+          </tr>`).join('');
+        lucide.createIcons();
+      } catch(e) { console.error('Interventions:', e); }
+    }
+
+    async function chargerStatistiques(token) {
+      const statsUrl = API_BASE.replace(/\/api\/?$/, '') + '/dashboard/stats/';
+      try {
+        const res = await fetch(statsUrl, { headers: { 'Authorization': 'Bearer ' + token } });
+        if (!res.ok) return;
+        const data = await res.json();
+        document.getElementById('statTotal2').textContent = data.resume.total_incidents;
+        document.getElementById('statEnCours').textContent = data.resume.incidents_en_cours;
+        document.getElementById('statResolus').textContent = data.resume.incidents_resolus;
+        document.getElementById('statSos2').textContent = data.resume.total_alertes_sos;
+        // Répartition par type
+        const couleurs = { accident:'#D97706', incendie:'#E11D48', inondation:'#0284C7', electricite:'#D97706', insecurite:'#7C3AED', urgence_medicale:'#059669', autre:'#64748B' };
+        document.getElementById('parType').innerHTML = data.par_type.map(t => {
+          const pct = data.resume.total_incidents ? Math.round(t.total / data.resume.total_incidents * 100) : 0;
+          return `<div style="margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+              <span>${labelType[t.type_incident] || t.type_incident}</span><span style="font-weight:700;">${t.total} (${pct}%)</span>
+            </div>
+            <div style="background:#f1f5f9;border-radius:6px;height:8px;">
+              <div style="background:${couleurs[t.type_incident]||'#64748B'};width:${pct}%;height:8px;border-radius:6px;"></div>
+            </div></div>`;
+        }).join('');
+      } catch(e) { console.error('Stats:', e); }
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
+
       lucide.createIcons();
       const token = localStorage.getItem('token');
       const username = localStorage.getItem('username');
