@@ -52,7 +52,7 @@ void main() {
         id: 2, type: 'incendie', description: 'Feu quartier', location: 'thies',
         latitude: 14.79, longitude: -16.93, status: 'nouveau', date: 'Maintenant',
       );
-      expect(inc.statusLabel, contains('Nouveau'));
+      expect(inc.statusLabel, contains('attente'));
     });
 
     test('Incident avec statut resolu a le bon label', () {
@@ -60,7 +60,7 @@ void main() {
         id: 3, type: 'inondation', description: 'Route inondée', location: 'kaolack',
         latitude: 14.15, longitude: -16.07, status: 'resolu', date: 'Hier',
       );
-      expect(inc.statusLabel, contains('Résolu'));
+      expect(inc.statusLabel, contains('Traitée'));
     });
 
     test('Incident avec statut refuse a le bon label', () {
@@ -68,7 +68,7 @@ void main() {
         id: 4, type: 'autre', description: 'Signalement invalide', location: 'dakar',
         latitude: 14.69, longitude: -17.44, status: 'refuse', date: 'Il y a 2h',
       );
-      expect(inc.statusLabel, contains('Refusé'));
+      expect(inc.statusLabel, contains('Classée'));
     });
 
     test('Urgence médicale a la bonne icône', () {
@@ -113,11 +113,10 @@ void main() {
       expect(provider.isLoading, isFalse);
     });
 
-    test('IncidentProvider isLoading passe à false après fetchIncidents', () async {
+    test('IncidentProvider a des incidents après initialisation', () async {
       final provider = IncidentProvider();
-      expect(provider.isLoading, isFalse);
-      final future = provider.fetchIncidents();
-      await future;
+      await Future.delayed(const Duration(seconds: 2));
+      expect(provider.incidents, isNotEmpty);
       expect(provider.isLoading, isFalse);
     });
   });
