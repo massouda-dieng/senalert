@@ -29,7 +29,7 @@ class IncidentProvider extends ChangeNotifier {
       final res = await _api.dio.get(ApiConstants.incidents);
       fetchedList = (res.data as List).map((e) => Incident.fromJson(e)).toList();
     } catch (_) {
-      fetchedList = _demoData();
+      _error = 'Impossible de charger les incidents (serveur injoignable).';
     }
 
     // Fusionner les alertes créées par l'utilisateur tout en haut de la liste

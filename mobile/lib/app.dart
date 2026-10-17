@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:senalert_mobile/features/auth/providers/auth_provider.dart';
 import 'package:senalert_mobile/core/constants/app_colors.dart';
 import 'package:senalert_mobile/features/splash/splash_screen.dart';
 import 'package:senalert_mobile/features/onboarding/onboarding_screen.dart';
@@ -17,8 +19,21 @@ import 'package:senalert_mobile/features/agent/screens/agent_dashboard_screen.da
 import 'package:senalert_mobile/features/incidents/screens/incidents_map_screen.dart';
 import 'package:senalert_mobile/features/services/proximity_services_screen.dart';
 
+// Écrans accessibles sans compte (cf. diagramme de cas d'utilisation Citoyen).
+const _publicRoutes = {'/', '/onboarding', '/login', '/register', '/first-aid', '/services'};
+
 final GoRouter _router = GoRouter(
   initialLocation: '/',
+  redirect: (context, state) {
+    final auth = context.read<AuthProvider>();
+    final loc = state.matchedLocation;
+    if (_publicRoutes.contains(loc)) return null;
+    // SOS, signalement, incidents, profil… : authentification obligatoire.
+    if (!auth.isAuthenticated) return '/login';
+    if (loc == '/agent-dashboard' && !auth.isAgent) return '/home';
+    if (loc == '/home' && auth.isAgent) return '/agent-dashboard';
+    return null;
+  },
   routes: [
     GoRoute(path: '/',                builder: (_, __) => const SplashScreen()),
     GoRoute(path: '/onboarding',      builder: (_, __) => const OnboardingScreen()),

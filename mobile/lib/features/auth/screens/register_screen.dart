@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -21,7 +20,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
-  final _gmailOtpCtrl = TextEditingController();
 
   // Agent Official Justification Fields
   final _badgeCtrl = TextEditingController();
@@ -30,7 +28,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool _acceptTerms = false;
   String _role = 'Citoyen';
-  String _generatedGmailCode = '';
 
   @override
   void dispose() {
@@ -38,13 +35,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _emailCtrl.dispose();
     _passCtrl.dispose();
     _confirmCtrl.dispose();
-    _gmailOtpCtrl.dispose();
     _badgeCtrl.dispose();
     _stationCtrl.dispose();
     super.dispose();
   }
 
-  void _initiateGmailConfirmation() {
+  void _submit() {
     if (!_formKey.currentState!.validate()) return;
 
     // Validate Officer Official Justification details if registering as an Agent
@@ -80,161 +76,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    final code = (1000 + Random().nextInt(8999)).toString();
-    setState(() {
-      _generatedGmailCode = code;
-    });
-
-    _gmailOtpCtrl.clear();
-
-    // Push notification simulating email delivery to Gmail
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.mark_email_unread_rounded, color: AppColors.white, size: 20),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text('✉️ GMAIL SENALERT : Votre code de confirmation est $code'),
-            ),
-          ],
-        ),
-        backgroundColor: AppColors.navy,
-        duration: const Duration(seconds: 5),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-
-    _showGmailModal();
-  }
-
-  void _showGmailModal() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.darkSlate,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.mark_email_read_rounded, color: AppColors.emerald),
-            SizedBox(width: 10),
-            Text('Validation Inscription Gmail', style: TextStyle(color: AppColors.white, fontSize: 16)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Un code de confirmation à 4 chiffres a été envoyé sur votre messagerie Gmail (${_emailCtrl.text}) :',
-              style: const TextStyle(color: Colors.white70, fontSize: 13),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _gmailOtpCtrl,
-              keyboardType: TextInputType.number,
-              style: const TextStyle(color: AppColors.white, fontSize: 22, letterSpacing: 8, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-              maxLength: 4,
-              decoration: InputDecoration(
-                hintText: '••••',
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-                filled: true,
-                fillColor: AppColors.navy,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annuler', style: TextStyle(color: AppColors.textGrey)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.crimson),
-            onPressed: () async {
-              final typedCode = _gmailOtpCtrl.text.trim();
-              if (typedCode != _generatedGmailCode && typedCode != '5914' && typedCode != '1234') {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Code Gmail incorrect ! Saisissez le code exact ($_generatedGmailCode) reçu par e-mail.'),
-                    backgroundColor: AppColors.crimson,
-                  ),
-                );
-                return;
-              }
-              Navigator.pop(ctx);
-              await _completeRegistration();
-            },
-            child: const Text('VALIDER L\'INSCRIPTION', style: TextStyle(color: AppColors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-          ),
-        ],
-      ),
-    );
+    _completeRegistration();
   }
 
   Future<void> _completeRegistration() async {
-    final ok = await context.read<AuthProvider>().register(
-          _nameCtrl.text.trim(),
-          _emailCtrl.text.trim(),
-          _passCtrl.text,
-          role: _role,
-        );
-    if (ok && mounted) {
-      if (_role != 'Citoyen') {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (ctx) => AlertDialog(
-            backgroundColor: AppColors.darkSlate,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: const Row(
-              children: [
-                Icon(Icons.verified_user_rounded, color: AppColors.emerald),
-                SizedBox(width: 8),
-                Text('Justificatif Agent Validé', style: TextStyle(color: AppColors.white, fontSize: 16)),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '✅ JUSTIFICATIF AGENT D\'ÉTAT CONFORME ET VALIDÉ !\n\n'
-                  '• Rôle Officiel : $_role\n'
-                  '• Matricule Agent : ${_badgeCtrl.text}\n'
-                  '• Unité / Caserne : ${_stationCtrl.text}\n\n'
-                  'Bienvenue dans les forces de sécurité SenAlert.\n'
-                  'Votre mot de passe de sécurité pour déverrouiller le Portail Commandement est :\n\n'
-                  '👉   alerte',
-                  style: const TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-              ],
-            ),
-            actions: [
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.crimson),
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  context.go('/agent-dashboard');
-                },
-                child: const Text('ACCÉDER AU PORTAIL AGENT 👮‍♂️', style: TextStyle(color: AppColors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-              ),
-            ],
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Inscription confirmée par Gmail ! Connectez-vous maintenant.'),
-          backgroundColor: AppColors.success,
-          duration: Duration(seconds: 4),
-        ));
-        context.go('/login');
-      }
-    }
+    final auth = context.read<AuthProvider>();
+    final ok = await auth.register(
+      _nameCtrl.text.trim(),
+      _emailCtrl.text.trim(),
+      _passCtrl.text,
+      role: _role,
+    );
+    if (!ok || !mounted) return;
+    final isAgent = AuthProvider.roleToApi(_role) == 'autorite';
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(isAgent
+          ? 'Compte agent créé. Un administrateur doit le rattacher à votre service avant de recevoir les interventions. Connectez-vous.'
+          : 'Compte créé avec succès ! Connectez-vous maintenant.'),
+      backgroundColor: AppColors.success,
+      duration: const Duration(seconds: 5),
+    ));
+    context.go('/login');
   }
 
   @override
@@ -397,7 +259,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 14),
               CustomTextField(
-                hint: 'Adresse Gmail',
+                hint: 'Adresse email',
                 prefixIcon: Icons.email_outlined,
                 controller: _emailCtrl,
                 keyboardType: TextInputType.emailAddress,
@@ -451,8 +313,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               // Bouton
               Consumer<AuthProvider>(
                 builder: (_, auth, __) => CustomButton(
-                  text: 'CONFIRMER ET ENVOYER CODE GMAIL ✉️',
-                  onPressed: _initiateGmailConfirmation,
+                  text: 'CRÉER MON COMPTE',
+                  onPressed: _submit,
                   isLoading: auth.isLoading,
                 ),
               ),
