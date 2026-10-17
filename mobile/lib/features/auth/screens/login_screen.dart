@@ -31,14 +31,16 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     final name = _nameCtrl.text.trim();
     final pass = _passCtrl.text;
-    final ok = await context.read<AuthProvider>().login(name, pass);
-    if (ok && mounted) {
-      if (_isAgent) {
-        context.go('/agent-dashboard');
-      } else {
-        context.go('/home');
-      }
+    final auth = context.read<AuthProvider>();
+    final ok = await auth.login(name, pass);
+    if (!ok || !mounted) return;
+    // Le rôle vient du compte (backend), pas de l'onglet choisi.
+    if (_isAgent != auth.isAgent) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Ce compte est un compte ${auth.roleLabel}.'),
+      ));
     }
+    context.go(auth.isAgent ? '/agent-dashboard' : '/home');
   }
 
   @override
@@ -155,12 +157,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 20),
 
-              // Full Name input
+              // Email input (identifiant du compte)
               CustomTextField(
-                hint: _isAgent ? 'Nom complet ou Identifiant Agent' : 'Nom complet',
-                prefixIcon: Icons.person_outline_rounded,
+                hint: 'Adresse email',
+                prefixIcon: Icons.email_outlined,
                 controller: _nameCtrl,
-                validator: (v) => Validators.required(v, 'Nom complet'),
+                validator: Validators.email,
               ),
 
               const SizedBox(height: 14),

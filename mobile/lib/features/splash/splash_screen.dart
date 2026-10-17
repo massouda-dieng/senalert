@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:senalert_mobile/core/constants/app_colors.dart';
+import 'package:senalert_mobile/features/auth/providers/auth_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -29,9 +31,21 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(parent: _ctrl, curve: Curves.elasticOut),
     );
     _ctrl.forward();
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) context.go('/onboarding');
-    });
+    _route();
+  }
+
+  Future<void> _route() async {
+    final auth = context.read<AuthProvider>();
+    await Future.wait([
+      auth.checkAuth(),
+      Future.delayed(const Duration(seconds: 3)),
+    ]);
+    if (!mounted) return;
+    if (!auth.isAuthenticated) {
+      context.go('/onboarding');
+    } else {
+      context.go(auth.isAgent ? '/agent-dashboard' : '/home');
+    }
   }
 
   @override

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:senalert_mobile/features/incidents/models/incident_model.dart';
 import 'package:senalert_mobile/features/incidents/providers/incident_provider.dart';
+import 'package:senalert_mobile/features/auth/providers/auth_provider.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -105,19 +106,27 @@ void main() {
   });
 
   group('IncidentProvider Logic Tests', () {
-    test('IncidentProvider initializes with fallback demo data on network error', () async {
+    test('Sans serveur : erreur affichée et aucune donnée inventée', () async {
       final provider = IncidentProvider();
       await provider.fetchIncidents();
 
-      expect(provider.incidents.length, greaterThanOrEqualTo(3));
+      expect(provider.incidents, isEmpty);
+      expect(provider.error, isNotNull);
       expect(provider.isLoading, isFalse);
     });
 
-    test('IncidentProvider a des incidents après initialisation', () async {
-      final provider = IncidentProvider();
-      await Future.delayed(const Duration(seconds: 2));
-      expect(provider.incidents, isNotEmpty);
-      expect(provider.isLoading, isFalse);
+    test('Conversion des statuts vers le backend', () {
+      expect(IncidentProvider.statusToApi('traite'), 'resolu');
+      expect(IncidentProvider.statusToApi('en_attente'), 'nouveau');
+      expect(IncidentProvider.statusToApi('refuse'), 'refuse');
+    });
+  });
+
+  group('AuthProvider', () {
+    test('Le rôle du formulaire est converti en rôle backend', () {
+      expect(AuthProvider.roleToApi('Citoyen'), 'citoyen');
+      expect(AuthProvider.roleToApi('Policier'), 'autorite');
+      expect(AuthProvider.roleToApi('Agent SAMU'), 'autorite');
     });
   });
 }
