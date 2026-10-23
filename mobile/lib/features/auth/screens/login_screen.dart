@@ -6,6 +6,7 @@ import 'package:senalert_mobile/core/utils/validators.dart';
 import 'package:senalert_mobile/features/auth/providers/auth_provider.dart';
 import 'package:senalert_mobile/shared/widgets/custom_button.dart';
 import 'package:senalert_mobile/shared/widgets/custom_text_field.dart';
+import 'package:senalert_mobile/shared/widgets/sa_ui.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -46,184 +47,173 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: AppBar(
-        backgroundColor: AppColors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
-          onPressed: () => context.go('/onboarding'),
-        ),
-        title: const Text(
-          'Connexion',
-          style: TextStyle(
-            color: AppColors.crimson,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
+      backgroundColor: AppColors.navy900,
+      body: SaNightBackdrop(
+        child: SafeArea(
+          bottom: false,
+          child: LayoutBuilder(
+            builder: (context, c) => SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: c.maxHeight),
+                child: Column(
+                  children: [
+                    // ----- Hero bleu nuit -----
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+                      child: Row(children: [
+                        SaIconButton(
+                          icon: Icons.arrow_back_rounded,
+                          tooltip: 'Retour',
+                          onTap: () => context.go('/onboarding'),
+                        ),
+                      ]),
+                    ),
+                    const SizedBox(height: 4),
+                    const SaFadeSlide(child: SaLogo(size: 64)),
+                    const SizedBox(height: 10),
+                    RichText(
+                      text: TextSpan(children: [
+                        TextSpan(text: 'Sen', style: SaText.display(32, color: Colors.white)),
+                        TextSpan(text: 'Alert', style: SaText.display(32, color: AppColors.orange)),
+                      ]),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Ensemble pour un Sénégal plus sûr',
+                      style: SaText.body(13.5, color: Colors.white.withOpacity(0.75)),
+                    ),
+                    const SaDakarSkyline(height: 92, color: Color(0x299DB7FF)),
+
+                    // ----- Carte formulaire -----
+                    SaFadeSlide(
+                      index: 1,
+                      offsetY: 40,
+                      child: Container(
+                        width: double.infinity,
+                        constraints: BoxConstraints(minHeight: c.maxHeight * 0.55),
+                        padding: const EdgeInsets.fromLTRB(24, 26, 24, 28),
+                        decoration: const BoxDecoration(
+                          color: AppColors.white,
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+                        ),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Connexion', style: SaText.display(24)),
+                              const SizedBox(height: 4),
+                              Text('Accédez à votre espace SenAlert',
+                                  style: SaText.body(13.5)),
+                              const SizedBox(height: 20),
+
+                              // Profil attendu (le rôle réel vient du compte)
+                              SaSegmentedTabs<bool>(
+                                options: const [(false, 'Citoyen'), (true, 'Agent de secours')],
+                                value: _isAgent,
+                                onChanged: (v) => setState(() => _isAgent = v),
+                              ),
+                              const SizedBox(height: 18),
+
+                              CustomTextField(
+                                hint: 'Adresse email',
+                                prefixIcon: Icons.mail_outline_rounded,
+                                controller: _nameCtrl,
+                                keyboardType: TextInputType.emailAddress,
+                                validator: Validators.email,
+                              ),
+                              const SizedBox(height: 14),
+                              CustomTextField(
+                                hint: 'Mot de passe',
+                                prefixIcon: Icons.lock_outline_rounded,
+                                controller: _passCtrl,
+                                isPassword: true,
+                                validator: Validators.password,
+                              ),
+                              const SizedBox(height: 16),
+
+                              Consumer<AuthProvider>(builder: (_, auth, __) {
+                                if (auth.error == null) return const SizedBox.shrink();
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 14),
+                                  child: SaInfoBanner(
+                                    auth.error!,
+                                    icon: Icons.error_outline_rounded,
+                                    color: AppColors.crimson,
+                                  ),
+                                );
+                              }),
+
+                              Consumer<AuthProvider>(
+                                builder: (_, auth, __) => CustomButton(
+                                  text: 'Se connecter',
+                                  icon: Icons.login_rounded,
+                                  onPressed: _login,
+                                  isLoading: auth.isLoading,
+                                ),
+                              ),
+                              const SizedBox(height: 22),
+                              Center(
+                                child: Wrap(
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  children: [
+                                    Text('Nouveau sur SenAlert ? ', style: SaText.body(14)),
+                                    TextButton(
+                                      onPressed: () => context.go('/register'),
+                                      style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+                                      child: Text('S\'inscrire',
+                                          style: SaText.body(14,
+                                              color: AppColors.orangeDeep, weight: FontWeight.w800)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Center(
+                                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                  const _SenegalFlag(),
+                                  const SizedBox(width: 8),
+                                  Text('Sénégal', style: SaText.body(12.5, weight: FontWeight.w600)),
+                                ]),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              const SizedBox(height: 12),
-              // Official Logo
-              Container(
-                width: 90,
-                height: 90,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.darkSlate,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.crimson.withOpacity(0.3),
-                      blurRadius: 20,
-                      spreadRadius: 4,
-                    )
-                  ],
-                ),
-                child: Image.asset(
-                  'assets/images/senalert_logo.png',
-                  errorBuilder: (_, __, ___) => const Icon(Icons.shield, color: AppColors.white, size: 45),
-                ),
-              ),
+    );
+  }
+}
 
-              const SizedBox(height: 20),
+/// Petit drapeau du Sénégal dessiné (vert / jaune / rouge + étoile verte).
+class _SenegalFlag extends StatelessWidget {
+  const _SenegalFlag();
 
-              // Role Selector
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _isAgent = false),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: !_isAgent ? AppColors.white : Colors.transparent,
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: !_isAgent
-                                ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)]
-                                : [],
-                          ),
-                          child: Text(
-                            '👤 Citoyen',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontWeight: !_isAgent ? FontWeight.bold : FontWeight.normal,
-                              color: !_isAgent ? AppColors.crimson : AppColors.textGrey,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _isAgent = true),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: _isAgent ? AppColors.darkSlate : Colors.transparent,
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: _isAgent
-                                ? [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)]
-                                : [],
-                          ),
-                          child: Text(
-                            '👮‍♂️ Agent / Secours',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontWeight: _isAgent ? FontWeight.bold : FontWeight.normal,
-                              color: _isAgent ? AppColors.white : AppColors.textGrey,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // Email input (identifiant du compte)
-              CustomTextField(
-                hint: 'Adresse email',
-                prefixIcon: Icons.email_outlined,
-                controller: _nameCtrl,
-                validator: Validators.email,
-              ),
-
-              const SizedBox(height: 14),
-
-              // Password input
-              CustomTextField(
-                hint: 'Mot de passe',
-                prefixIcon: Icons.lock_outline_rounded,
-                controller: _passCtrl,
-                isPassword: true,
-                validator: Validators.password,
-              ),
-
-              const SizedBox(height: 16),
-
-              // Error notification
-              Consumer<AuthProvider>(builder: (_, auth, __) {
-                if (auth.error == null) return const SizedBox.shrink();
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Text(
-                    auth.error!,
-                    style: const TextStyle(color: AppColors.crimson, fontSize: 13),
-                  ),
-                );
-              }),
-
-              // Submit Button
-              Consumer<AuthProvider>(
-                builder: (_, auth, __) => CustomButton(
-                  text: 'SE CONNECTER',
-                  onPressed: _login,
-                  isLoading: auth.isLoading,
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Register Link
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'Nouveau sur SenAlert ? ',
-                    style: TextStyle(color: AppColors.textGrey),
-                  ),
-                  GestureDetector(
-                    onTap: () => context.go('/register'),
-                    child: const Text(
-                      'S\'inscrire',
-                      style: TextStyle(
-                        color: AppColors.crimson,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(3),
+      child: SizedBox(
+        width: 24,
+        height: 16,
+        child: Row(children: [
+          Expanded(child: Container(color: const Color(0xFF00853F))),
+          Expanded(
+            child: Container(
+              color: const Color(0xFFFDEF42),
+              alignment: Alignment.center,
+              child: const Icon(Icons.star_rounded, size: 8, color: Color(0xFF00853F)),
+            ),
           ),
-        ),
+          Expanded(child: Container(color: const Color(0xFFE31B23))),
+        ]),
       ),
     );
   }
