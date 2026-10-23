@@ -67,72 +67,128 @@ class SenAlertApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       routerConfig: _router,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.crimson),
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.navy800,
+          primary: AppColors.navy800,
+          secondary: AppColors.orange,
+          error: AppColors.crimson,
+          surface: AppColors.white,
+        ),
         scaffoldBackgroundColor: AppColors.background,
         textTheme: GoogleFonts.interTextTheme(
           ThemeData.light().textTheme,
+        ).apply(bodyColor: AppColors.textDark, displayColor: AppColors.textDark),
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: ZoomPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.windows: ZoomPageTransitionsBuilder(),
+            TargetPlatform.linux: ZoomPageTransitionsBuilder(),
+          },
         ),
         appBarTheme: AppBarTheme(
-          backgroundColor: AppColors.darkSlate,
+          backgroundColor: AppColors.navy900,
           foregroundColor: AppColors.white,
           elevation: 0,
-          centerTitle: true,
+          scrolledUnderElevation: 0,
+          centerTitle: false,
           titleTextStyle: GoogleFonts.plusJakartaSans(
             color: AppColors.white,
             fontSize: 18,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w800,
           ),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.danger,
+            backgroundColor: AppColors.navy800,
             foregroundColor: AppColors.white,
-            minimumSize: const Size(double.infinity, 50),
+            elevation: 0,
+            minimumSize: const Size(double.infinity, 54),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(18),
             ),
-            textStyle: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1,
+            textStyle: GoogleFonts.plusJakartaSans(
+              fontSize: 15.5,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ),
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.textDark,
-            minimumSize: const Size(double.infinity, 50),
-            side: const BorderSide(color: Colors.grey),
+            foregroundColor: AppColors.navy800,
+            minimumSize: const Size(double.infinity, 54),
+            side: const BorderSide(color: AppColors.border, width: 1.4),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(18),
             ),
-            textStyle: const TextStyle(
+            textStyle: GoogleFonts.plusJakartaSans(
               fontSize: 15,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1,
+              fontWeight: FontWeight.w700,
             ),
           ),
+        ),
+        snackBarTheme: SnackBarThemeData(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.navy900,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          contentTextStyle: GoogleFonts.inter(
+            color: AppColors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        dialogTheme: DialogTheme(
+          backgroundColor: AppColors.white,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        ),
+        bottomSheetTheme: const BottomSheetThemeData(
+          backgroundColor: AppColors.white,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+        ),
+        switchTheme: SwitchThemeData(
+          thumbColor: WidgetStateProperty.resolveWith(
+            (s) => s.contains(WidgetState.selected) ? AppColors.white : null,
+          ),
+          trackColor: WidgetStateProperty.resolveWith(
+            (s) => s.contains(WidgetState.selected) ? AppColors.emerald : null,
+          ),
+        ),
+        checkboxTheme: CheckboxThemeData(
+          fillColor: WidgetStateProperty.resolveWith(
+            (s) => s.contains(WidgetState.selected) ? AppColors.navy800 : null,
+          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: AppColors.white,
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: AppColors.border),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: AppColors.border),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: AppColors.danger, width: 1.5),
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: AppColors.blue600, width: 1.6),
           ),
           errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(16),
             borderSide: const BorderSide(color: AppColors.danger),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: AppColors.danger, width: 1.6),
           ),
         ),
       ),
