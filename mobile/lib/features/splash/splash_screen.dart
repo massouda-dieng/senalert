@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:senalert_mobile/core/constants/app_colors.dart';
 import 'package:senalert_mobile/features/auth/providers/auth_provider.dart';
+import 'package:senalert_mobile/shared/widgets/sa_ui.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -57,101 +58,80 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
-      body: Center(
-        child: FadeTransition(
-          opacity: _fade,
-          child: ScaleTransition(
-            scale: _scale,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Official SenAlert Logo Asset
-                Container(
-                  width: 140,
-                  height: 140,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppColors.darkSlate,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.crimson.withOpacity(0.35),
-                        blurRadius: 28,
-                        spreadRadius: 6,
-                      ),
-                    ],
-                  ),
-                  child: Image.asset(
-                    'assets/images/senalert_logo.png',
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.shield,
-                      color: AppColors.white,
-                      size: 65,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 28),
-                // SenAlert
-                RichText(
-                  text: const TextSpan(
-                    children: [
-                      TextSpan(
-                        text: 'Sen',
-                        style: TextStyle(
-                          fontSize: 42,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textDark,
-                        ),
-                      ),
-                      TextSpan(
-                        text: 'Alert',
-                        style: TextStyle(
-                          fontSize: 42,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.danger,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 14),
-                const Text(
-                  'Plateforme d\'alertes citoyennes\npour la gestion des urgences\nau Sénégal',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textGrey,
-                    height: 1.6,
-                  ),
-                ),
-                const SizedBox(height: 64),
-                // Barre rouge
-                SizedBox(
-                  width: 80,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      minHeight: 4,
-                      backgroundColor: Colors.grey.shade200,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        AppColors.danger,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Chargement...',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textGrey,
-                  ),
-                ),
-              ],
+      backgroundColor: AppColors.navy900,
+      body: SaNightBackdrop(
+        child: Stack(
+          children: [
+            const Align(
+              alignment: Alignment.bottomCenter,
+              child: SaDakarSkyline(height: 190, color: Color(0x2E9DB7FF)),
             ),
-          ),
+            SafeArea(
+              child: Center(
+                child: FadeTransition(
+                  opacity: _fade,
+                  child: ScaleTransition(
+                    scale: _scale,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 128,
+                          height: 128,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withOpacity(0.06),
+                            border: Border.all(color: Colors.white.withOpacity(0.14)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.blue500.withOpacity(0.45),
+                                blurRadius: 48,
+                                spreadRadius: 4,
+                              ),
+                            ],
+                          ),
+                          child: const SaLogo(size: 76),
+                        ),
+                        const SizedBox(height: 26),
+                        RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(text: 'Sen', style: SaText.display(40, color: Colors.white)),
+                              TextSpan(text: 'Alert', style: SaText.display(40, color: AppColors.orange)),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Ensemble pour un Sénégal\nplus sûr et plus solidaire',
+                          textAlign: TextAlign.center,
+                          style: SaText.body(14.5, color: Colors.white.withOpacity(0.78)),
+                        ),
+                        const SizedBox(height: 48),
+                        SizedBox(
+                          width: 120,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              minHeight: 4,
+                              backgroundColor: Colors.white.withOpacity(0.12),
+                              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.orange),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Chargement…',
+                          style: SaText.body(12, color: Colors.white.withOpacity(0.6)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
