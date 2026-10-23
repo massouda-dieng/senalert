@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:senalert_mobile/core/constants/app_colors.dart';
 import 'package:senalert_mobile/features/incidents/models/incident_model.dart';
 import 'package:senalert_mobile/features/incidents/providers/incident_provider.dart';
+import 'package:senalert_mobile/shared/widgets/sa_ui.dart';
 
 class IncidentListScreen extends StatefulWidget {
   const IncidentListScreen({super.key});
@@ -23,23 +24,16 @@ class _IncidentListScreenState extends State<IncidentListScreen> {
 
   String _selectedFilter = 'tous';
 
-  Color _statusColor(String s) {
-    switch (s) {
-      case 'nouveau':    return AppColors.warning;
-      case 'en_cours':   return AppColors.info;
-      case 'resolu':     return AppColors.success;
-      case 'refuse':     return AppColors.danger;
-      default:           return AppColors.textGrey;
-    }
-  }
-
-  String _statusLabel(String s) {
-    switch (s) {
-      case 'nouveau':    return 'Nouveau';
-      case 'en_cours':   return 'En cours';
-      case 'resolu':     return 'Résolu';
-      case 'refuse':     return 'Refusé';
-      default:           return s;
+  bool _matches(Incident i) {
+    switch (_selectedFilter) {
+      case 'nouveau':
+        return i.status == 'nouveau' || i.status == 'en_attente';
+      case 'en_cours':
+        return i.status == 'en_cours';
+      case 'resolu':
+        return i.status == 'resolu' || i.status == 'traite';
+      default:
+        return true;
     }
   }
 
@@ -47,225 +41,142 @@ class _IncidentListScreenState extends State<IncidentListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Mes signalements'),
-        leading: IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () {},
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Actualiser',
-            onPressed: () => context.read<IncidentProvider>().fetchIncidents(),
+      body: Column(
+        children: [
+          SaHeader(
+            title: 'Mes signalements',
+            subtitle: 'Suivez l\'avancement de vos alertes',
+            onBack: () => context.go('/home'),
+            actions: [
+              SaIconButton(
+                icon: Icons.refresh_rounded,
+                tooltip: 'Actualiser',
+                onTap: () => context.read<IncidentProvider>().fetchIncidents(),
+              ),
+            ],
+            bottom: SaSegmentedTabs<String>(
+              onDark: true,
+              options: const [
+                ('tous', 'Tous'),
+                ('nouveau', 'Nouveaux'),
+                ('en_cours', 'En cours'),
+                ('resolu', 'Résolus'),
+              ],
+              value: _selectedFilter,
+              onChanged: (v) => setState(() => _selectedFilter = v),
+            ),
+          ),
+          Expanded(
+            child: Consumer<IncidentProvider>(builder: (_, p, __) {
+              if (p.isLoading) {
+                return const Center(child: CircularProgressIndicator(color: AppColors.navy800));
+              }
+              final incidents = p.incidents.where(_matches).toList();
+              return RefreshIndicator(
+                color: AppColors.navy800,
+                onRefresh: p.fetchIncidents,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                  children: [
+                    if (p.error != null) ...[SaInfoBanner(p.error!), const SizedBox(height: 12)],
+                    if (incidents.isEmpty)
+                      SaEmptyState(
+                        icon: Icons.inbox_rounded,
+                        title: _selectedFilter == 'tous' ? 'Aucun incident' : 'Aucun incident avec ce statut',
+                        message: 'Tirez vers le bas pour actualiser.',
+                      )
+                    else
+                      for (var i = 0; i < incidents.length; i++)
+                        SaFadeSlide(
+                          key: ValueKey('${_selectedFilter}_${incidents[i].id}'),
+                          index: i,
+                          child: _IncidentCard(
+                            incident: incidents[i],
+                            onTap: () => context.go('/incidents/${incidents[i].id}'),
+                          ),
+                        ),
+                  ],
+                ),
+              );
+            }),
           ),
         ],
       ),
-      body: Consumer<IncidentProvider>(builder: (_, p, __) {
-        if (p.isLoading) {
-          return const Center(
-              child: CircularProgressIndicator(color: AppColors.danger));
-        }
-        final incidents = _selectedFilter == 'tous'
-            ? p.incidents
-            : p.incidents.where((i) => i.status == _selectedFilter).toList();
-
-        return Column(
-          children: [
-            // Filtres rapides
-            Container(
-              color: AppColors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    for (final f in [
-                      ('tous', 'Tous'),
-                      ('nouveau', 'Nouveaux'),
-                      ('en_cours', 'En cours'),
-                      ('resolu', 'Résolus'),
-                    ])
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ChoiceChip(
-                          label: Text(f.$2),
-                          selected: _selectedFilter == f.$1,
-                          selectedColor: AppColors.danger.withOpacity(0.15),
-                          onSelected: (_) => setState(() => _selectedFilter = f.$1),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            // Légende
-            Container(
-              color: AppColors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: const [
-                  _Legend(color: AppColors.danger,  label: 'Accident'),
-                  _Legend(color: AppColors.info,    label: 'Inondation'),
-                  _Legend(color: AppColors.warning, label: 'Incendie'),
-                  _Legend(color: AppColors.success, label: 'Urgence méd.'),
-                ],
-              ),
-            ),
-            // Liste
-            Expanded(
-              child: incidents.isEmpty
-                  ? Center(child: Text(_selectedFilter == 'tous' ? 'Aucun incident' : 'Aucun incident avec ce statut'))
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: incidents.length,
-                      itemBuilder: (_, i) {
-                        final inc = incidents[i];
-                        return _IncidentCard(
-                          incident: inc,
-                          statusColor: _statusColor(inc.status),
-                          onTap: () =>
-                              context.go('/incidents/${inc.id}'),
-                        );
-                      },
-                    ),
-            ),
-          ],
-        );
-      }),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.danger,
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: AppColors.orangeDeep,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         onPressed: () => context.go('/report'),
-        child: const Icon(Icons.add, color: AppColors.white),
+        icon: const Icon(Icons.add_rounded),
+        label: Text('Signaler', style: SaText.body(14, color: Colors.white, weight: FontWeight.w700)),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
-        selectedItemColor: AppColors.crimson,
-        unselectedItemColor: AppColors.textGrey,
-        onTap: (i) {
-          if (i == 0) context.go('/home');
-          if (i == 1) context.go('/incidents');
-          if (i == 2) context.go('/report');
-          if (i == 3) context.go('/first-aid');
-          if (i == 4) context.go('/profile');
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Accueil'),
-          BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Incidents'),
-          BottomNavigationBarItem(icon: Icon(Icons.add_circle), label: 'Signaler'),
-          BottomNavigationBarItem(icon: Icon(Icons.medical_services_outlined), label: 'Secours'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profil'),
-        ],
-      ),
+      bottomNavigationBar: const SaBottomNav(currentIndex: 1),
     );
   }
 }
 
 class _IncidentCard extends StatelessWidget {
   final Incident incident;
-  final Color statusColor;
   final VoidCallback onTap;
 
-  const _IncidentCard({
-    required this.incident,
-    required this.statusColor,
-    required this.onTap,
-  });
+  const _IncidentCard({required this.incident, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
+    final t = SaIncidentType.of(incident.type);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: SaCard(
+        padding: const EdgeInsets.all(14),
+        onTap: onTap,
         child: Row(
           children: [
-            Text(incident.typeIcon, style: const TextStyle(fontSize: 30)),
-            const SizedBox(width: 12),
+            SaTypeIcon(incident.type, size: 52),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        incident.type,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: statusColor.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          incident.statusLabel,
-                          style: TextStyle(
-                            color: statusColor,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
+                  Row(children: [
+                    Expanded(
+                      child: Text(t.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: SaText.body(15, color: AppColors.textDark, weight: FontWeight.w700)),
+                    ),
+                    SaStatusBadge(incident.status, dense: true),
+                  ]),
+                  if (incident.description.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(incident.description,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: SaText.body(12.5, color: AppColors.textDark)),
+                  ],
+                  const SizedBox(height: 6),
+                  Row(children: [
+                    const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textGrey),
+                    const SizedBox(width: 3),
+                    Expanded(
+                      child: Text(incident.location,
+                          maxLines: 1, overflow: TextOverflow.ellipsis, style: SaText.body(12)),
+                    ),
+                    if (incident.date.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      const Icon(Icons.schedule_rounded, size: 13, color: AppColors.textGrey),
+                      const SizedBox(width: 3),
+                      Text(incident.date, style: SaText.body(11.5)),
                     ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    incident.location,
-                    style: const TextStyle(
-                        color: AppColors.textGrey, fontSize: 12),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    incident.date,
-                    style: const TextStyle(
-                        color: AppColors.textGrey, fontSize: 11),
-                  ),
+                  ]),
                 ],
               ),
             ),
+            const SizedBox(width: 4),
+            const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _Legend extends StatelessWidget {
-  final Color color;
-  final String label;
-  const _Legend({required this.color, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 4),
-        Text(label, style: const TextStyle(fontSize: 10)),
-      ],
     );
   }
 }
