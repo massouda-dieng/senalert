@@ -1,1208 +1,778 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:senalert_mobile/core/constants/app_colors.dart';
+import 'package:senalert_mobile/features/auth/providers/auth_provider.dart';
+import 'package:senalert_mobile/features/incidents/models/incident_model.dart';
+import 'package:senalert_mobile/features/incidents/providers/incident_provider.dart';
+import 'package:senalert_mobile/shared/widgets/sa_ui.dart';
 
-/// Enum representing the UX severity levels for national alerts.
-enum AlertSeverity { info, vigilance, danger, urgence }
-
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+  late AnimationController _heroCtrl;
+  late AnimationController _waveCtrl;
+  late Animation<double> _heroFade;
+  late Animation<Offset> _heroSlide;
+
+  @override
+  void initState() {
+    super.initState();
+    _heroCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
+    _waveCtrl = AnimationController(vsync: this, duration: const Duration(seconds: 6))..repeat();
+    _heroFade = CurvedAnimation(parent: _heroCtrl, curve: Curves.easeOut);
+    _heroSlide = Tween<Offset>(begin: const Offset(0, 0.06), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _heroCtrl, curve: Curves.easeOutCubic));
+    _heroCtrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _heroCtrl.dispose();
+    _waveCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    // Rediriger agents/admins vers leur tableau de bord
+    if (auth.isAgent) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => context.go('/agent-dashboard'));
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: const _SenAlertAppBar(),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          children: [
-            // Dark Institutional Header Section
-            const _HeaderHeroSection(),
+      body: RefreshIndicator(
+        color: AppColors.navy800,
+        onRefresh: () => context.read<IncidentProvider>().fetchIncidents(),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+          slivers: [
+            // ── HERO SECTION ──────────────────────────────────────────
+            SliverToBoxAdapter(
+              child: FadeTransition(
+                opacity: _heroFade,
+                child: SlideTransition(
+                  position: _heroSlide,
+                  child: _HeroSection(waveCtrl: _waveCtrl),
+                ),
+              ),
+            ),
 
-            const SizedBox(height: 20),
-
-            // Main Content Area
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Quick Actions Grid Title & Subtitle
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Actions Rapides & Services',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textDark,
-                              letterSpacing: -0.4,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Accès direct aux services de secours',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textGrey.withOpacity(0.9),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: AppColors.darkSlate.withOpacity(0.06),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.shield_outlined, size: 13, color: AppColors.darkSlate),
-                            SizedBox(width: 4),
-                            Text(
-                              '6 Services',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.darkSlate,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Unified Responsive Action Cards Grid
-                  const _QuickActionGrid(),
-
+            // ── CONTENU PRINCIPAL ──────────────────────────────────────
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
                   const SizedBox(height: 28),
-
-                  // Real-time Emergency Statistics Section
-                  const _StatSection(),
-
+                  SaFadeSlide(index: 2, child: _TypeGrid()),
                   const SizedBox(height: 28),
-
-                  // Recent Incidents Feed Section
-                  const _RecentIncidentsSection(),
-
+                  SaFadeSlide(index: 3, child: _QuickAccess()),
                   const SizedBox(height: 28),
-                ],
+                  SaFadeSlide(index: 4, child: _ActivitySection()),
+                  const SizedBox(height: 20),
+                ]),
               ),
             ),
           ],
         ),
       ),
-      bottomNavigationBar: const _SenAlertBottomNavBar(currentIndex: 0),
+      bottomNavigationBar: const SaBottomNav(currentIndex: 0),
     );
   }
 }
 
-/// App Bar component with institutional header branding & notifications
-class _SenAlertAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const _SenAlertAppBar();
-
-  @override
-  Size get preferredSize => const Size.fromHeight(64);
+// ─────────────────────────────────────────────────────────────────────────────
+// HERO SECTION : fond animé, salutation, bouton SOS, carte Signaler
+// ─────────────────────────────────────────────────────────────────────────────
+class _HeroSection extends StatelessWidget {
+  final AnimationController waveCtrl;
+  const _HeroSection({required this.waveCtrl});
 
   @override
   Widget build(BuildContext context) {
-    return AppBar(
-      backgroundColor: AppColors.darkSlate,
-      elevation: 0,
-      toolbarHeight: 64,
-      title: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(7),
-            decoration: BoxDecoration(
-              color: AppColors.crimson,
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.crimson.withOpacity(0.4),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+    final auth = context.watch<AuthProvider>();
+    final name = auth.userName.contains('@')
+        ? auth.userName.split('@').first
+        : auth.userName;
+    final firstName = name.isNotEmpty
+        ? name[0].toUpperCase() + name.substring(1)
+        : '';
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // Fond dégradé animé
+        ClipPath(
+          clipper: _HeroClipper(),
+          child: AnimatedBuilder(
+            animation: waveCtrl,
+            builder: (_, __) => Container(
+              height: 420,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: const [Color(0xFF0F172A), Color(0xFF1E3A5F), Color(0xFF0F172A)],
+                  stops: [
+                    0.0,
+                    0.4 + 0.1 * math.sin(waveCtrl.value * 2 * math.pi),
+                    1.0,
+                  ],
                 ),
-              ],
-            ),
-            child: Image.asset(
-              'assets/images/senalert_logo.png',
-              height: 22,
-              width: 22,
-              errorBuilder: (context, error, stackTrace) => const Icon(
-                Icons.shield_rounded,
-                color: AppColors.white,
-                size: 22,
               ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
+              child: Stack(
                 children: [
-                  const Text(
-                    'SenAlert',
-                    style: TextStyle(
-                      color: AppColors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 18,
-                      letterSpacing: 0.3,
+                  // Cercles décoratifs animés
+                  Positioned(
+                    right: -60 + 20 * math.sin(waveCtrl.value * math.pi),
+                    top: -40,
+                    child: Container(
+                      width: 280,
+                      height: 280,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.orange.withOpacity(0.06),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(4),
+                  Positioned(
+                    left: -80,
+                    bottom: 60 + 10 * math.cos(waveCtrl.value * math.pi),
+                    child: Container(
+                      width: 200,
+                      height: 200,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.crimson.withOpacity(0.05),
+                      ),
                     ),
-                    child: const Text(
-                      'SN',
-                      style: TextStyle(
-                        color: AppColors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
+                  ),
+                  Positioned(
+                    right: 40,
+                    bottom: 100,
+                    child: Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.03),
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 2),
-              Row(
-                children: [
-                  Container(
-                    width: 7,
-                    height: 7,
-                    decoration: const BoxDecoration(
-                      color: AppColors.success,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                  const Text(
-                    'Réseau National Actif',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
-        ],
-      ),
-      actions: [
-        IconButton(
-          tooltip: 'Notifications',
-          icon: Stack(
-            children: [
-              const Icon(Icons.notifications_none_rounded, color: AppColors.white, size: 24),
-              Positioned(
-                right: 0,
-                top: 0,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: AppColors.crimson,
-                    shape: BoxShape.circle,
+        ),
+
+        // Contenu hero
+        SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Topbar
+                Row(children: [
+                  const SaLogo(size: 36),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('SenAlert', style: SaText.display(18, color: Colors.white)),
+                      Row(children: [
+                        Icon(Icons.circle, size: 8,
+                            color: const Color(0xFF34D399).withOpacity(0.9)),
+                        const SizedBox(width: 5),
+                        Text('Système d\'alerte national',
+                            style: SaText.body(11, color: Colors.white.withOpacity(0.6))),
+                      ]),
+                    ]),
                   ),
+                  // Notifications
+                  _TopbarBtn(icon: Icons.notifications_rounded, onTap: () {}),
+                  const SizedBox(width: 8),
+                  // Profil
+                  GestureDetector(
+                    onTap: () => context.go('/profile'),
+                    child: Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: AppColors.navyGradient,
+                        border: Border.all(color: AppColors.orange, width: 2),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        firstName.isNotEmpty ? firstName[0].toUpperCase() : '?',
+                        style: SaText.display(16, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ]),
+
+                const SizedBox(height: 28),
+
+                // Salutation principale
+                Text(
+                  firstName.isEmpty ? 'Bonjour 👋' : 'Bonjour, $firstName 👋',
+                  style: SaText.display(28, color: Colors.white, weight: FontWeight.w800),
                 ),
-              ),
-            ],
+                const SizedBox(height: 6),
+                Text(
+                  'Ensemble, protégeons le Sénégal',
+                  style: SaText.body(14, color: Colors.white.withOpacity(0.7)),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Bouton SOS principal — le plus visible
+                _SosBigButton(),
+
+                const SizedBox(height: 14),
+
+                // Carte Signaler un incident
+                _SignalerCard(),
+
+                const SizedBox(height: 48),
+              ],
+            ),
           ),
-          onPressed: () {},
         ),
-        IconButton(
-          tooltip: 'Profil',
-          icon: const Icon(Icons.account_circle_outlined, color: AppColors.white, size: 25),
-          onPressed: () => context.go('/profile'),
-        ),
-        const SizedBox(width: 6),
       ],
     );
   }
 }
 
-/// Dark Hero Section containing national metadata, alert banner, and SOS button
-class _HeaderHeroSection extends StatelessWidget {
-  const _HeaderHeroSection();
+class _TopbarBtn extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _TopbarBtn({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
-      decoration: const BoxDecoration(
-        color: AppColors.darkSlate,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(28),
-          bottomRight: Radius.circular(28),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.white.withOpacity(0.1),
+          border: Border.all(color: Colors.white.withOpacity(0.12)),
         ),
-      ),
-      child: Stack(
-        children: [
-          // Signature SenAlert Watermark Emblem
-          Positioned(
-            right: -20,
-            top: -20,
-            child: Opacity(
-              opacity: 0.05,
-              child: Image.asset(
-                'assets/images/senalert_logo.png',
-                height: 170,
-                width: 170,
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
-
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'SERVICE NATIONAL D\'ALERTE & DE SECOURS',
-                style: TextStyle(
-                  color: AppColors.textGrey,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              Text(
-                'RÉPUBLIQUE DU SÉNÉGAL',
-                style: TextStyle(
-                  color: AppColors.textGrey.withOpacity(0.8),
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.8,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-
-          // National Weather Alert Notification Banner
-          const _AlertBanner(
-            severity: AlertSeverity.vigilance,
-            title: 'VIGILANCE MÉTÉO SÉNÉGAL',
-            message: 'Risque de fortes pluies & orages à Dakar, Thiès & Kaolack.',
-            timeInfo: 'Aujourd\'hui 14h - 20h',
-          ),
-
-          const SizedBox(height: 14),
-
-          // Primary Reassuring SOS Panic Trigger Card
-          const _SosButton(),
-        ],
-      ),
-    ],
-  ),
-);
-  }
-}
-
-
-
-/// Dynamic Alert Banner Component with 4 Severity Levels
-class _AlertBanner extends StatelessWidget {
-  final AlertSeverity severity;
-  final String title;
-  final String message;
-  final String timeInfo;
-
-  const _AlertBanner({
-    required this.severity,
-    required this.title,
-    required this.message,
-    required this.timeInfo,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final config = _getSeverityConfig(severity);
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: config.backgroundColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: config.borderColor, width: 1.2),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: config.iconBgColor,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(config.icon, color: config.accentColor, size: 22),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: config.accentColor,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: config.accentColor.withOpacity(0.18),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        config.pillLabel,
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                          color: config.accentColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  message,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.white,
-                    height: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.access_time_rounded, size: 11, color: Colors.white.withOpacity(0.7)),
-                    const SizedBox(width: 4),
-                    Text(
-                      timeInfo,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.white.withOpacity(0.7),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
+        child: Icon(icon, size: 20, color: Colors.white),
       ),
     );
   }
+}
 
-  _SeverityConfig _getSeverityConfig(AlertSeverity severity) {
-    switch (severity) {
-      case AlertSeverity.info:
-        return _SeverityConfig(
-          pillLabel: 'INFO',
-          icon: Icons.info_outline_rounded,
-          accentColor: AppColors.alertInfo,
-          backgroundColor: AppColors.alertInfo.withOpacity(0.12),
-          borderColor: AppColors.alertInfo.withOpacity(0.4),
-          iconBgColor: AppColors.alertInfo.withOpacity(0.2),
-        );
-      case AlertSeverity.vigilance:
-        return _SeverityConfig(
-          pillLabel: 'VIGILANCE',
-          icon: Icons.campaign_rounded,
-          accentColor: AppColors.alertVigilance,
-          backgroundColor: AppColors.alertVigilance.withOpacity(0.15),
-          borderColor: AppColors.alertVigilance.withOpacity(0.5),
-          iconBgColor: AppColors.alertVigilance.withOpacity(0.25),
-        );
-      case AlertSeverity.danger:
-        return _SeverityConfig(
-          pillLabel: 'DANGER',
-          icon: Icons.warning_amber_rounded,
-          accentColor: AppColors.alertDanger,
-          backgroundColor: AppColors.alertDanger.withOpacity(0.18),
-          borderColor: AppColors.alertDanger.withOpacity(0.6),
-          iconBgColor: AppColors.alertDanger.withOpacity(0.3),
-        );
-      case AlertSeverity.urgence:
-        return _SeverityConfig(
-          pillLabel: 'URGENCE MAX',
-          icon: Icons.error_outline_rounded,
-          accentColor: AppColors.alertUrgence,
-          backgroundColor: AppColors.alertUrgence.withOpacity(0.22),
-          borderColor: AppColors.alertUrgence.withOpacity(0.7),
-          iconBgColor: AppColors.alertUrgence.withOpacity(0.35),
-        );
-    }
+/// Grand bouton SOS rouge avec pulsation
+class _SosBigButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.go('/sos'),
+      child: Container(
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(28),
+          gradient: AppColors.sosGradient,
+          boxShadow: [
+            BoxShadow(color: AppColors.crimson.withOpacity(0.5), blurRadius: 32, offset: const Offset(0, 12)),
+          ],
+        ),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(14, 14, 18, 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(26),
+            gradient: LinearGradient(
+              colors: [AppColors.crimson, const Color(0xFFBE123C)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Row(children: [
+            SaPulse(
+              size: 80,
+              color: Colors.white,
+              child: Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10)],
+                ),
+                alignment: Alignment.center,
+                child: Text('SOS', style: SaText.display(16, color: AppColors.crimson, weight: FontWeight.w900)),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Alerte SOS d\'urgence',
+                    style: SaText.display(18, color: Colors.white, weight: FontWeight.w900)),
+                const SizedBox(height: 4),
+                Text('Maintenez 3 secondes pour alerter\nles secours avec votre position GPS',
+                    style: SaText.body(12, color: Colors.white.withOpacity(0.9))),
+              ]),
+            ),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white.withOpacity(0.3)),
+              ),
+              child: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
+            ),
+          ]),
+        ),
+      ),
+    );
   }
 }
 
-class _SeverityConfig {
-  final String pillLabel;
-  final IconData icon;
-  final Color accentColor;
-  final Color backgroundColor;
-  final Color borderColor;
-  final Color iconBgColor;
-
-  _SeverityConfig({
-    required this.pillLabel,
-    required this.icon,
-    required this.accentColor,
-    required this.backgroundColor,
-    required this.borderColor,
-    required this.iconBgColor,
-  });
-}
-
-/// Primary SOS Panic Trigger Card (Reassuring & Highly Accessible)
-class _SosButton extends StatelessWidget {
-  const _SosButton();
-
+/// Carte Signaler un incident en glassmorphisme
+class _SignalerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => context.go('/sos'),
-      borderRadius: BorderRadius.circular(20),
+    return GestureDetector(
+      onTap: () => context.go('/report'),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.crimson,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.2),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.crimson.withOpacity(0.35),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            )
-          ],
+          borderRadius: BorderRadius.circular(22),
+          color: Colors.white.withOpacity(0.08),
+          border: Border.all(color: Colors.white.withOpacity(0.15)),
         ),
-        child: Row(
-          children: [
-            // Circular SOS Action Badge Icon
-            Container(
-              width: 54,
-              height: 54,
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.touch_app_rounded,
-                  color: AppColors.crimson,
-                  size: 30,
-                ),
-              ),
+        child: Row(children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              gradient: AppColors.orangeGradient,
+              borderRadius: BorderRadius.circular(16),
             ),
-            const SizedBox(width: 16),
-
-            // Content Typography
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Text(
-                        'BOUTON SOS PANIQUE',
-                        style: TextStyle(
-                          color: AppColors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 16,
-                          letterSpacing: 0.6,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.22),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'Hold 3s',
-                          style: TextStyle(
-                            color: AppColors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    'Alerter les secours • Géolocalisation GPS active',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.85),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Arrow Prompt
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: AppColors.white,
-                size: 16,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Unified Cohesive Quick Action Grid with Responsive Layout
-class _QuickActionGrid extends StatelessWidget {
-  const _QuickActionGrid();
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        int crossAxisCount = 2;
-        double childAspectRatio = 1.12;
-
-        if (constraints.maxWidth > 900) {
-          crossAxisCount = 4;
-          childAspectRatio = 1.35;
-        } else if (constraints.maxWidth > 600) {
-          crossAxisCount = 3;
-          childAspectRatio = 1.25;
-        } else if (constraints.maxWidth < 360) {
-          crossAxisCount = 2;
-          childAspectRatio = 0.95;
-        }
-
-        return GridView.count(
-          crossAxisCount: crossAxisCount,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: childAspectRatio,
-          children: [
-            _QuickActionTile(
-              title: 'Signaler une Urgence',
-              subtitle: 'Photo, Vidéo & GPS',
-              tag: 'URGENT',
-              icon: Icons.add_alert_rounded,
-              accentColor: AppColors.crimson,
-              onTap: () => context.go('/report'),
-            ),
-            _QuickActionTile(
-              title: 'Carte GPS Interactive',
-              subtitle: 'Alertes en temps réel',
-              tag: 'LIVE MAP',
-              icon: Icons.map_rounded,
-              accentColor: AppColors.navy,
-              onTap: () => context.go('/map'),
-            ),
-            _QuickActionTile(
-              title: 'Services de Secours',
-              subtitle: 'Hôpitaux, Police, Sapeurs',
-              tag: 'PROXIMITÉ',
-              icon: Icons.local_hospital_rounded,
-              accentColor: AppColors.darkSlate,
-              onTap: () => context.go('/services'),
-            ),
-            _QuickActionTile(
-              title: 'Assistant IA Secours',
-              subtitle: 'Secourisme & IA 24h/7d',
-              tag: 'IA CONSEIL 🤖',
-              icon: Icons.smart_toy_rounded,
-              accentColor: AppColors.emerald,
-              onTap: () => context.go('/first-aid'),
-            ),
-            _QuickActionTile(
-              title: 'Liste des Incidents',
-              subtitle: 'Fil d\'alertes publiques',
-              tag: 'FLUX DIRECT',
-              icon: Icons.format_list_bulleted_rounded,
-              accentColor: AppColors.info,
-              onTap: () => context.go('/incidents'),
-            ),
-            _QuickActionTile(
-              title: 'Numéros SOS 24/7',
-              subtitle: 'Appels 18, 17, 15 direct',
-              tag: 'SOS DIRECT',
-              icon: Icons.phone_in_talk_rounded,
-              accentColor: AppColors.warning,
-              onTap: () => context.go('/sos'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-/// Unified SenAlert Action Tile Card Component
-class _QuickActionTile extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final String tag;
-  final IconData icon;
-  final Color accentColor;
-  final VoidCallback onTap;
-
-  const _QuickActionTile({
-    required this.title,
-    required this.subtitle,
-    required this.tag,
-    required this.icon,
-    required this.accentColor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.025),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+            child: const Icon(Icons.add_alert_rounded, color: Colors.white, size: 26),
           ),
-        ],
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Signaler un incident',
+                  style: SaText.display(15, color: Colors.white, weight: FontWeight.w700)),
+              const SizedBox(height: 3),
+              Text('Accident, incendie, inondation…',
+                  style: SaText.body(12.5, color: Colors.white.withOpacity(0.7))),
+            ]),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              gradient: AppColors.orangeGradient,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text('Signaler', style: SaText.body(12, color: Colors.white, weight: FontWeight.w700)),
+          ),
+        ]),
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Top Row: Colored Accent Icon Badge & Category Tag Pill
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: accentColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(
-                        icon,
-                        color: accentColor,
-                        size: 24,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: accentColor.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: accentColor.withOpacity(0.2)),
-                      ),
-                      child: Text(
-                        tag,
-                        style: TextStyle(
-                          color: accentColor,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+    );
+  }
+}
 
-                // Bottom Text Hierarchy
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textDark,
-                        height: 1.18,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            subtitle,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: AppColors.textGrey,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        Icon(
-                          Icons.arrow_forward_rounded,
-                          color: AppColors.textGrey.withOpacity(0.6),
-                          size: 13,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+/// Clipper pour découper le bas du hero en courbe
+class _HeroClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size s) {
+    final p = Path();
+    p.lineTo(0, s.height - 50);
+    p.quadraticBezierTo(s.width * 0.5, s.height + 20, s.width, s.height - 50);
+    p.lineTo(s.width, 0);
+    p.close();
+    return p;
+  }
+
+  @override
+  bool shouldReclip(_) => false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GRILLE TYPES D'INCIDENTS
+// ─────────────────────────────────────────────────────────────────────────────
+class _TypeGrid extends StatelessWidget {
+  const _TypeGrid();
+
+  static const _types = [
+    ('accident', 'Accident'),
+    ('incendie', 'Incendie'),
+    ('inondation', 'Inondation'),
+    ('urgence_medicale', 'Urgence\nmédicale'),
+    ('electricite', 'Électricité'),
+    ('insecurite', 'Insécurité'),
+    ('autre', 'Autre'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      SaSectionTitle('Que voulez-vous signaler ?',
+          actionLabel: 'Voir tous', onAction: () => context.go('/report')),
+      const SizedBox(height: 12),
+      GridView.count(
+        crossAxisCount: 4,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 0.85,
+        children: _types.map((t) {
+          return _TypeCell(code: t.$1, label: t.$2);
+        }).toList(),
+      ),
+    ]);
+  }
+}
+
+class _TypeCell extends StatefulWidget {
+  final String code;
+  final String label;
+  const _TypeCell({required this.code, required this.label});
+
+  @override
+  State<_TypeCell> createState() => _TypeCellState();
+}
+
+class _TypeCellState extends State<_TypeCell> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = SaIncidentType.of(widget.code);
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        context.go('/report?type=${widget.code}');
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.92 : 1.0,
+        duration: const Duration(milliseconds: 120),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.border),
+            boxShadow: [
+              BoxShadow(
+                color: t.color.withOpacity(0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: t.color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(t.icon, color: t.color, size: 26),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              widget.label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              style: SaText.body(11, color: AppColors.textDark, weight: FontWeight.w700)
+                  .copyWith(height: 1.2),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ACCÈS RAPIDE
+// ─────────────────────────────────────────────────────────────────────────────
+class _QuickAccess extends StatelessWidget {
+  const _QuickAccess();
+
+  @override
+  Widget build(BuildContext context) {
+    final items = [
+      (Icons.smart_toy_rounded, 'Assistant IA', 'Premiers secours', AppColors.blue600, '/first-aid'),
+      (Icons.local_hospital_rounded, 'Services proches', 'Hôpitaux, police…', AppColors.emerald, '/services'),
+      (Icons.receipt_long_rounded, 'Mes signalements', 'Suivi des statuts', AppColors.orangeDeep, '/incidents'),
+      (Icons.map_rounded, 'Carte nationale', 'Incidents autour', const Color(0xFF7C3AED), '/map'),
+    ];
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const SaSectionTitle('Accès rapide'),
+      const SizedBox(height: 12),
+      GridView.count(
+        crossAxisCount: 2,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 2.4,
+        children: items.map((it) {
+          return _QuickCard(
+            icon: it.$1, title: it.$2, sub: it.$3, color: it.$4, route: it.$5,
+          );
+        }).toList(),
+      ),
+    ]);
+  }
+}
+
+class _QuickCard extends StatefulWidget {
+  final IconData icon;
+  final String title, sub, route;
+  final Color color;
+  const _QuickCard({required this.icon, required this.title, required this.sub,
+      required this.color, required this.route});
+
+  @override
+  State<_QuickCard> createState() => _QuickCardState();
+}
+
+class _QuickCardState extends State<_QuickCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _hovered = true),
+      onTapUp: (_) { setState(() => _hovered = false); context.go(widget.route); },
+      onTapCancel: () => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: _hovered ? widget.color.withOpacity(0.07) : AppColors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: _hovered ? widget.color.withOpacity(0.4) : AppColors.border,
+            width: _hovered ? 1.5 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 3)),
+          ],
+        ),
+        child: Row(children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: widget.color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(widget.icon, color: widget.color, size: 20),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(widget.title, maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: SaText.body(13, color: AppColors.textDark, weight: FontWeight.w700)),
+                Text(widget.sub, maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: SaText.body(11)),
               ],
             ),
           ),
-        ),
+        ]),
       ),
     );
   }
 }
 
-/// Real-time Rescue Activity Statistics Component
-class _StatSection extends StatelessWidget {
-  const _StatSection();
+// ─────────────────────────────────────────────────────────────────────────────
+// ACTIVITÉ RÉELLE
+// ─────────────────────────────────────────────────────────────────────────────
+class _ActivitySection extends StatelessWidget {
+  const _ActivitySection();
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Activité des Secours',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textDark,
-                letterSpacing: -0.4,
+    final p = context.watch<IncidentProvider>();
+    final list = p.incidents;
+    final enCours = list.where((i) => i.status == 'en_cours').length;
+    final resolus = list.where((i) => i.status == 'resolu' || i.status == 'traite').length;
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      SaSectionTitle('Mes derniers signalements',
+          actionLabel: list.isEmpty ? null : 'Tout voir',
+          onAction: () => context.go('/incidents')),
+      const SizedBox(height: 12),
+
+      if (p.isLoading && list.isEmpty)
+        const Padding(
+          padding: EdgeInsets.all(24),
+          child: Center(child: CircularProgressIndicator(color: AppColors.navy800)),
+        )
+      else ...[
+        if (p.error != null) ...[
+          SaInfoBanner(p.error!),
+          const SizedBox(height: 12),
+        ],
+        if (list.isNotEmpty) ...[
+          Row(children: [
+            _Counter(label: 'Total', value: list.length, color: AppColors.navy800, icon: Icons.layers_rounded),
+            const SizedBox(width: 10),
+            _Counter(label: 'En cours', value: enCours, color: AppColors.blue600, icon: Icons.autorenew_rounded),
+            const SizedBox(width: 10),
+            _Counter(label: 'Résolus', value: resolus, color: AppColors.emerald, icon: Icons.check_circle_rounded),
+          ]),
+          const SizedBox(height: 14),
+          ...list.take(3).map((i) => Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _MiniIncident(incident: i),
+          )),
+        ] else if (p.error == null)
+          // État vide : incite à signaler
+          GestureDetector(
+            onTap: () => context.go('/report'),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.border),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8)],
               ),
-            ),
-            Row(
-              children: [
+              child: Column(children: [
                 Container(
-                  width: 6,
-                  height: 6,
-                  decoration: const BoxDecoration(
-                    color: AppColors.success,
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: AppColors.navy800.withOpacity(0.06),
                     shape: BoxShape.circle,
                   ),
+                  child: const Icon(Icons.add_alert_outlined, size: 32, color: AppColors.navy800),
                 ),
-                const SizedBox(width: 5),
-                const Text(
-                  'Aujourd\'hui',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textGrey,
-                    fontWeight: FontWeight.w600,
+                const SizedBox(height: 14),
+                Text('Aucun signalement', style: SaText.display(16, color: AppColors.textDark)),
+                const SizedBox(height: 6),
+                Text('Appuyez pour signaler votre premier incident',
+                    textAlign: TextAlign.center,
+                    style: SaText.body(13)),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  decoration: BoxDecoration(
+                    gradient: AppColors.navyGradient,
+                    borderRadius: BorderRadius.circular(14),
                   ),
+                  child: Text('Faire un signalement',
+                      style: SaText.body(13, color: Colors.white, weight: FontWeight.w700)),
                 ),
-              ],
+              ]),
             ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            _StatBadge(
-              label: 'Signalés',
-              value: '142',
-              icon: Icons.warning_amber_rounded,
-              color: AppColors.darkSlate,
-              bgTint: AppColors.darkSlate.withOpacity(0.08),
-            ),
-            const SizedBox(width: 10),
-            _StatBadge(
-              label: 'En cours',
-              value: '18',
-              icon: Icons.run_circle_outlined,
-              color: AppColors.warning,
-              bgTint: AppColors.warning.withOpacity(0.1),
-            ),
-            const SizedBox(width: 10),
-            _StatBadge(
-              label: 'Pris en charge',
-              value: '124',
-              icon: Icons.verified_user_rounded,
-              color: AppColors.emerald,
-              bgTint: AppColors.emerald.withOpacity(0.1),
-            ),
-          ],
-        ),
+          ),
       ],
-    );
+    ]);
   }
 }
 
-class _StatBadge extends StatelessWidget {
+class _Counter extends StatelessWidget {
   final String label;
-  final String value;
-  final IconData icon;
+  final int value;
   final Color color;
-  final Color bgTint;
-
-  const _StatBadge({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-    required this.bgTint,
-  });
+  final IconData icon;
+  const _Counter({required this.label, required this.value, required this.color, required this.icon});
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppColors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: color.withOpacity(0.2)),
+          boxShadow: [BoxShadow(color: color.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 4))],
         ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(7),
-              decoration: BoxDecoration(
-                color: bgTint,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: color,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textGrey,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Recent Incidents Feed Component
-class _RecentIncidentsSection extends StatelessWidget {
-  const _RecentIncidentsSection();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Dernières Alertes Nationales',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textDark,
-                letterSpacing: -0.4,
-              ),
-            ),
-            TextButton.icon(
-              onPressed: () => context.go('/incidents'),
-              icon: const Icon(Icons.arrow_forward_rounded, size: 15),
-              label: const Text('Tout voir'),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.crimson,
-                textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-
-        _RecentIncidentCard(
-          title: 'Accident de circulation grave',
-          location: 'Autoroute à Péage, Sortie Rufisque',
-          time: 'Il y a 12 min',
-          type: 'accident',
-          status: 'Pompiers en route',
-          statusColor: AppColors.warning,
-        ),
-        const SizedBox(height: 10),
-        _RecentIncidentCard(
-          title: 'Début d\'incendie entrepôt',
-          location: 'Zone Industrielle de Mbao, Dakar',
-          time: 'Il y a 45 min',
-          type: 'incendie',
-          status: 'Intervention en cours',
-          statusColor: AppColors.crimson,
-        ),
-      ],
-    );
-  }
-}
-
-class _RecentIncidentCard extends StatelessWidget {
-  final String title;
-  final String location;
-  final String time;
-  final String type;
-  final String status;
-  final Color statusColor;
-
-  const _RecentIncidentCard({
-    required this.title,
-    required this.location,
-    required this.time,
-    required this.status,
-    required this.statusColor,
-    required this.type,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 8),
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: value.toDouble()),
+            duration: const Duration(milliseconds: 700),
+            curve: Curves.easeOutCubic,
+            builder: (_, v, __) => Text('${v.round()}',
+                style: SaText.display(22, color: color, weight: FontWeight.w800)),
           ),
-        ],
+          const SizedBox(height: 2),
+          Text(label, style: SaText.body(11.5, weight: FontWeight.w600)),
+        ]),
       ),
-      child: Row(
-        children: [
+    );
+  }
+}
+
+class _MiniIncident extends StatelessWidget {
+  final Incident incident;
+  const _MiniIncident({required this.incident});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = SaIncidentType.of(incident.type);
+    return GestureDetector(
+      onTap: () => context.go('/incidents/${incident.id}'),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.border),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8)],
+        ),
+        child: Row(children: [
           Container(
-            padding: const EdgeInsets.all(11),
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(14),
+              color: t.color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(
-              type == 'incendie'
-                  ? Icons.local_fire_department_rounded
-                  : Icons.car_crash_rounded,
-              color: statusColor,
-              size: 24,
-            ),
+            child: Icon(t.icon, color: t.color, size: 24),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: AppColors.textDark,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Row(
-                  children: [
-                    const Icon(Icons.location_on_outlined, size: 12, color: AppColors.textGrey),
-                    const SizedBox(width: 3),
-                    Expanded(
-                      child: Text(
-                        location,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textGrey,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(t.label,
+                  style: SaText.body(14, color: AppColors.textDark, weight: FontWeight.w700)),
+              const SizedBox(height: 3),
+              Text(
+                [incident.location, incident.date].where((s) => s.isNotEmpty).join(' · '),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: SaText.body(12),
+              ),
+            ]),
           ),
           const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: statusColor.withOpacity(0.3)),
-                ),
-                child: Text(
-                  status,
-                  style: TextStyle(
-                    color: statusColor,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                time,
-                style: const TextStyle(fontSize: 10, color: AppColors.textGrey, fontWeight: FontWeight.w500),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Redesigned Bottom Navigation Bar with Highlighted Center Button
-class _SenAlertBottomNavBar extends StatelessWidget {
-  final int currentIndex;
-
-  const _SenAlertBottomNavBar({required this.currentIndex});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: BottomNavigationBar(
-        currentIndex: currentIndex,
-        elevation: 0,
-        backgroundColor: AppColors.white,
-        selectedItemColor: AppColors.crimson,
-        unselectedItemColor: AppColors.textGrey,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
-        unselectedLabelStyle: const TextStyle(fontSize: 11),
-        type: BottomNavigationBarType.fixed,
-        onTap: (i) {
-          if (i == 1) context.go('/incidents');
-          if (i == 2) context.go('/report');
-          if (i == 3) context.go('/first-aid');
-          if (i == 4) context.go('/profile');
-        },
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home_rounded),
-            label: 'Accueil',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt_rounded),
-            label: 'Incidents',
-          ),
-          // Signaler: Highlighted Primary Action Center Button
-          BottomNavigationBarItem(
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.crimson,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.crimson.withOpacity(0.35),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: const Icon(Icons.add_rounded, color: AppColors.white, size: 22),
-            ),
-            label: 'Signaler',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.medical_services_rounded),
-            label: 'Secours',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.person_rounded),
-            label: 'Profil',
-          ),
-        ],
+          SaStatusBadge(incident.status, dense: true),
+        ]),
       ),
     );
   }

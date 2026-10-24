@@ -25,8 +25,14 @@ class AuthProvider extends ChangeNotifier {
   String get userName      => _userName;
   String get userEmail     => _userEmail;
   String get userRole      => _userRole;
+  /// Agent de secours ou admin → accès tableau de bord agent
   bool get isAgent         => _userRole == 'autorite' || _userRole == 'admin';
-  String get roleLabel     => isAgent ? 'Agent de secours' : 'Citoyen';
+  bool get isAdmin         => _userRole == 'admin';
+  String get roleLabel {
+    if (_userRole == 'admin') return 'Administrateur';
+    if (_userRole == 'autorite') return 'Agent de secours';
+    return 'Citoyen';
+  }
 
   /// Convertit le choix du formulaire en rôle backend.
   static String roleToApi(String formRole) =>
