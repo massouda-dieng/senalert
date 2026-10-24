@@ -32,4 +32,4 @@ Incident.objects.all().delete()
 for data in incidents_demo:
     Incident.objects.create(**data)
 
-print(f"✅ {len(incidents_demo)} incidents de démo créés !")
+print(f"[OK] {len(incidents_demo)} incidents de demo crees !")

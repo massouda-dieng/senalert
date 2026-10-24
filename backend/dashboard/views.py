@@ -1,8 +1,5 @@
-from django.utils import timezone
-from datetime import timedelta
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
 from incidents.models import Incident
 from alerts.models import AlerteSOS
 from accounts.models import User
@@ -90,3 +87,19 @@ class DashboardStatsView(APIView):
             }
         })
 
+@login_required
+def dashboard_view(request):
+    total_alertes = Incident.objects.count()
+    en_attente = Incident.objects.filter(statut='nouveau').count()
+    en_cours = Incident.objects.filter(statut='en_cours').count()
+    traitees = Incident.objects.filter(statut='resolu').count()
+    alertes_recentes = Incident.objects.order_by('-date_creation')[:10]
+
+    context = {
+        'total_alertes': total_alertes,
+        'en_attente': en_attente,
+        'en_cours': en_cours,
+        'traitees': traitees,
+        'alertes_recentes': alertes_recentes,
+    }
+    return render(request, 'dashboard/index.html', context)
