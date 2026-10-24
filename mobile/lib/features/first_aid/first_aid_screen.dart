@@ -128,7 +128,7 @@ class _FirstAidScreenState extends State<FirstAidScreen> {
           receiveTimeout: const Duration(seconds: 15),
         ),
         data: {
-          'model': 'llama-3.3-70b-versatile',
+          'model': 'qwen/qwen3.8-27b',   // Modèle confirmé actif sur ce compte Groq
           'messages': payload,
           'max_tokens': 600,
           'temperature': 0.5,
