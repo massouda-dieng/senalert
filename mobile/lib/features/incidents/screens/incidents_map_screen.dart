@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:senalert_mobile/core/constants/app_colors.dart';
+import 'package:senalert_mobile/features/incidents/models/incident_model.dart';
 import 'package:senalert_mobile/features/incidents/providers/incident_provider.dart';
+import 'package:senalert_mobile/shared/widgets/sa_ui.dart';
 
 class IncidentsMapScreen extends StatefulWidget {
   const IncidentsMapScreen({super.key});
@@ -15,6 +17,7 @@ class IncidentsMapScreen extends StatefulWidget {
 
 class _IncidentsMapScreenState extends State<IncidentsMapScreen> {
   final MapController _mapController = MapController();
+  String _filter = 'tous';
 
   @override
   void initState() {
@@ -24,41 +27,52 @@ class _IncidentsMapScreenState extends State<IncidentsMapScreen> {
     });
   }
 
-  Color _statusColor(String s) {
-    switch (s.toLowerCase()) {
+  bool _matches(Incident i) {
+    final s = i.status.toLowerCase();
+    switch (_filter) {
+      case 'en_cours':
+        return s == 'en_cours';
       case 'nouveau':
-      case 'en_attente': return AppColors.warning;
-      case 'en_cours':   return AppColors.info;
+        return s == 'nouveau' || s == 'en_attente';
       case 'resolu':
-      case 'traite':     return AppColors.success;
-      default:           return AppColors.textGrey;
+        return s == 'resolu' || s == 'traite';
+      default:
+        return true;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final incidentProvider = context.watch<IncidentProvider>();
-    final incidents = incidentProvider.incidents;
+    final incidents = incidentProvider.incidents.where(_matches).toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.darkSlate,
-        title: const Text('Carte GPS des Incidents', style: TextStyle(color: AppColors.white)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.white),
-          onPressed: () => context.go('/home'),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: AppColors.white),
-            onPressed: () => context.read<IncidentProvider>().fetchIncidents(),
-          ),
-        ],
-      ),
       body: Column(
         children: [
-          // FlutterMap Interactive GPS View
+          SaHeader(
+            title: 'Carte des signalements',
+            subtitle: '${incidents.length} signalement(s) affiché(s)',
+            onBack: () => context.go('/home'),
+            actions: [
+              SaIconButton(
+                icon: Icons.refresh_rounded,
+                tooltip: 'Actualiser',
+                onTap: () => context.read<IncidentProvider>().fetchIncidents(),
+              ),
+            ],
+            bottom: SaSegmentedTabs<String>(
+              onDark: true,
+              options: const [
+                ('tous', 'Tous'),
+                ('nouveau', 'Nouveaux'),
+                ('en_cours', 'En cours'),
+                ('resolu', 'Résolus'),
+              ],
+              value: _filter,
+              onChanged: (v) => setState(() => _filter = v),
+            ),
+          ),
           Expanded(
             flex: 5,
             child: Stack(
@@ -78,112 +92,109 @@ class _IncidentsMapScreenState extends State<IncidentsMapScreen> {
                       markers: incidents.map((inc) {
                         final lat = inc.latitude != 0 ? inc.latitude : 14.6928;
                         final lng = inc.longitude != 0 ? inc.longitude : -17.4467;
-                        final color = _statusColor(inc.status);
-
+                        final t = SaIncidentType.of(inc.type);
+                        final st = SaStatus.of(inc.status);
                         return Marker(
                           point: LatLng(lat, lng),
-                          width: 44,
-                          height: 44,
+                          width: 48,
+                          height: 56,
+                          alignment: Alignment.topCenter,
                           child: GestureDetector(
                             onTap: () => context.go('/incidents/${inc.id}'),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: color,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 2.5),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: color.withOpacity(0.5),
-                                    blurRadius: 10,
-                                    spreadRadius: 2,
-                                  )
-                                ],
+                            child: Column(children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: t.color,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 3),
+                                  boxShadow: [
+                                    BoxShadow(color: t.color.withOpacity(0.5), blurRadius: 10, spreadRadius: 1),
+                                  ],
+                                ),
+                                child: Icon(t.icon, color: Colors.white, size: 20),
                               ),
-                              child: Center(
-                                child: Text(
-                                  inc.typeIcon,
-                                  style: const TextStyle(fontSize: 20),
+                              Container(
+                                width: 10,
+                                height: 10,
+                                margin: const EdgeInsets.only(top: 2),
+                                decoration: BoxDecoration(
+                                  color: st.fg,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 2),
                                 ),
                               ),
-                            ),
+                            ]),
                           ),
                         );
                       }).toList(),
                     ),
                   ],
                 ),
-
-                // Map Control Overlay - Reset View
                 Positioned(
                   bottom: 16,
                   right: 16,
-                  child: FloatingActionButton.small(
-                    backgroundColor: AppColors.darkSlate,
+                  child: FloatingActionButton(
+                    heroTag: 'recenter',
+                    tooltip: 'Recentrer sur Dakar',
+                    backgroundColor: AppColors.navy800,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                     onPressed: () {
                       _mapController.move(const LatLng(14.6928, -17.4467), 12.0);
                     },
-                    child: const Icon(Icons.my_location, color: AppColors.white),
+                    child: const Icon(Icons.my_location_rounded, color: AppColors.white),
                   ),
                 ),
               ],
             ),
           ),
-
-          // Lower Feed List
           Expanded(
             flex: 4,
             child: Container(
-              color: AppColors.white,
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                boxShadow: [BoxShadow(color: AppColors.navy800.withOpacity(0.1), blurRadius: 20)],
+              ),
+              transform: Matrix4.translationValues(0, -20, 0),
               child: Column(
                 children: [
                   Container(
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    width: 40,
+                    margin: const EdgeInsets.symmetric(vertical: 10),
+                    width: 42,
                     height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.border,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+                    decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
                   ),
                   Expanded(
                     child: incidents.isEmpty
-                        ? const Center(child: Text('Aucune alerte enregistrée'))
-                        : ListView.separated(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                        ? const SingleChildScrollView(
+                            child: SaEmptyState(icon: Icons.map_outlined, title: 'Aucune alerte enregistrée'),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                             itemCount: incidents.length,
-                            separatorBuilder: (_, __) => const Divider(height: 1),
                             itemBuilder: (context, index) {
                               final alert = incidents[index];
-                              return ListTile(
-                                leading: Text(alert.typeIcon, style: const TextStyle(fontSize: 24)),
-                                title: Text(
-                                  alert.type,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    color: AppColors.textDark,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  alert.location,
-                                  style: const TextStyle(fontSize: 12, color: AppColors.textGrey),
-                                ),
-                                trailing: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: _statusColor(alert.status).withOpacity(0.15),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    alert.statusLabel,
-                                    style: TextStyle(
-                                      color: _statusColor(alert.status),
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: SaCard(
+                                  padding: const EdgeInsets.all(12),
+                                  onTap: () => context.go('/incidents/${alert.id}'),
+                                  child: Row(children: [
+                                    SaTypeIcon(alert.type, size: 42),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                        Text(SaIncidentType.of(alert.type).label,
+                                            style: SaText.body(14, color: AppColors.textDark, weight: FontWeight.w700)),
+                                        Text(alert.location,
+                                            maxLines: 1, overflow: TextOverflow.ellipsis, style: SaText.body(12)),
+                                      ]),
                                     ),
-                                  ),
+                                    SaStatusBadge(alert.status, dense: true),
+                                  ]),
                                 ),
-                                onTap: () => context.go('/incidents/${alert.id}'),
                               );
                             },
                           ),
@@ -194,25 +205,7 @@ class _IncidentsMapScreenState extends State<IncidentsMapScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
-        selectedItemColor: AppColors.crimson,
-        unselectedItemColor: AppColors.textGrey,
-        onTap: (i) {
-          if (i == 0) context.go('/home');
-          if (i == 1) context.go('/incidents');
-          if (i == 2) context.go('/report');
-          if (i == 3) context.go('/first-aid');
-          if (i == 4) context.go('/profile');
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Accueil'),
-          BottomNavigationBarItem(icon: Icon(Icons.map_outlined), label: 'Carte GPS'),
-          BottomNavigationBarItem(icon: Icon(Icons.add_circle), label: 'Signaler'),
-          BottomNavigationBarItem(icon: Icon(Icons.medical_services_outlined), label: 'Secours'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profil'),
-        ],
-      ),
+      bottomNavigationBar: const SaBottomNav(currentIndex: 2),
     );
   }
 }

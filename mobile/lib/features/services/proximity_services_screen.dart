@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:senalert_mobile/core/constants/app_colors.dart';
+import 'package:senalert_mobile/shared/widgets/sa_ui.dart';
 
 class ProximityServicesScreen extends StatefulWidget {
   const ProximityServicesScreen({super.key});
@@ -106,161 +107,146 @@ class _ProximityServicesScreenState extends State<ProximityServicesScreen> {
       return matchesCategory && matchesSearch;
     }).toList();
 
+    const cats = ['Tous', 'Hôpital', 'Pharmacie', 'Pompiers', 'Police', 'SAMU', 'Secours'];
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.darkSlate,
-        title: const Text('Services de Secours Proches', style: TextStyle(color: AppColors.white)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.white),
-          onPressed: () => context.go('/home'),
-        ),
-      ),
       body: Column(
         children: [
-          // Live Search Bar
-          Container(
-            color: AppColors.white,
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: TextField(
+          SaHeader(
+            title: 'Services de secours',
+            subtitle: 'Hôpitaux, pharmacies, police, pompiers',
+            onBack: () => context.go('/home'),
+            bottom: TextField(
               onChanged: (v) => setState(() => _searchQuery = v),
+              style: SaText.body(14.5, color: Colors.white),
               decoration: InputDecoration(
-                hintText: 'Rechercher hôpital, pharmacie, lieu...',
-                prefixIcon: const Icon(Icons.search, color: AppColors.crimson),
-                filled: true,
-                fillColor: AppColors.background,
-                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+                hintText: 'Rechercher hôpital, pharmacie, lieu…',
+                hintStyle: SaText.body(14, color: Colors.white60),
+                prefixIcon: const Icon(Icons.search_rounded, color: Colors.white70),
+                fillColor: Colors.white.withOpacity(0.1),
+                contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: BorderSide(color: Colors.white.withOpacity(0.16)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: const BorderSide(color: AppColors.orange, width: 1.4),
                 ),
               ),
             ),
           ),
-
-          // Category Filter Horizontal Pills
-          Container(
-            color: AppColors.white,
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-            child: SingleChildScrollView(
+          SizedBox(
+            height: 64,
+            child: ListView(
               scrollDirection: Axis.horizontal,
-              child: Row(
-                children: ['Tous', 'Hôpital', 'Pharmacie', 'Pompiers', 'Police', 'SAMU', 'Secours'].map((cat) {
-                  final isSelected = _selectedCategory == cat;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: FilterChip(
-                      label: Text(cat),
-                      selected: isSelected,
-                      selectedColor: AppColors.crimson.withOpacity(0.15),
-                      checkmarkColor: AppColors.crimson,
-                      labelStyle: TextStyle(
-                        color: isSelected ? AppColors.crimson : AppColors.textDark,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      ),
-                      onSelected: (val) => setState(() => _selectedCategory = cat),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-          const Divider(height: 1),
-
-          // Service List
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: filtered.length,
-              itemBuilder: (context, i) {
-                final item = filtered[i];
-                final color = item['color'] as Color;
-
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.all(16),
-                    leading: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: color.withOpacity(0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(item['icon'] as IconData, color: color, size: 28),
-                    ),
-                    title: Text(
-                      item['name'] as String,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: AppColors.textDark,
-                      ),
-                    ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.location_on, size: 14, color: AppColors.textGrey),
-                              const SizedBox(width: 4),
-                              Text('${item['location']} • ${item['distance']}'),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.emerald.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              item['status'] as String,
-                              style: const TextStyle(
-                                color: AppColors.emerald,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    trailing: ElevatedButton.icon(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Appel d\'urgence vers ${item['name']} (${item['phone']})'),
-                            backgroundColor: AppColors.emerald,
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: color,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      ),
-                      icon: const Icon(Icons.phone, size: 16, color: AppColors.white),
-                      label: Text(
-                        item['phone'] as String,
-                        style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold),
-                      ),
-                    ),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              children: cats.map((cat) {
+                final isSelected = _selectedCategory == cat;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(cat),
+                    selected: isSelected,
+                    showCheckmark: false,
+                    selectedColor: AppColors.navy800,
+                    backgroundColor: Colors.white,
+                    side: const BorderSide(color: AppColors.border),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    labelStyle: SaText.body(13,
+                        color: isSelected ? Colors.white : AppColors.textDark, weight: FontWeight.w700),
+                    onSelected: (val) => setState(() => _selectedCategory = cat),
                   ),
                 );
-              },
+              }).toList(),
             ),
+          ),
+          Expanded(
+            child: filtered.isEmpty
+                ? const SaEmptyState(icon: Icons.search_off_rounded, title: 'Aucun service trouvé')
+                : ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                    itemCount: filtered.length,
+                    itemBuilder: (context, i) {
+                      final item = filtered[i];
+                      final color = item['color'] as Color;
+                      return SaFadeSlide(
+                        index: i,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: SaCard(
+                            padding: const EdgeInsets.all(14),
+                            child: Row(children: [
+                              Container(
+                                width: 52,
+                                height: 52,
+                                decoration: BoxDecoration(
+                                  color: color.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Icon(item['icon'] as IconData, color: color, size: 26),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                  Text(item['name'] as String,
+                                      style: SaText.body(14.5, color: AppColors.textDark, weight: FontWeight.w700)),
+                                  const SizedBox(height: 3),
+                                  Row(children: [
+                                    const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textGrey),
+                                    const SizedBox(width: 3),
+                                    Expanded(
+                                      child: Text(item['location'] as String,
+                                          maxLines: 1, overflow: TextOverflow.ellipsis, style: SaText.body(12)),
+                                    ),
+                                  ]),
+                                  const SizedBox(height: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.emerald.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(item['status'] as String,
+                                        style: SaText.body(11, color: AppColors.emerald, weight: FontWeight.w700)),
+                                  ),
+                                ]),
+                              ),
+                              const SizedBox(width: 8),
+                              Material(
+                                color: AppColors.navy800,
+                                borderRadius: BorderRadius.circular(16),
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(16),
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Appel d\'urgence vers ${item['name']} (${item['phone']})'),
+                                        backgroundColor: AppColors.emerald,
+                                      ),
+                                    );
+                                  },
+                                  child: ConstrainedBox(
+                                    constraints: const BoxConstraints(minWidth: 56, minHeight: 56),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                                        const Icon(Icons.phone_rounded, size: 18, color: Colors.white),
+                                        const SizedBox(height: 2),
+                                        Text(item['phone'] as String,
+                                            style: SaText.body(11, color: Colors.white, weight: FontWeight.w800)),
+                                      ]),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ]),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),

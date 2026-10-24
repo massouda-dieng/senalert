@@ -8,6 +8,7 @@ import 'package:dio/dio.dart';
 import 'package:senalert_mobile/core/constants/app_colors.dart';
 import 'package:senalert_mobile/core/constants/api_constants.dart';
 import 'package:senalert_mobile/core/services/api_service.dart';
+import 'package:senalert_mobile/shared/widgets/sa_ui.dart';
 
 class SosScreen extends StatefulWidget {
   const SosScreen({super.key});
@@ -244,253 +245,224 @@ class _SosScreenState extends State<SosScreen>
 
   @override
   Widget build(BuildContext context) {
+    final color = _isTriggered ? AppColors.emerald : AppColors.crimson;
     return Scaffold(
-      backgroundColor: AppColors.darkSlate,
-      appBar: AppBar(
-        backgroundColor: AppColors.darkSlate,
-        elevation: 0,
-        title: const Text('Urgence SOS', style: TextStyle(color: AppColors.white)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.white),
-          onPressed: () => context.go('/home'),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Column(
-          children: [
-            // GPS Location Card
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.navy,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.emerald.withOpacity(0.3)),
-              ),
-              child: Row(
-                children: [
-                  AnimatedBuilder(
-                    animation: _pulseController,
-                    builder: (context, child) {
-                      return Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.emerald,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.emerald.withOpacity(_pulseController.value),
-                              blurRadius: 10 * _pulseController.value,
-                              spreadRadius: 4 * _pulseController.value,
-                            )
-                          ],
-                        ),
-                      );
-                    },
+      backgroundColor: AppColors.navy900,
+      body: SaNightBackdrop(
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            child: Column(
+              children: [
+                Row(children: [
+                  SaIconButton(
+                    icon: Icons.arrow_back_rounded,
+                    tooltip: 'Retour',
+                    onTap: () => context.go('/home'),
                   ),
                   const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'GPS Actif • Position précise',
-                          style: TextStyle(
-                            color: AppColors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          _locationStatus,
-                          style: const TextStyle(
-                            color: AppColors.textGrey,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.gps_fixed, color: AppColors.emerald, size: 20),
-                ],
-              ),
-            ),
+                  Expanded(child: Text('Urgence SOS', style: SaText.display(19, color: Colors.white))),
+                ]),
+                const SizedBox(height: 16),
 
-            const SizedBox(height: 32),
-
-            // Instruction Text
-            Text(
-              _isSending
-                  ? 'TRANSMISSION EN COURS...'
-                  : _isTriggered
-                      ? 'ALERTE SOS ENREGISTRÉE'
-                      : 'Maintenez enfoncé pendant 3s',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: _isTriggered
-                    ? AppColors.emerald
-                    : _isSending
-                        ? AppColors.warning
-                        : AppColors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            Text(
-              _isTriggered
-                  ? 'L\'alerte SOS a été enregistrée sur les serveurs de SenAlert avec vos coordonnées GPS.'
-                  : 'Une alerte silencieuse géolocalisée sera envoyée au serveur central des secours.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.textGrey,
-                fontSize: 13,
-              ),
-            ),
-
-            const SizedBox(height: 36),
-
-            // SOS Panic Button (Disabled during _isSending)
-            GestureDetector(
-              onTapDown: _isSending ? null : (_) => _startHolding(),
-              onTapUp: _isSending ? null : (_) => _stopHolding(),
-              onTapCancel: _isSending ? null : _stopHolding,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Outer Glow / Progress Ring
-                  Container(
-                    width: 220,
-                    height: 220,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppColors.crimson.withOpacity(0.1),
-                    ),
-                    child: CircularProgressIndicator(
-                      value: _isSending ? null : _holdProgress,
-                      strokeWidth: 8,
-                      backgroundColor: Colors.transparent,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        _isTriggered ? AppColors.emerald : AppColors.crimson,
-                      ),
-                    ),
-                  ),
-
-                  // Core SOS Button
-                  Container(
-                    width: 180,
-                    height: 180,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: _isTriggered
-                            ? [AppColors.emerald, const Color(0xFF047857)]
-                            : [AppColors.crimson, const Color(0xFF991B1B)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: (_isTriggered ? AppColors.emerald : AppColors.crimson).withOpacity(0.4),
-                          blurRadius: 24,
-                          spreadRadius: 6,
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          _isTriggered
-                              ? Icons.check_circle_outline_rounded
-                              : Icons.warning_amber_rounded,
-                          color: AppColors.white,
-                          size: 48,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _isTriggered ? 'ENVOYÉ' : 'SOS',
-                          style: const TextStyle(
-                            color: AppColors.white,
-                            fontSize: 32,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 2,
-                          ),
-                        ),
-                        if (_isHolding)
-                          Text(
-                            '${((1 - _holdProgress) * 3).ceil()}s',
-                            style: const TextStyle(
-                              color: AppColors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                // Carte GPS (verre)
+                SaGlass(
+                  child: Row(
+                    children: [
+                      AnimatedBuilder(
+                        animation: _pulseController,
+                        builder: (context, child) {
+                          return Container(
+                            width: 12,
+                            height: 12,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: const Color(0xFF34D399),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF34D399).withOpacity(_pulseController.value),
+                                  blurRadius: 10 * _pulseController.value,
+                                  spreadRadius: 4 * _pulseController.value,
+                                )
+                              ],
                             ),
-                          ),
-                      ],
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(_latitude != null ? 'GPS actif · position précise' : 'Localisation GPS',
+                                style: SaText.body(13.5, color: Colors.white, weight: FontWeight.w700)),
+                            Text(_locationStatus, style: SaText.body(12, color: Colors.white.withOpacity(0.7))),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.gps_fixed_rounded, color: Color(0xFF34D399), size: 22),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  child: Text(
+                    _isSending
+                        ? 'Transmission en cours…'
+                        : _isTriggered
+                            ? 'Alerte SOS enregistrée'
+                            : 'Maintenez enfoncé pendant 3 s',
+                    key: ValueKey('$_isSending$_isTriggered'),
+                    textAlign: TextAlign.center,
+                    style: SaText.display(21,
+                        color: _isTriggered
+                            ? const Color(0xFF34D399)
+                            : _isSending
+                                ? const Color(0xFFFDBA74)
+                                : Colors.white),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _isTriggered
+                      ? 'L\'alerte SOS a été enregistrée sur les serveurs de SenAlert avec vos coordonnées GPS.'
+                      : 'Une alerte silencieuse géolocalisée sera envoyée au serveur central des secours.',
+                  textAlign: TextAlign.center,
+                  style: SaText.body(13.5, color: Colors.white.withOpacity(0.72)),
+                ),
+
+                const SizedBox(height: 26),
+
+                // Bouton SOS lumineux
+                Semantics(
+                  button: true,
+                  label: 'Bouton SOS, maintenir 3 secondes',
+                  child: GestureDetector(
+                    onTapDown: _isSending ? null : (_) => _startHolding(),
+                    onTapUp: _isSending ? null : (_) => _stopHolding(),
+                    onTapCancel: _isSending ? null : _stopHolding,
+                    child: AnimatedScale(
+                      scale: _isHolding ? 0.96 : 1,
+                      duration: const Duration(milliseconds: 150),
+                      child: SaPulse(
+                        size: 290,
+                        color: color,
+                        active: !_isSending,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            SizedBox(
+                              width: 228,
+                              height: 228,
+                              child: CircularProgressIndicator(
+                                value: _isSending ? null : _holdProgress,
+                                strokeWidth: 7,
+                                strokeCap: StrokeCap.round,
+                                backgroundColor: Colors.white.withOpacity(0.08),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  _isTriggered ? const Color(0xFF34D399) : Colors.white,
+                                ),
+                              ),
+                            ),
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              width: 192,
+                              height: 192,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: _isTriggered
+                                    ? const LinearGradient(
+                                        colors: [Color(0xFF10B981), Color(0xFF047857)],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      )
+                                    : AppColors.sosGradient,
+                                border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
+                                boxShadow: [
+                                  BoxShadow(color: color.withOpacity(0.6), blurRadius: 40, spreadRadius: 6),
+                                ],
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    _isTriggered ? Icons.check_circle_outline_rounded : Icons.sos_rounded,
+                                    color: AppColors.white,
+                                    size: 46,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    _isTriggered ? 'ENVOYÉ' : 'SOS',
+                                    style: SaText.display(34, color: Colors.white, weight: FontWeight.w900),
+                                  ),
+                                  if (_isHolding)
+                                    Text(
+                                      '${((1 - _holdProgress) * 3).ceil()} s',
+                                      style: SaText.body(16, color: Colors.white, weight: FontWeight.w800),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 36),
-
-            if (_isTriggered) ...[
-              OutlinedButton.icon(
-                onPressed: _resetSos,
-                icon: const Icon(Icons.refresh, color: AppColors.white),
-                label: const Text('NOUVELLE ALERTE SOS', style: TextStyle(color: AppColors.white)),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.emerald),
                 ),
-              ),
-            ],
 
-            const SizedBox(height: 40),
+                const SizedBox(height: 20),
 
-            // Hotline Emergency Calls
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Numéros d\'Urgence Directs',
-                style: TextStyle(
-                  color: AppColors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
+                if (_isTriggered)
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _resetSos,
+                      icon: const Icon(Icons.refresh_rounded, color: AppColors.white),
+                      label: const Text('Nouvelle alerte SOS', style: TextStyle(color: AppColors.white)),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Colors.white.withOpacity(0.4)),
+                      ),
+                    ),
+                  ),
 
-            const Row(
-              children: [
-                _EmergencyHotlineCard(
-                  title: 'Pompiers',
-                  number: '18',
-                  icon: Icons.fire_truck,
-                  color: Color(0xFFF97316),
+                const SizedBox(height: 28),
+
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('Numéros d\'urgence directs', style: SaText.display(16, color: Colors.white)),
                 ),
-                SizedBox(width: 10),
-                _EmergencyHotlineCard(
-                  title: 'Police',
-                  number: '17',
-                  icon: Icons.local_police,
-                  color: Color(0xFF3B82F6),
-                ),
-                SizedBox(width: 10),
-                _EmergencyHotlineCard(
-                  title: 'SAMU',
-                  number: '15',
-                  icon: Icons.medical_services,
-                  color: Color(0xFF10B981),
+                const SizedBox(height: 12),
+
+                const Row(
+                  children: [
+                    _EmergencyHotlineCard(
+                      title: 'Pompiers',
+                      number: '18',
+                      icon: Icons.fire_truck_rounded,
+                      color: Color(0xFFFB923C),
+                    ),
+                    SizedBox(width: 10),
+                    _EmergencyHotlineCard(
+                      title: 'Police',
+                      number: '17',
+                      icon: Icons.local_police_rounded,
+                      color: Color(0xFF60A5FA),
+                    ),
+                    SizedBox(width: 10),
+                    _EmergencyHotlineCard(
+                      title: 'SAMU',
+                      number: '15',
+                      icon: Icons.medical_services_rounded,
+                      color: Color(0xFF34D399),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -513,38 +485,20 @@ class _EmergencyHotlineCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.navy,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3)),
-        ),
+      child: SaGlass(
+        radius: 18,
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
         child: Column(
           children: [
-            CircleAvatar(
-              backgroundColor: color.withOpacity(0.2),
-              radius: 20,
-              child: Icon(icon, color: color, size: 20),
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(color: color.withOpacity(0.18), borderRadius: BorderRadius.circular(14)),
+              child: Icon(icon, color: color, size: 22),
             ),
             const SizedBox(height: 8),
-            Text(
-              title,
-              style: const TextStyle(
-                color: AppColors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              number,
-              style: TextStyle(
-                color: color,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            Text(title, style: SaText.body(12, color: Colors.white, weight: FontWeight.w600)),
+            Text(number, style: SaText.display(22, color: color)),
           ],
         ),
       ),

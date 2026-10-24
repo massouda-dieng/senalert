@@ -67,11 +67,13 @@
     .login-box p { text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 24px; }
     .login-box label { font-size: 12px; font-weight: 700; color: var(--texte); display: block; margin-bottom: 6px; }
     .login-box input {
-      width: 100%; padding: 12px 14px; border: 1px solid var(--bordure);
+      width: 100%; padding: 12px 14px; border: 1.5px solid var(--bordure);
       border-radius: 10px; font-size: 14px; margin-bottom: 16px; outline: none;
-      font-family: var(--font-body); transition: border 0.2s;
+      font-family: var(--font-body); transition: border 0.2s, box-shadow 0.2s;
+      color: #0F172A; background: #F8FAFC;
     }
-    .login-box input:focus { border-color: var(--rouge); }
+    .login-box input::placeholder { color: #94A3B8; }
+    .login-box input:focus { border-color: var(--rouge); box-shadow: 0 0 0 3px rgba(225,29,72,0.1); background: #fff; }
     .login-box button {
       width: 100%; padding: 13px; border: none; border-radius: 10px;
       background: var(--rouge); color: white; font-size: 14px; font-weight: 800;

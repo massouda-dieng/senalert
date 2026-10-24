@@ -3,242 +3,218 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:senalert_mobile/core/constants/app_colors.dart';
 import 'package:senalert_mobile/features/auth/providers/auth_provider.dart';
+import 'package:senalert_mobile/shared/widgets/sa_ui.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    final initials = auth.userName.isEmpty ? '?' : auth.userName.substring(0, 1).toUpperCase();
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Mon profil'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/home'),
-        ),
-        actions: [
-          IconButton(icon: const Icon(Icons.settings), onPressed: () {}),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // En-tête profil
-            Container(
-              width: double.infinity,
-              color: AppColors.danger,
-              padding: const EdgeInsets.symmetric(vertical: 28),
-              child: Column(
-                children: [
-                  CircleAvatar(
-                    radius: 44,
-                    backgroundColor: AppColors.white.withOpacity(0.2),
-                    child: const Icon(
-                      Icons.person,
-                      size: 50,
-                      color: AppColors.white,
+      body: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          // En-tête profil
+          SaNightBackdrop(
+            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 28),
+                child: Column(children: [
+                  Row(children: [
+                    SaIconButton(
+                      icon: Icons.arrow_back_rounded,
+                      tooltip: 'Retour',
+                      onTap: () => context.go('/home'),
+                    ),
+                    const SizedBox(width: 12),
+                    Text('Mon profil', style: SaText.display(19, color: Colors.white)),
+                  ]),
+                  const SizedBox(height: 18),
+                  SaFadeSlide(
+                    child: Container(
+                      width: 92,
+                      height: 92,
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(shape: BoxShape.circle, gradient: AppColors.orangeGradient),
+                      child: Container(
+                        decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.navy800),
+                        alignment: Alignment.center,
+                        child: Text(initials, style: SaText.display(36, color: Colors.white)),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Consumer<AuthProvider>(
-                    builder: (_, auth, __) => Column(
-                      children: [
-                        Text(
-                          auth.userName,
-                          style: const TextStyle(
-                            color: AppColors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+                  Text(auth.userName,
+                      textAlign: TextAlign.center, style: SaText.display(20, color: Colors.white)),
+                  const SizedBox(height: 2),
+                  Text(auth.userEmail, style: SaText.body(13, color: Colors.white.withOpacity(0.75))),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withOpacity(0.18)),
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(auth.isAgent ? Icons.shield_rounded : Icons.person_rounded,
+                          size: 15, color: AppColors.orange),
+                      const SizedBox(width: 6),
+                      Text(auth.roleLabel, style: SaText.body(12.5, color: Colors.white, weight: FontWeight.w700)),
+                    ]),
+                  ),
+                ]),
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SaCard(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Column(children: [
+                _MenuItem(
+                  icon: Icons.receipt_long_rounded,
+                  label: 'Mes alertes',
+                  onTap: () => context.go('/incidents'),
+                ),
+                _MenuItem(
+                  icon: Icons.notifications_none_rounded,
+                  label: 'Notifications',
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      builder: (context) => SafeArea(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Center(
+                                child: Container(
+                                  width: 42,
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                      color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Text('Notifications & alertes push', style: SaText.display(18)),
+                              const SizedBox(height: 8),
+                              SwitchListTile(
+                                title: const Text('Alertes d\'urgence prioritaires (SOS)'),
+                                value: true,
+                                onChanged: (v) {},
+                              ),
+                              SwitchListTile(
+                                title: const Text('Alertes météo & inondations'),
+                                value: true,
+                                onChanged: (v) {},
+                              ),
+                              SwitchListTile(
+                                title: const Text('Retours d\'intervention des secours'),
+                                value: true,
+                                onChanged: (v) {},
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          auth.userEmail,
-                          style: const TextStyle(color: Colors.white70, fontSize: 13),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'Citoyen',
-                      style: TextStyle(
-                        color: AppColors.white,
-                        fontWeight: FontWeight.w600,
                       ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Menu
-            _MenuItem(
-              icon: Icons.warning_amber_rounded,
-              label: 'Mes alertes',
-              onTap: () => context.go('/incidents'),
-            ),
-            _MenuItem(
-              icon: Icons.notifications_outlined,
-              label: 'Notifications',
-              onTap: () {
-                showModalBottomSheet(
-                  context: context,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                  ),
-                  builder: (context) => Container(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Notifications & Alertes Push',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        const Divider(height: 24),
-                        SwitchListTile(
-                          title: const Text('Alertes d\'urgence prioritaires (SOS)'),
-                          value: true,
-                          activeColor: AppColors.crimson,
-                          onChanged: (v) {},
-                        ),
-                        SwitchListTile(
-                          title: const Text('Alertes météo & inondations'),
-                          value: true,
-                          activeColor: AppColors.crimson,
-                          onChanged: (v) {},
-                        ),
-                        SwitchListTile(
-                          title: const Text('Retours d\'intervention des secours'),
-                          value: true,
-                          activeColor: AppColors.crimson,
-                          onChanged: (v) {},
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-            _MenuItem(
-              icon: Icons.settings_outlined,
-              label: 'Paramètres',
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    title: const Row(
-                      children: [
-                        Icon(Icons.settings, color: AppColors.crimson),
-                        SizedBox(width: 10),
-                        Text('Paramètres SenAlert'),
-                      ],
-                    ),
-                    content: const Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('• Langue : Français (Wolof disponible)'),
-                        SizedBox(height: 8),
-                        Text('• Géolocalisation : Haute précision (Actif)'),
-                        SizedBox(height: 8),
-                        Text('• Mode d\'urgence : SOS 1-Tap (3s)'),
-                      ],
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Fermer', style: TextStyle(color: AppColors.crimson)),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-            _MenuItem(
-              icon: Icons.shield_outlined,
-              label: 'Espace Police & Forces de Secours',
-              onTap: () => context.go('/agent-dashboard'),
-            ),
-            _MenuItem(
-              icon: Icons.info_outline,
-              label: 'À propos',
-              onTap: () {
-                showAboutDialog(
-                  context: context,
-                  applicationName: 'SenAlert',
-                  applicationVersion: 'v1.0.0',
-                  applicationIcon: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: AppColors.crimson,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Image.asset(
-                      'assets/images/senalert_logo.png',
-                      height: 28,
-                      width: 28,
-                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.shield, color: AppColors.white),
-                    ),
-                  ),
-                  children: const [
-                    Text(
-                      'Plateforme citoyenne de gestion des urgences et d\'alerte précoce au Sénégal.\n'
-                      'Permet de signaler les accidents, incendies et inondations avec géolocalisation directe.',
-                    ),
-                  ],
-                );
-              },
-            ),
-            const SizedBox(height: 24),
-            // Déconnexion
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: ElevatedButton(
-                onPressed: () async {
-                  await context.read<AuthProvider>().logout();
-                  if (context.mounted) context.go('/login');
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.danger,
+                    );
+                  },
                 ),
-                child: const Text('DÉCONNEXION'),
+                _MenuItem(
+                  icon: Icons.settings_outlined,
+                  label: 'Paramètres',
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: Row(
+                          children: [
+                            const Icon(Icons.settings_outlined, color: AppColors.navy800),
+                            const SizedBox(width: 10),
+                            Text('Paramètres SenAlert', style: SaText.display(17)),
+                          ],
+                        ),
+                        content: const Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('• Langue : Français (Wolof disponible)'),
+                            SizedBox(height: 8),
+                            Text('• Géolocalisation : Haute précision (Actif)'),
+                            SizedBox(height: 8),
+                            Text('• Mode d\'urgence : SOS 1-Tap (3s)'),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Fermer'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                _MenuItem(
+                  icon: Icons.shield_outlined,
+                  label: 'Espace Police & Forces de Secours',
+                  onTap: () => context.go('/agent-dashboard'),
+                ),
+                _MenuItem(
+                  icon: Icons.info_outline_rounded,
+                  label: 'À propos',
+                  last: true,
+                  onTap: () {
+                    showAboutDialog(
+                      context: context,
+                      applicationName: 'SenAlert',
+                      applicationVersion: 'v1.0.0',
+                      applicationIcon: const SaLogo(size: 40),
+                      children: const [
+                        Text(
+                          'Plateforme citoyenne de gestion des urgences et d\'alerte précoce au Sénégal.\n'
+                          'Permet de signaler les accidents, incendies et inondations avec géolocalisation directe.',
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ]),
+            ),
+          ),
+          const SizedBox(height: 18),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SaCard(
+              padding: EdgeInsets.zero,
+              onTap: () async {
+                await context.read<AuthProvider>().logout();
+                if (context.mounted) context.go('/login');
+              },
+              child: SizedBox(
+                height: 56,
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  const Icon(Icons.logout_rounded, color: AppColors.crimson),
+                  const SizedBox(width: 8),
+                  Text('Se déconnecter', style: SaText.body(15, color: AppColors.crimson, weight: FontWeight.w800)),
+                ]),
               ),
             ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 4,
-        selectedItemColor: AppColors.crimson,
-        unselectedItemColor: AppColors.textGrey,
-        onTap: (i) {
-          if (i == 0) context.go('/home');
-          if (i == 1) context.go('/incidents');
-          if (i == 2) context.go('/report');
-          if (i == 3) context.go('/first-aid');
-          if (i == 4) context.go('/profile');
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Accueil'),
-          BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Incidents'),
-          BottomNavigationBarItem(icon: Icon(Icons.add_circle), label: 'Signaler'),
-          BottomNavigationBarItem(icon: Icon(Icons.medical_services_outlined), label: 'Secours'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profil'),
+          ),
+          const SizedBox(height: 24),
         ],
       ),
+      bottomNavigationBar: auth.isAgent ? null : const SaBottomNav(currentIndex: 3),
     );
   }
 }
@@ -247,33 +223,26 @@ class _MenuItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final bool last;
 
-  const _MenuItem({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
+  const _MenuItem({required this.icon, required this.label, required this.onTap, this.last = false});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 6,
-          ),
-        ],
-      ),
-      child: ListTile(
-        leading: Icon(icon, color: AppColors.danger),
-        title: Text(label, style: const TextStyle(fontSize: 15)),
-        trailing: const Icon(Icons.chevron_right, color: AppColors.textGrey),
+    return Column(children: [
+      ListTile(
+        minVerticalPadding: 14,
+        leading: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(color: AppColors.blue50, borderRadius: BorderRadius.circular(12)),
+          child: Icon(icon, color: AppColors.navy800, size: 21),
+        ),
+        title: Text(label, style: SaText.body(14.5, color: AppColors.textDark, weight: FontWeight.w600)),
+        trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
         onTap: onTap,
       ),
-    );
+      if (!last) const Divider(height: 1, indent: 72, endIndent: 16, color: AppColors.border),
+    ]);
   }
 }

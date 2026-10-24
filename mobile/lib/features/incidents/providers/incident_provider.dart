@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:senalert_mobile/core/services/api_service.dart';
 import 'package:senalert_mobile/core/constants/api_constants.dart';
@@ -62,8 +63,25 @@ class IncidentProvider extends ChangeNotifier {
   }
 
   /// Convertit un nom de région (ex. « Saint-Louis ») en code backend.
-  static String regionToApi(String label) =>
-      _normalize(label).replaceAll('-', '_').replaceAll(' ', '_');
+  static String regionToApi(String label) {
+    const map = {
+      'Dakar': 'dakar',
+      'Thiès': 'thies',
+      'Saint-Louis': 'saint_louis',
+      'Diourbel': 'diourbel',
+      'Fatick': 'fatick',
+      'Kaffrine': 'kaffrine',
+      'Kaolack': 'kaolack',
+      'Kédougou': 'kedougou',
+      'Kolda': 'kolda',
+      'Louga': 'louga',
+      'Matam': 'matam',
+      'Sédhiou': 'sedhiou',
+      'Tambacounda': 'tambacounda',
+      'Ziguinchor': 'ziguinchor',
+    };
+    return map[label] ?? _normalize(label).replaceAll(RegExp(r'[^a-z0-9]'), '_');
+  }
 
   static String _normalize(String s) {
     const accents = {'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e', 'à': 'a', 'â': 'a',
@@ -90,13 +108,29 @@ class IncidentProvider extends ChangeNotifier {
     try {
       await _api.dio.post(ApiConstants.incidents, data: {
         'type_incident': typeToApi(type),
-        'region': regionToApi(region),
-        'description': description,
-        'latitude': latitude,
-        'longitude': longitude,
+        'region':        regionToApi(region),
+        'description':   description,
+        'latitude':      latitude,
+        'longitude':     longitude,
       });
+    } on DioException catch (e) {
+      // Afficher la vraie erreur du backend pour faciliter le diagnostic
+      String msg = 'Envoi impossible. Vérifiez votre connexion et réessayez.';
+      if (e.response != null) {
+        final data = e.response!.data;
+        if (data is Map && data.isNotEmpty) {
+          final first = data.entries.first;
+          final val = first.value;
+          msg = '[${first.key}] ${val is List ? val.first : val}';
+        } else {
+          msg = 'Erreur serveur ${e.response!.statusCode}';
+        }
+      }
+      lastError = msg;
+      _isLoading = false;
+      notifyListeners();
+      return false;
     } catch (e) {
-      // Échec réel : on ne simule pas un succès
       lastError = 'Envoi impossible. Vérifiez votre connexion et réessayez.';
       _isLoading = false;
       notifyListeners();

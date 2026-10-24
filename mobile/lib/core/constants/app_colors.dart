@@ -76,4 +76,9 @@ class AppColors {
     end: Alignment.bottomRight,
     colors: [Color(0xFFF43F5E), crimson, crimsonDeep],
   );
+  static const LinearGradient navyGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [navy700, navy900],
+  );
 }

@@ -7,6 +7,7 @@ import 'package:senalert_mobile/core/constants/app_colors.dart';
 import 'package:senalert_mobile/features/auth/providers/auth_provider.dart';
 import 'package:senalert_mobile/features/incidents/providers/incident_provider.dart';
 import 'package:senalert_mobile/features/incidents/models/incident_model.dart';
+import 'package:senalert_mobile/shared/widgets/sa_ui.dart';
 
 class AgentDashboardScreen extends StatefulWidget {
   const AgentDashboardScreen({super.key});
@@ -18,6 +19,7 @@ class AgentDashboardScreen extends StatefulWidget {
 class _AgentDashboardScreenState extends State<AgentDashboardScreen> {
   bool _isAvailable = true;
   int _activeTab = 0;
+  String _filter = 'tous';
 
   @override
   void initState() {
@@ -32,22 +34,20 @@ class _AgentDashboardScreenState extends State<AgentDashboardScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.navy,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.timer, color: AppColors.emerald),
-            SizedBox(width: 8),
-            Text('Temps d\'arrivée estimé', style: TextStyle(color: AppColors.white, fontSize: 16)),
+            const Icon(Icons.timer_outlined, color: AppColors.blue600),
+            const SizedBox(width: 8),
+            Text('Temps d\'arrivée estimé', style: SaText.display(16)),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Sélectionnez le délai d\'intervention prévu pour informer le citoyen :',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
+              style: SaText.body(13),
             ),
             const SizedBox(height: 16),
             for (var eta in [
@@ -76,266 +76,280 @@ class _AgentDashboardScreenState extends State<AgentDashboardScreen> {
                       );
                     }
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.crimson,
-                    minimumSize: const Size(double.infinity, 44),
-                  ),
-                  child: Text(eta, style: const TextStyle(color: AppColors.white)),
+                  style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
+                  child: Text(eta),
                 ),
               ),
           ],
         ),
       ),
     );
+  }
+
+  bool _matches(Incident i) {
+    final s = i.status.toLowerCase();
+    switch (_filter) {
+      case 'nouveau':
+        return s == 'nouveau' || s == 'en_attente';
+      case 'en_cours':
+        return s == 'en_cours';
+      case 'clos':
+        return s == 'resolu' || s == 'traite' || s == 'refuse';
+      default:
+        return true;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final incidentProvider = context.watch<IncidentProvider>();
     final incidents = incidentProvider.incidents;
+    final nouveaux = incidents.where((i) => i.status == 'nouveau' || i.status == 'en_attente').length;
+    final enCours = incidents.where((i) => i.status == 'en_cours').length;
+    final clos = incidents.where((i) => i.status == 'resolu' || i.status == 'traite').length;
+    final filtered = incidents.where(_matches).toList();
 
     return Scaffold(
-      backgroundColor: AppColors.darkSlate,
-      appBar: AppBar(
-        backgroundColor: AppColors.navy,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.white),
-          onPressed: () => context.go('/home'),
-        ),
-        title: const Row(
-          children: [
-            Icon(Icons.shield_rounded, color: AppColors.crimson),
-            SizedBox(width: 8),
-            Text(
-              'Portail Commandement Police & Secours',
-              style: TextStyle(
-                color: AppColors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: AppColors.white),
-            onPressed: () => incidentProvider.fetchIncidents(),
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Officer Profile & Status Switch Header
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.navy,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: _isAvailable ? AppColors.emerald : AppColors.crimson,
-                  width: 1.5,
-                ),
-              ),
-              child: Row(
-                children: [
-                  const CircleAvatar(
-                    radius: 24,
-                    backgroundColor: AppColors.crimson,
-                    child: Icon(Icons.badge, color: AppColors.white, size: 28),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Consumer<AuthProvider>(
-                      builder: (_, auth, __) => Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: AppColors.background,
+      body: Column(
+        children: [
+          SaNightBackdrop(
+            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(30)),
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      const Icon(Icons.shield_rounded, color: AppColors.orange),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text('Tableau de bord agent', style: SaText.display(18, color: Colors.white))),
+                      SaIconButton(
+                        icon: Icons.refresh_rounded,
+                        tooltip: 'Actualiser',
+                        onTap: () => incidentProvider.fetchIncidents(),
+                      ),
+                      const SizedBox(width: 8),
+                      SaIconButton(
+                        icon: Icons.person_rounded,
+                        tooltip: 'Profil',
+                        onTap: () => context.go('/profile'),
+                      ),
+                    ]),
+                    const SizedBox(height: 14),
+                    // Profil agent + disponibilité
+                    SaGlass(
+                      child: Row(
                         children: [
-                          Text(
-                            auth.userName,
-                            style: const TextStyle(
-                              color: AppColors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                          Container(
+                            width: 46,
+                            height: 46,
+                            decoration: BoxDecoration(
+                              gradient: AppColors.orangeGradient,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Icon(Icons.badge_rounded, color: AppColors.white),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Consumer<AuthProvider>(
+                              builder: (_, auth, __) => Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(auth.userName,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: SaText.body(15, color: Colors.white, weight: FontWeight.w700)),
+                                  Text(
+                                    _isAvailable ? 'En patrouille · disponible' : 'Hors service',
+                                    style: SaText.body(12,
+                                        color: _isAvailable ? const Color(0xFF6EE7B7) : const Color(0xFFFDA4AF)),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${auth.userRole} • ${auth.userEmail}',
-                            style: const TextStyle(
-                              color: AppColors.textGrey,
-                              fontSize: 11,
+                          Switch(
+                            value: _isAvailable,
+                            onChanged: (v) {
+                              setState(() {
+                                _isAvailable = v;
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    _isAvailable
+                                        ? 'Statut : EN PATROUILLE / DISPONIBLE'
+                                        : 'Statut : HORS SERVICE',
+                                  ),
+                                  backgroundColor: _isAvailable ? AppColors.emerald : AppColors.crimson,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(children: [
+                      _Kpi(value: nouveaux, label: 'Nouveaux', color: const Color(0xFFFCD34D)),
+                      const SizedBox(width: 8),
+                      _Kpi(value: enCours, label: 'En cours', color: const Color(0xFF93C5FD)),
+                      const SizedBox(width: 8),
+                      _Kpi(value: clos, label: 'Résolus', color: const Color(0xFF6EE7B7)),
+                    ]),
+                    const SizedBox(height: 14),
+                    SaSegmentedTabs<int>(
+                      onDark: true,
+                      options: [(0, 'Interventions (${incidents.length})'), (1, 'Carte GPS')],
+                      value: _activeTab,
+                      onChanged: (v) => setState(() => _activeTab = v),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: _activeTab == 0
+                ? ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+                    children: [
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            for (final f in const [
+                              ('tous', 'Tous'),
+                              ('nouveau', 'Nouveaux'),
+                              ('en_cours', 'En cours'),
+                              ('clos', 'Clôturés'),
+                            ])
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: ChoiceChip(
+                                  label: Text(f.$2),
+                                  selected: _filter == f.$1,
+                                  showCheckmark: false,
+                                  labelStyle: SaText.body(12.5,
+                                      color: _filter == f.$1 ? Colors.white : AppColors.textDark,
+                                      weight: FontWeight.w700),
+                                  selectedColor: AppColors.navy800,
+                                  backgroundColor: Colors.white,
+                                  side: const BorderSide(color: AppColors.border),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  onSelected: (_) => setState(() => _filter = f.$1),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      if (incidentProvider.error != null) ...[
+                        SaInfoBanner(incidentProvider.error!),
+                        const SizedBox(height: 12),
+                      ],
+                      if (filtered.isEmpty)
+                        const SaEmptyState(
+                          icon: Icons.task_alt_rounded,
+                          title: 'Aucune alerte citoyenne en attente',
+                        )
+                      else
+                        for (var k = 0; k < filtered.length; k++)
+                          SaFadeSlide(
+                            key: ValueKey('${_filter}_${filtered[k].id}'),
+                            index: k,
+                            child: _AgentInterventionCard(
+                              incident: filtered[k],
+                              onAccept: () => _showEtaDialog(context, filtered[k]),
+                              onReject: () {
+                                final inc = filtered[k];
+                                incidentProvider.updateIncidentStatus(inc.id, 'refuse');
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Urgence #${inc.id} REFUSÉE / Classée.'),
+                                    backgroundColor: AppColors.crimson,
+                                  ),
+                                );
+                              },
+                              onComplete: () {
+                                final inc = filtered[k];
+                                incidentProvider.updateIncidentStatus(inc.id, 'traite');
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Urgence #${inc.id} MARQUÉE TRAITÉE ✓'),
+                                    backgroundColor: AppColors.emerald,
+                                  ),
+                                );
+                              },
                             ),
+                          ),
+                    ],
+                  )
+                : Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: FlutterMap(
+                        options: const MapOptions(
+                          initialCenter: LatLng(14.6928, -17.4467), // Dakar
+                          initialZoom: 12.0,
+                        ),
+                        children: [
+                          TileLayer(
+                            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            userAgentPackageName: 'com.senalert.app',
+                          ),
+                          MarkerLayer(
+                            markers: incidents.map((inc) {
+                              final lat = inc.latitude != 0 ? inc.latitude : 14.6928;
+                              final lng = inc.longitude != 0 ? inc.longitude : -17.4467;
+                              final t = SaIncidentType.of(inc.type);
+                              return Marker(
+                                point: LatLng(lat, lng),
+                                width: 42,
+                                height: 42,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: t.color,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 3),
+                                    boxShadow: [BoxShadow(color: t.color.withOpacity(0.5), blurRadius: 10)],
+                                  ),
+                                  child: Icon(t.icon, color: Colors.white, size: 20),
+                                ),
+                              );
+                            }).toList(),
                           ),
                         ],
                       ),
                     ),
                   ),
-                  Switch(
-                    value: _isAvailable,
-                    activeColor: AppColors.emerald,
-                    onChanged: (v) {
-                      setState(() {
-                        _isAvailable = v;
-                      });
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            _isAvailable
-                                ? 'Statut : EN PATROUILLE / DISPONIBLE'
-                                : 'Statut : HORS SERVICE',
-                          ),
-                          backgroundColor:
-                              _isAvailable ? AppColors.emerald : AppColors.crimson,
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Tab Filters
-            Row(
-              children: [
-                _TabButton(
-                  title: 'Avis d\'Urgence Citoyens (${incidents.length})',
-                  isActive: _activeTab == 0,
-                  onTap: () => setState(() => _activeTab = 0),
-                ),
-                const SizedBox(width: 10),
-                _TabButton(
-                  title: 'Carte GPS Live',
-                  isActive: _activeTab == 1,
-                  onTap: () => setState(() => _activeTab = 1),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            // Tab Content
-            if (_activeTab == 0) ...[
-              if (incidents.isEmpty)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 40),
-                    child: Text(
-                      'Aucune alerte citoyenne en attente',
-                      style: TextStyle(color: AppColors.textGrey),
-                    ),
-                  ),
-                )
-              else
-                ...incidents.map((inc) {
-                  return _AgentInterventionCard(
-                    incident: inc,
-                    onAccept: () => _showEtaDialog(context, inc),
-                    onReject: () {
-                      incidentProvider.updateIncidentStatus(inc.id, 'refuse');
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Urgence #${inc.id} REFUSÉE / Classée.'),
-                          backgroundColor: AppColors.crimson,
-                        ),
-                      );
-                    },
-                    onComplete: () {
-                      incidentProvider.updateIncidentStatus(inc.id, 'traite');
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Urgence #${inc.id} MARQUÉE TRAITÉE ✓'),
-                          backgroundColor: AppColors.emerald,
-                        ),
-                      );
-                    },
-                  );
-                }),
-            ] else ...[
-              Container(
-                height: 420,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: FlutterMap(
-                    options: const MapOptions(
-                      initialCenter: LatLng(14.6928, -17.4467), // Dakar
-                      initialZoom: 12.0,
-                    ),
-                    children: [
-                      TileLayer(
-                        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        userAgentPackageName: 'com.senalert.app',
-                      ),
-                      MarkerLayer(
-                        markers: incidents.map((inc) {
-                          final lat = inc.latitude != 0 ? inc.latitude : 14.6928;
-                          final lng = inc.longitude != 0 ? inc.longitude : -17.4467;
-
-                          return Marker(
-                            point: LatLng(lat, lng),
-                            width: 40,
-                            height: 40,
-                            child: Container(
-                              decoration: const BoxDecoration(
-                                color: AppColors.crimson,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: Text(inc.typeIcon, style: const TextStyle(fontSize: 18)),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _TabButton extends StatelessWidget {
-  final String title;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _TabButton({
-    required this.title,
-    required this.isActive,
-    required this.onTap,
-  });
+class _Kpi extends StatelessWidget {
+  final int value;
+  final String label;
+  final Color color;
+  const _Kpi({required this.value, required this.label, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.crimson : AppColors.navy,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Text(
-          title,
-          style: TextStyle(
-            color: AppColors.white,
-            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-            fontSize: 13,
-          ),
-        ),
+    return Expanded(
+      child: SaGlass(
+        radius: 16,
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('$value', style: SaText.display(22, color: color)),
+          Text(label, style: SaText.body(11.5, color: Colors.white.withOpacity(0.8))),
+        ]),
       ),
     );
   }
@@ -359,140 +373,100 @@ class _AgentInterventionCard extends StatelessWidget {
     final status = incident.status.toLowerCase();
     final isPending = status == 'en_attente' || status == 'nouveau';
     final isInProgress = status == 'en_cours';
+    final t = SaIncidentType.of(incident.type);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.navy,
-        borderRadius: BorderRadius.circular(14),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: SaCard(
         border: Border.all(
-          color: isPending
-              ? Colors.orange.withOpacity(0.6)
-              : isInProgress
-                  ? AppColors.emerald
-                  : Colors.grey.shade700,
-          width: 1.5,
+          color: isPending ? AppColors.warning.withOpacity(0.5) : AppColors.border,
+          width: isPending ? 1.4 : 1,
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(incident.typeIcon, style: const TextStyle(fontSize: 26)),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      incident.type,
-                      style: const TextStyle(
-                        color: AppColors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      incident.location,
-                      style: const TextStyle(
-                        color: AppColors.textGrey,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isPending
-                      ? Colors.orange.withOpacity(0.2)
-                      : isInProgress
-                          ? AppColors.emerald.withOpacity(0.2)
-                          : AppColors.crimson.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  incident.statusLabel,
-                  style: TextStyle(
-                    color: isPending
-                        ? Colors.orange
-                        : isInProgress
-                            ? AppColors.emerald
-                            : AppColors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                SaTypeIcon(incident.type, size: 46),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(t.label, style: SaText.body(15, color: AppColors.textDark, weight: FontWeight.w700)),
+                      Text(incident.location, maxLines: 1, overflow: TextOverflow.ellipsis, style: SaText.body(12)),
+                    ],
                   ),
                 ),
-              ),
+                SaStatusBadge(incident.status, dense: true),
+              ],
+            ),
+            if (incident.description.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Text(incident.description, style: SaText.body(13, color: AppColors.textDark)),
             ],
-          ),
-          if (incident.description.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              incident.description,
-              style: const TextStyle(color: Colors.white70, fontSize: 13),
+            if (isInProgress && incident.eta != null) ...[
+              const SizedBox(height: 8),
+              Row(children: [
+                const Icon(Icons.timer_outlined, size: 15, color: AppColors.blue600),
+                const SizedBox(width: 4),
+                Text('Arrivée estimée : ${incident.eta}',
+                    style: SaText.body(12, color: AppColors.blue600, weight: FontWeight.w700)),
+              ]),
+            ],
+            const Divider(height: 22, color: AppColors.border),
+            Row(
+              children: [
+                Expanded(
+                  child: Text('Alerte #${incident.id} · ${incident.date}',
+                      maxLines: 1, overflow: TextOverflow.ellipsis, style: SaText.body(11.5)),
+                ),
+                if (isPending) ...[
+                  _SmallBtn(label: 'Refuser', color: AppColors.crimson, outlined: true, onTap: onReject),
+                  const SizedBox(width: 8),
+                  _SmallBtn(label: 'Accepter', icon: Icons.check_rounded, color: AppColors.emerald, onTap: onAccept),
+                ] else if (isInProgress)
+                  _SmallBtn(label: 'Marquer traitée', icon: Icons.task_alt_rounded, color: AppColors.emerald, onTap: onComplete)
+                else
+                  Text('Clôturée', style: SaText.body(12, weight: FontWeight.w700)),
+              ],
             ),
           ],
-          const Divider(color: Colors.white12, height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Alerte #${incident.id} • ${incident.date}',
-                style: const TextStyle(color: AppColors.textGrey, fontSize: 11),
-              ),
-              if (isPending) ...[
-                Row(
-                  children: [
-                    OutlinedButton(
-                      onPressed: onReject,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.crimson,
-                        side: const BorderSide(color: AppColors.crimson),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: const Text('REFUSER', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton.icon(
-                      onPressed: onAccept,
-                      icon: const Icon(Icons.check_circle, size: 14, color: AppColors.white),
-                      label: const Text('ACCEPTER', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.emerald,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                    ),
-                  ],
-                )
-              ] else if (isInProgress) ...[
-                ElevatedButton.icon(
-                  onPressed: onComplete,
-                  icon: const Icon(Icons.task_alt, size: 14, color: AppColors.white),
-                  label: const Text('MARQUER TRAITÉE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.emerald,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                )
-              ] else ...[
-                const Text(
-                  'Clôturée',
-                  style: TextStyle(color: AppColors.textGrey, fontSize: 11),
-                ),
-              ],
-            ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SmallBtn extends StatelessWidget {
+  final String label;
+  final IconData? icon;
+  final Color color;
+  final bool outlined;
+  final VoidCallback onTap;
+  const _SmallBtn({required this.label, required this.color, required this.onTap, this.icon, this.outlined = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: outlined ? Colors.white : color,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: color, width: 1.4),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44, minWidth: 48),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              if (icon != null) ...[Icon(icon, size: 16, color: Colors.white), const SizedBox(width: 4)],
+              Text(label, style: SaText.body(12.5, color: outlined ? color : Colors.white, weight: FontWeight.w800)),
+            ]),
           ),
-        ],
+        ),
       ),
     );
   }
