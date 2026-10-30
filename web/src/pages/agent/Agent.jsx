@@ -50,7 +50,7 @@ export function TableauAgent() {
     <>
       <div className="relative mb-6 overflow-hidden rounded-3xl text-white">
         <Photo nom="pompiers-bnsp" className="absolute inset-0 h-full w-full" alt="" credit={false} />
-        <div className="absolute inset-0 bg-gradient-to-r from-marque-950/95 via-marque-900/85 to-marque-800/40" aria-hidden />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-black/5" aria-hidden />
         <div className="relative flex flex-wrap items-end justify-between gap-4 px-6 py-8 sm:px-8">
           <div>
             <p className="text-sm font-semibold uppercase tracking-widest text-or">Espace agent</p>

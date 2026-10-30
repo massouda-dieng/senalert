@@ -83,3 +83,28 @@ class StatistiquesTests(SenAlertTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.data['incidents']['total'], 0)
         self.assertIsNotNone(agent)
+
+
+class SimulateurMobileTests(SenAlertTestCase):
+    """L'application Flutter compilée est servie sous /mobile/ pour le simulateur."""
+
+    def test_service_et_cadre_meme_origine(self):
+        import tempfile
+        from pathlib import Path
+        from django.test import override_settings
+        with tempfile.TemporaryDirectory() as d:
+            with override_settings(MOBILE_WEB_DIR=Path(d)):
+                self.assertEqual(self.client.get('/mobile/').status_code, 503)
+                (Path(d) / 'index.html').write_text('<html>flutter</html>')
+                (Path(d) / 'main.dart.js').write_text('// js')
+                r = self.client.get('/mobile/')
+                self.assertEqual(r.status_code, 200)
+                self.assertEqual(r['X-Frame-Options'], 'SAMEORIGIN')
+                self.assertEqual(self.client.get('/mobile/main.dart.js').status_code, 200)
+                self.assertEqual(self.client.get('/mobile/route/inconnue').status_code, 200, 'repli sur index.html')
+                (Path(d).parent / 'secret.txt').write_text('SECRET')
+                try:
+                    r = self.client.get('/mobile/../secret.txt')
+                    self.assertNotIn(b'SECRET', b''.join(r.streaming_content) if r.streaming else r.content)
+                finally:
+                    (Path(d).parent / 'secret.txt').unlink()

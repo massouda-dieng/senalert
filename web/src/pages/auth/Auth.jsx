@@ -14,7 +14,7 @@ function Cadre({ titre, sousTitre, children }) {
     <div className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
       <div className="relative hidden overflow-hidden lg:flex lg:flex-col">
         <Photo nom="pompiers-bnsp" className="absolute inset-0 h-full w-full" alt="Brigade nationale des sapeurs-pompiers" priorite />
-        <div className="absolute inset-0 bg-gradient-to-t from-marque-950 via-marque-900/80 to-marque-800/40" aria-hidden />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/10" aria-hidden />
         <BandeDrapeau className="relative h-1.5" />
         <div className="relative flex items-center gap-3 p-12 text-white"><Logo className="h-11 w-11" clair /><span className="font-titre text-2xl font-extrabold">SenAlert</span></div>
         <div className="relative mt-auto max-w-lg p-12 text-white">

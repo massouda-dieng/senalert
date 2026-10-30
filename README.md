@@ -22,6 +22,8 @@ python manage.py runserver          # → http://127.0.0.1:8000/app/
 cd ~/Documents/PFF/senalert/mobile
 flutter run                         # s'ouvre dans Chrome
 ```
+**Simulateur mobile** (téléphone iPhone / Android affiché dans le navigateur) : `./run.sh simulateur` une fois, puis http://127.0.0.1:8000/app/simulateur (serveur lancé).
+
 `manage.py` utilise automatiquement l'environnement Python du projet (`backend/env`), même si un autre Python (conda) est actif.
 
 Autre méthode, tout-en-un :

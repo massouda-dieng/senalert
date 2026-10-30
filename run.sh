@@ -4,6 +4,7 @@
 #   ./run.sh backend          API + application web compilée  → http://127.0.0.1:8000/app/
 #   ./run.sh web              serveur de développement React  → http://localhost:5173/app/
 #   ./run.sh mobile [cible]   application Flutter (chrome par défaut, ou un id d'appareil)
+#   ./run.sh simulateur       compile l'app mobile pour le simulateur → http://127.0.0.1:8000/app/simulateur
 #   ./run.sh tests            tous les tests (backend, web, mobile)
 # Aucune clé secrète n'est transmise à l'application mobile : l'IA passe par le backend.
 # =============================================================================
@@ -37,11 +38,17 @@ case "${1:-backend}" in
       --dart-define=GOOGLE_SERVER_CLIENT_ID="${GOOGLE_SERVER_CLIENT_ID:-}" \
       --dart-define=GOOGLE_IOS_CLIENT_ID="${GOOGLE_IOS_CLIENT_ID:-}"
     ;;
+  simulateur)
+    cd "$RACINE/mobile"
+    "$FLUTTER" pub get
+    "$FLUTTER" build web --release --base-href /mobile/
+    echo "→ Lancez le serveur (cd backend && python manage.py runserver) puis ouvrez http://127.0.0.1:8000/app/simulateur"
+    ;;
   tests)
     (cd "$RACINE/backend" && source env/bin/activate && python manage.py test)
     (cd "$RACINE/web" && npx vitest run)
     (cd "$RACINE/mobile" && "$FLUTTER" analyze && "$FLUTTER" test)
     ;;
   *)
-    echo "Usage : ./run.sh [backend|web|mobile [cible]|tests]"; exit 1 ;;
+    echo "Usage : ./run.sh [backend|web|mobile [cible]|simulateur|tests]"; exit 1 ;;
 esac

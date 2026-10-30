@@ -79,7 +79,7 @@ function SOS() {
     <>
       <div className="relative overflow-hidden rounded-3xl text-white">
         <Photo nom="dakar-vue" className="absolute inset-0 h-full w-full" alt="" credit={false} />
-        <div className="absolute inset-0 bg-gradient-to-r from-marque-950/95 via-marque-900/85 to-sos-fonce/60" aria-hidden />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-black/5" aria-hidden />
         <div className="relative flex flex-col items-center gap-6 p-6 sm:flex-row sm:justify-between sm:p-8">
           <div className="max-w-md text-center sm:text-left">
             <p className="text-sm font-semibold uppercase tracking-widest text-or">Urgence</p>

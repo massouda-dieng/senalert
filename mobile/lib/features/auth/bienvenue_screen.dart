@@ -27,7 +27,7 @@ class _BienvenueScreenState extends State<BienvenueScreen> {
   Widget build(BuildContext context) {
     final numeros = context.watch<Configuration>().numeros;
     return Scaffold(
-      backgroundColor: AppColors.vert950,
+      backgroundColor: Colors.black,
       body: Stack(children: [
         PageView.builder(
           controller: _pages,
@@ -35,7 +35,7 @@ class _BienvenueScreenState extends State<BienvenueScreen> {
           onPageChanged: (i) => setState(() => _index = i),
           itemBuilder: (_, i) => PhotoIllustration(_diapos[i].$1, superposition: const DecoratedBox(
             decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                colors: [Color(0x33003A1B), Color(0xCC003A1B), AppColors.vert950], stops: [0, 0.55, 1])),
+                colors: [Color(0x1A000000), Color(0xB3000000), Color(0xF2000000)], stops: [0, 0.55, 1])),
           )),
         ),
         // Bande tricolore
@@ -68,7 +68,7 @@ class _BienvenueScreenState extends State<BienvenueScreen> {
               ]),
               const SizedBox(height: 24),
               FilledButton(
-                style: FilledButton.styleFrom(backgroundColor: AppColors.jaune, foregroundColor: AppColors.textDark, minimumSize: const Size.fromHeight(56)),
+                style: FilledButton.styleFrom(backgroundColor: AppColors.vert600, foregroundColor: Colors.white, minimumSize: const Size.fromHeight(56)),
                 onPressed: () => context.push('/inscription'), child: const Text('Créer mon compte'),
               ),
               const SizedBox(height: 10),

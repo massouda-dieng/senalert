@@ -32,18 +32,19 @@ class _BandeauAlertesZoneState extends State<BandeauAlertesZone> {
           margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
           padding: const EdgeInsets.fromLTRB(14, 10, 4, 10),
           decoration: BoxDecoration(
-            color: a['niveau'] == 'danger' ? AppColors.crimson : a['niveau'] == 'vigilance' ? AppColors.jaune : AppColors.vert700,
+            color: a['niveau'] == 'danger' ? const Color(0xFFFDE3E4) : a['niveau'] == 'vigilance' ? AppColors.jauneClair : AppColors.vert50,
             borderRadius: BorderRadius.circular(16),
+            border: Border(left: BorderSide(width: 4, color: a['niveau'] == 'danger' ? AppColors.crimson : a['niveau'] == 'vigilance' ? const Color(0xFFF5D90A) : AppColors.vert600)),
           ),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Icon(Icons.campaign_rounded, color: a['niveau'] == 'vigilance' ? AppColors.textDark : Colors.white),
+            const Icon(Icons.campaign_rounded, color: AppColors.textDark),
             const SizedBox(width: 10),
             Expanded(child: Text.rich(TextSpan(children: [
               TextSpan(text: '${a['titre']}\n', style: const TextStyle(fontWeight: FontWeight.w800)),
               TextSpan(text: a['message']),
-            ]), style: TextStyle(color: a['niveau'] == 'vigilance' ? AppColors.textDark : Colors.white, height: 1.35))),
+            ]), style: const TextStyle(color: AppColors.textDark, height: 1.35))),
             IconButton(tooltip: 'Masquer', visualDensity: VisualDensity.compact, onPressed: () => setState(() => _masquees.add(a['id'])),
-                icon: Icon(Icons.close, size: 18, color: a['niveau'] == 'vigilance' ? AppColors.textDark : Colors.white)),
+                icon: const Icon(Icons.close, size: 18, color: AppColors.textDark)),
           ]),
         ),
     ]);

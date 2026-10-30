@@ -20,6 +20,7 @@ import CartePage from './pages/commun/CartePage';
 import Communaute from './pages/commun/Communaute';
 import Credits from './pages/commun/Credits';
 import Notifications from './pages/commun/Notifications';
+import Simulateur from './pages/Simulateur';
 import Vitrine from './pages/Vitrine';
 import Profil from './pages/commun/Profil';
 
@@ -51,6 +52,7 @@ export default function App() {
       <Route path="/reinitialiser" element={<Reinitialiser />} />
       <Route path="/" element={<Vitrine />} />
       <Route path="/credits" element={<Credits />} />
+      <Route path="/simulateur" element={<Simulateur />} />
 
       <Route element={<Espace><Layout /></Espace>}>
         <Route path="/citoyen" element={<Espace roles={['citoyen']}><Accueil /></Espace>} />

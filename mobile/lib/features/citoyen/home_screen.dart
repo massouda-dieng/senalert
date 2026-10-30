@@ -64,7 +64,7 @@ class _AccueilCitoyenState extends State<AccueilCitoyen> {
               child: Stack(children: [
                 const Positioned.fill(child: PhotoIllustration('dakar-vue', credit: false)),
                 const Positioned.fill(child: DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(
-                    begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xF2003A1B), Color(0xD9005527), Color(0xB3B5121A)])))),
+                    begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xD9000000), Color(0x99000000), Color(0x33000000)])))),
                 Padding(
                   padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 16, 20, 28),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

@@ -82,7 +82,7 @@ class _AccueilAgentState extends State<AccueilAgent> {
                 SizedBox(
                   height: 170 + MediaQuery.of(context).padding.top,
                   child: PhotoIllustration('pompiers-bnsp', credit: false, superposition: DecoratedBox(
-                    decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xF2003A1B), Color(0x99006E33)])),
+                    decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xD9000000), Color(0x40000000)])),
                     child: SafeArea(child: Padding(padding: const EdgeInsets.all(20), child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.end, children: [
                         const Text('ESPACE AGENT', style: TextStyle(color: AppColors.jaune, fontWeight: FontWeight.w700, letterSpacing: 1.5, fontSize: 12)),

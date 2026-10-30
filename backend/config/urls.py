@@ -4,7 +4,7 @@ from django.views.generic import RedirectView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from accounts.views import UtilisateurAdminViewSet
-from dashboard.views import application_web
+from dashboard.views import application_mobile, application_web
 from rest_framework.routers import DefaultRouter
 
 admin.site.site_header = 'SenAlert — administration technique'
@@ -26,4 +26,5 @@ urlpatterns = [
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='docs'),
     path('', RedirectView.as_view(url='/app/', permanent=False)),
     re_path(r'^app(?:/(?P<chemin>.*))?$', application_web, name='application-web'),
+    re_path(r'^mobile/(?P<chemin>.*)$', application_mobile, name='application-mobile'),
 ]

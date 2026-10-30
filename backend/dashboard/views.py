@@ -4,6 +4,7 @@ import io
 from django.conf import settings
 from django.http import FileResponse, Http404, HttpResponse
 from django.utils import timezone
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
@@ -161,4 +162,23 @@ def application_web(request, chemin=''):
     reponse = HttpResponse(index.read_bytes(), content_type='text/html; charset=utf-8')
     # Jamais en cache : après chaque `npm run build`, le navigateur charge la nouvelle version.
     reponse['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    return reponse
+
+
+@xframe_options_sameorigin
+def application_mobile(request, chemin=''):
+    """Sert l'application Flutter compilée pour le web (simulateur mobile, /mobile/…)."""
+    from django.views.static import serve
+
+    racine = settings.MOBILE_WEB_DIR
+    if not (racine / 'index.html').exists():
+        return HttpResponse(
+            "<h1>Application mobile non compilée</h1><p>Lancez : <code>cd mobile && flutter build web "
+            "--base-href /mobile/</code> puis rechargez cette page.</p>", status=503)
+    cible = (racine / chemin).resolve()
+    if not chemin or not cible.is_file() or racine.resolve() not in cible.parents:
+        chemin = 'index.html'  # route interne de l'app, ou tentative de sortir du dossier
+    reponse = serve(request, chemin, document_root=str(racine))
+    if chemin == 'index.html':
+        reponse['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     return reponse

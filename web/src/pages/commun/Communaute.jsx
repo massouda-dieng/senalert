@@ -92,7 +92,7 @@ export default function Communaute() {
     <>
       <div className="relative mb-6 overflow-hidden rounded-3xl">
         <Photo nom="croix-rouge-equipe" className="absolute inset-0 h-full w-full" alt="" credit={false} />
-        <div className="absolute inset-0 bg-gradient-to-r from-marque-900/95 to-marque-700/70" aria-hidden />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-black/5" aria-hidden />
         <div className="relative px-6 py-8 text-white sm:px-8">
           <h1 className="font-titre text-3xl font-extrabold">Autour de moi</h1>
           <p className="mt-1 max-w-xl text-white/85">Les incidents signalés près de chez vous. Confirmez ceux que vous constatez : cela aide les secours à prioriser.</p>

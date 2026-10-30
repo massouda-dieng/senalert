@@ -44,12 +44,13 @@ export default function Vitrine() {
           <nav className="flex items-center gap-2">
             <a href="#fonctionnalites" className="hidden rounded-full px-4 py-2 text-sm font-semibold text-white/90 hover:bg-white/10 md:block">Fonctionnalités</a>
             <a href="#comment" className="hidden rounded-full px-4 py-2 text-sm font-semibold text-white/90 hover:bg-white/10 md:block">Comment ça marche</a>
+            <Link to="/simulateur" className="hidden rounded-full px-4 py-2 text-sm font-semibold text-white/90 hover:bg-white/10 md:block">Essayer l’app mobile</Link>
             {espace ? (
-              <Link to={espace} className="rounded-full bg-or px-5 py-2 text-sm font-bold text-texte hover:bg-or-vif">Mon espace</Link>
+              <Link to={espace} className="rounded-full bg-white px-5 py-2 text-sm font-bold text-marque-800 hover:bg-marque-50">Mon espace</Link>
             ) : (
               <>
                 <Link to="/connexion" className="rounded-full px-4 py-2 text-sm font-semibold text-white hover:bg-white/10">Connexion</Link>
-                <Link to="/inscription" className="rounded-full bg-or px-5 py-2 text-sm font-bold text-texte hover:bg-or-vif">S’inscrire</Link>
+                <Link to="/inscription" className="rounded-full bg-white px-5 py-2 text-sm font-bold text-marque-800 hover:bg-marque-50">S’inscrire</Link>
               </>
             )}
           </nav>
@@ -59,7 +60,7 @@ export default function Vitrine() {
       {/* Héros */}
       <section className="relative min-h-[640px] overflow-hidden lg:min-h-[720px]">
         <Photo nom="dakar-coucher-soleil" priorite className="absolute inset-0 h-full w-full" imgClassName="animate-zoomLent" alt="Coucher de soleil sur Dakar" />
-        <div className="absolute inset-0 bg-gradient-to-r from-marque-950/95 via-marque-900/80 to-marque-900/20" aria-hidden />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/10" aria-hidden />
         <div className="relative mx-auto flex max-w-7xl flex-col gap-10 px-4 pb-20 pt-36 sm:px-8 lg:flex-row lg:items-center lg:pt-44">
           <div className="max-w-2xl text-white">
             <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-or ring-1 ring-white/20">
@@ -72,7 +73,7 @@ export default function Vitrine() {
               Signalez une urgence en quelques secondes, suivez l’intervention des secours et restez informé des alertes de votre région — sur un seul canal.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link to={espace || '/inscription'} className="inline-flex items-center gap-2 rounded-full bg-or px-6 py-3.5 font-bold text-texte shadow-lg hover:bg-or-vif">
+              <Link to={espace || '/inscription'} className="inline-flex items-center gap-2 rounded-full bg-marque-600 px-6 py-3.5 font-bold text-white shadow-lg shadow-marque-600/30 hover:bg-marque-500">
                 {espace ? 'Ouvrir mon espace' : 'Créer mon compte gratuit'} <ArrowRight className="h-5 w-5" />
               </Link>
               <Link to={espace ? `${espace}` : '/connexion'} className="inline-flex items-center gap-2 rounded-full bg-sos px-6 py-3.5 font-bold text-white shadow-lg hover:bg-sos-fonce">
@@ -124,7 +125,7 @@ export default function Vitrine() {
 
       {/* Alertes officielles en cours */}
       {alertes?.results?.length > 0 && (
-        <section className="mx-auto mt-8 max-w-6xl px-4 sm:px-8"><div className="rounded-2xl bg-or">
+        <section className="mx-auto mt-8 max-w-6xl px-4 sm:px-8"><div className="rounded-2xl border-l-4 border-or-vif bg-or-clair">
           <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-8">
             <p className="flex items-center gap-2 font-bold"><Megaphone className="h-5 w-5" /> Alertes en cours</p>
             {alertes.results.slice(0, 3).map((a) => <p key={a.id} className="text-sm"><b>{a.titre}</b> — {a.regions_libelles.join(', ')}</p>)}
@@ -172,7 +173,7 @@ export default function Vitrine() {
       {/* Bandeau services */}
       <section className="relative overflow-hidden">
         <Photo nom="pompiers-defile" className="absolute inset-0 h-full w-full" alt="" />
-        <div className="absolute inset-0 bg-marque-950/80" aria-hidden />
+        <div className="absolute inset-0 bg-black/70" aria-hidden />
         <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-20 text-white sm:px-8 lg:grid-cols-2 lg:items-center">
           <div>
             <h2 className="font-titre text-3xl font-extrabold sm:text-4xl">Pensé avec les services de secours</h2>
@@ -194,7 +195,7 @@ export default function Vitrine() {
       <section className="mx-auto max-w-5xl px-4 py-20 text-center sm:px-8">
         <Smartphone className="mx-auto h-12 w-12 text-marque-600" />
         <h2 className="mt-4 font-titre text-3xl font-extrabold">Rejoignez SenAlert</h2>
-        <p className="mx-auto mt-3 max-w-xl text-texte-doux">Disponible dès maintenant dans votre navigateur, sur ordinateur comme sur téléphone. Les applications Android et iOS sont en préparation.</p>
+        <p className="mx-auto mt-3 max-w-xl text-texte-doux">Disponible dès maintenant dans votre navigateur, sur ordinateur comme sur téléphone. Les applications Android et iOS sont en préparation : essayez-les dès maintenant dans le <Link to="/simulateur" className="lien">simulateur mobile</Link>.</p>
         <Link to={espace || '/inscription'} className="mt-8 inline-flex items-center gap-2 rounded-full bg-marque-600 px-7 py-3.5 font-bold text-white shadow-lg hover:bg-marque-700">
           {espace ? 'Ouvrir mon espace' : 'Créer mon compte'} <ArrowRight className="h-5 w-5" />
         </Link>

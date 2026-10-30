@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import {
   Activity, Bell, BookOpenCheck, Bot, Building2, ClipboardList, FileClock, FolderOpen, Gauge, Home, LogOut, Map,
   MapPinned, Megaphone, Menu, PanelLeftClose, PanelLeftOpen, Search, Settings2, ShieldAlert, Siren, SlidersHorizontal,
-  Tags, UserCircle2, Users, UsersRound, WifiOff, X,
+  Smartphone, Tags, UserCircle2, Users, UsersRound, WifiOff, X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -58,9 +58,9 @@ function useEnLigne() {
 }
 
 const STYLE_NIVEAU = {
-  danger: 'bg-sos text-white',
-  vigilance: 'bg-or text-texte',
-  info: 'bg-marque-700 text-white',
+  danger: 'bg-sos-clair text-sos-fonce border-l-4 border-sos',
+  vigilance: 'bg-or-clair text-texte border-l-4 border-or-vif',
+  info: 'bg-marque-50 text-marque-800 border-l-4 border-marque-600',
 };
 
 /** Bandeau des alertes de zone en cours pour la région de l'utilisateur. */
@@ -117,10 +117,10 @@ export default function Layout() {
     <div className="flex min-h-screen">
       <a href="#contenu" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[2000] focus:rounded-lg focus:bg-white focus:px-3 focus:py-2">Aller au contenu</a>
 
-      <aside className={clsx('fixed inset-y-0 left-0 z-[900] flex flex-col overflow-hidden bg-gradient-to-b from-marque-800 via-marque-900 to-marque-950 text-white transition-all duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0',
+      <aside className={clsx('fixed inset-y-0 left-0 z-[900] flex flex-col overflow-hidden bg-gradient-to-b from-[#0B1F15] to-[#040B07] text-white transition-all duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0',
         replie ? 'lg:w-[78px]' : 'lg:w-64', mobileOuvert ? 'w-72 translate-x-0' : 'w-72 -translate-x-full')}>
         {/* Étoile du drapeau en filigrane */}
-        <svg viewBox="0 0 100 100" className="pointer-events-none absolute -bottom-10 -right-14 h-64 w-64 text-or opacity-[.07]" aria-hidden>
+        <svg viewBox="0 0 100 100" className="pointer-events-none absolute -bottom-10 -right-14 h-64 w-64 text-or opacity-[.04]" aria-hidden>
           <path fill="currentColor" d="m50 5 11 34h36L68 60l11 35-29-21-29 21 11-35L3 39h36z" />
         </svg>
         <BandeDrapeau className="h-1 shrink-0" />
@@ -137,7 +137,7 @@ export default function Layout() {
           ) : (
             <NavLink key={l.a} to={l.a} end={l.fin} title={replie ? l.libelle : undefined}
               className={({ isActive }) => clsx('group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition',
-                isActive ? 'bg-white text-marque-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white')}>
+                isActive ? 'bg-marque-600 text-white shadow-[0_8px_24px_rgba(0,133,63,.35)]' : 'text-white/70 hover:bg-white/[.06] hover:text-white')}>
               <l.icone className="h-[18px] w-[18px] shrink-0" aria-hidden />
               <span className={clsx('truncate', replie && 'lg:sr-only')}>{l.libelle}</span>
             </NavLink>
@@ -221,6 +221,7 @@ function MenuProfil({ utilisateur, onDeconnexion }) {
               <p className="text-xs text-texte-doux">{utilisateur.role_libelle}{utilisateur.profil_agent?.service_nom ? ` · ${utilisateur.profil_agent.service_nom}` : ''}</p>
             </div>
             <NavLink role="menuitem" to="/profil" onClick={() => setOuvert(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-surface-douce"><UserCircle2 className="h-4 w-4" /> Profil et sécurité</NavLink>
+            <NavLink role="menuitem" to="/simulateur" onClick={() => setOuvert(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-surface-douce"><Smartphone className="h-4 w-4" /> Simulateur mobile</NavLink>
             {utilisateur.role === 'superadmin' && <a role="menuitem" href="/admin/" className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-surface-douce"><Settings2 className="h-4 w-4" /> Administration technique</a>}
             {utilisateur.role === 'superadmin' && <a role="menuitem" href="/api/docs/" target="_blank" rel="noreferrer" className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-surface-douce"><Building2 className="h-4 w-4" /> Documentation API</a>}
             <button role="menuitem" type="button" onClick={onDeconnexion} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-red-700 hover:bg-red-50"><LogOut className="h-4 w-4" /> Se déconnecter</button>
