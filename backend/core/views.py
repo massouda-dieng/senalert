@@ -2,7 +2,7 @@ import logging
 
 import requests
 from django.conf import settings
-from django.core.cache import cache
+from django.core.cache import cache, caches
 from django.utils import timezone
 from django_filters import rest_framework as filters
 from drf_spectacular.types import OpenApiTypes
@@ -197,11 +197,18 @@ def interroger_overpass(lat, lng, rayon, types):
     clauses = ''.join(
         f'nwr["{TYPES_OSM[t][0]}"="{TYPES_OSM[t][1]}"](around:{rayon},{lat},{lng});' for t in types
     )
-    requete = f'[out:json][timeout:20];({clauses});out center tags 200;'
-    reponse = requests.post(settings.OVERPASS_URL, data={'data': requete}, timeout=25,
-                            headers={'User-Agent': 'SenAlert/3.0 (projet academique ISEP Diamniadio)'})
-    reponse.raise_for_status()
-    return reponse.json().get('elements', [])
+    requete = f'[out:json][timeout:15];({clauses});out center tags 200;'
+    derniere = None
+    for url in settings.OVERPASS_URLS:  # serveur principal puis miroirs
+        try:
+            reponse = requests.post(url, data={'data': requete}, timeout=(4, 10),
+                                    headers={'User-Agent': 'SenAlert/3.0 (projet academique ISEP Diamniadio)'})
+            reponse.raise_for_status()
+            return reponse.json()['elements']
+        except Exception as exc:  # saturé, hors délai ou réponse non JSON : serveur suivant
+            logger.info('Overpass %s indisponible : %s', url, exc.__class__.__name__)
+            derniere = exc
+    raise derniere or RuntimeError('Aucun serveur Overpass configuré')
 
 
 class ServicesProximiteView(APIView):
@@ -234,11 +241,16 @@ class ServicesProximiteView(APIView):
         if cache_val is None:
             try:
                 elements = interroger_overpass(lat_r, lng_r, rayon + 1500, types)
+                cache_val = {'elements': elements, 'date': timezone.now().isoformat()}
+                cache.set(cle, cache_val, 60 * 60)
+                caches['osm'].set(cle, cache_val)
             except Exception as exc:
                 logger.warning('Overpass indisponible : %s', exc.__class__.__name__)
-                raise ServiceIndisponible("Le service cartographique OpenStreetMap ne répond pas. Réessayez plus tard.")
-            cache_val = {'elements': elements, 'date': timezone.now().isoformat()}
-            cache.set(cle, cache_val, 60 * 60)
+                # Derniers résultats réels obtenus pour cette zone (datés), sinon erreur honnête.
+                cache_val = caches['osm'].get(cle)
+                if cache_val is None:
+                    raise ServiceIndisponible("Les serveurs OpenStreetMap sont saturés en ce moment. Réessayez dans quelques minutes.")
+                cache_val = {**cache_val, 'ancien': True}
 
         resultats = []
         inverse = {v: k for k, v in TYPES_OSM.items()}
@@ -270,6 +282,7 @@ class ServicesProximiteView(APIView):
             'resultats': resultats[:100],
             'source': '© contributeurs OpenStreetMap (ODbL)',
             'donnees_du': cache_val['date'],
+            'donnees_anciennes': bool(cache_val.get('ancien')),
             'avertissement': ("Données collaboratives : vérifiez avant de vous déplacer. "
                               "La disponibilité des établissements n'est pas connue."),
         })

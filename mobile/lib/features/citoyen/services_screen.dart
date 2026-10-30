@@ -80,7 +80,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
               IconButton(tooltip: 'Itinéraire', onPressed: () => itineraire(s['latitude'], s['longitude']), icon: const Icon(Icons.directions_rounded, color: AppColors.vert600)),
             ])),
           ),
-          Text('${_donnees!['source']} · données du ${dateHeure(lireDate(_donnees!['donnees_du']))}. ${_donnees!['avertissement']}',
+          Text('${_donnees!['source']} · données du ${dateHeure(lireDate(_donnees!['donnees_du']))}${_donnees!['donnees_anciennes'] == true ? ' (serveurs OpenStreetMap saturés : derniers résultats connus)' : ''}. ${_donnees!['avertissement']}',
               style: TextStyle(fontSize: 11.5, color: AppColors.textMuted)),
         ],
       ]),

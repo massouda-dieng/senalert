@@ -81,7 +81,7 @@ export default function Services() {
           </Carte>
         </div>
       )}
-      {donnees && <p className="mt-3 text-xs text-texte-pale">{donnees.source} · données du {dateHeure(donnees.donnees_du)}. {donnees.avertissement}</p>}
+      {donnees && <p className="mt-3 text-xs text-texte-pale">{donnees.source} · données du {dateHeure(donnees.donnees_du)}{donnees.donnees_anciennes && <b> (serveurs OpenStreetMap saturés : derniers résultats connus)</b>}. {donnees.avertissement}</p>}
     </>
   );
 }

@@ -58,7 +58,30 @@ class ServicesProximiteTests(SenAlertTestCase):
 
     def setUp(self):
         super().setUp()
+        from django.core.cache import caches
+        caches['default'].clear()
+        caches['osm'].clear()
         self.en_tant_que(self.citoyen())
+
+    def test_derniers_resultats_si_serveurs_satures(self):
+        from django.core.cache import caches
+        elements = [{'type': 'node', 'id': 1, 'lat': 14.6929, 'lon': -17.4468, 'tags': {'amenity': 'police', 'name': 'Commissariat'}}]
+        with mock.patch('core.views.interroger_overpass', return_value=elements):
+            self.assertFalse(self.client.get(self.URL, {'lat': 14.69, 'lng': -17.44}).data['donnees_anciennes'])
+        caches['default'].clear()  # le cache court a expiré
+        with mock.patch('core.views.interroger_overpass', side_effect=requests.ConnectionError):
+            r = self.client.get(self.URL, {'lat': 14.69, 'lng': -17.44})
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.data['donnees_anciennes'])
+        self.assertEqual(r.data['resultats'][0]['nom'], 'Commissariat')
+
+    def test_miroir_overpass_si_principal_sature(self):
+        from core.views import interroger_overpass
+        ok = mock.Mock(status_code=200, **{'json.return_value': {'elements': [{'id': 1}]}})
+        with self.settings(OVERPASS_URLS=['https://principal', 'https://miroir']), \
+                mock.patch('core.views.requests.post', side_effect=[requests.Timeout(), ok]) as post:
+            self.assertEqual(interroger_overpass(14.69, -17.44, 1000, ['police']), [{'id': 1}])
+        self.assertEqual([c.args[0] for c in post.call_args_list], ['https://principal', 'https://miroir'])
 
     def test_donnees_osm_triees_par_distance(self):
         elements = [

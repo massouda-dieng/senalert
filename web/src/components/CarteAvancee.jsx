@@ -15,7 +15,7 @@ import { CENTRE_SENEGAL, echapper, icone } from './Carte';
 import { IndicateurSynchro, Selecteur } from './ui';
 
 const FONDS = {
-  plan: { libelle: 'Plan', url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', attribution: '&copy; contributeurs OpenStreetMap' },
+  plan: { libelle: 'Plan', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', attribution: 'Fond &copy; Esri, HERE, Garmin, &copy; contributeurs OpenStreetMap' },
   clair: { libelle: 'Clair', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', attribution: 'Fond &copy; Esri, HERE, Garmin, &copy; contributeurs OpenStreetMap' },
   satellite: { libelle: 'Satellite', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attribution: 'Imagerie &copy; Esri, Maxar, Earthstar Geographics' },
 };

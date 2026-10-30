@@ -12,7 +12,7 @@ import '../../state/configuration.dart';
 import '../../ui/kit.dart';
 
 const _fonds = {
-  'plan': ('Plan', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', '© contributeurs OpenStreetMap'),
+  'plan': ('Plan', 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', 'Fond © Esri · © contributeurs OpenStreetMap'),
   'clair': ('Clair', 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', 'Fond © Esri · © OpenStreetMap'),
   'satellite': ('Satellite', 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', 'Imagerie © Esri, Maxar'),
 };

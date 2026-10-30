@@ -3,7 +3,7 @@
  * - fichiers /static/ (versionnés) : cache d'abord ;
  * - API : jamais en cache ici (les fiches de secours et la configuration sont
  *   mémorisées par l'application elle-même). Aucune donnée personnelle n'est stockée. */
-const VERSION = 'senalert-v3.2';
+const VERSION = 'senalert-v3.3';
 const COQUILLE = '/app/';
 
 self.addEventListener('install', (e) => {

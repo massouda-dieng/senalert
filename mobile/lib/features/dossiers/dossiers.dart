@@ -292,9 +292,10 @@ class _DossierScreenState extends State<DossierScreen> {
                       ClipRRect(borderRadius: BorderRadius.circular(18), child: SizedBox(height: 200, child: FlutterMap(
                         options: MapOptions(initialCenter: LatLng(d.lat!, d.lng!), initialZoom: 15),
                         children: [
-                          TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'sn.senalert.mobile'),
+                          TileLayer(urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', userAgentPackageName: 'sn.senalert.mobile'),
                           MarkerLayer(markers: [Marker(point: LatLng(d.lat!, d.lng!), width: 36, height: 36,
                               child: Icon(Icons.location_on, size: 36, color: d.estSos ? AppColors.crimson : AppColors.vert700))]),
+                          const RichAttributionWidget(attributions: [TextSourceAttribution('Fond © Esri · © contributeurs OpenStreetMap')]),
                         ],
                       ))),
                     ],

@@ -58,8 +58,9 @@ export default function CarteSenAlert({ points = [], centre = CENTRE_SENEGAL, zo
   return (
     <div className={`relative overflow-hidden rounded-2xl border border-surface-bord ${className}`} style={{ height: hauteur }}>
       <MapContainer center={centre} zoom={zoom} scrollWheelZoom className="h-full w-full" aria-label="Carte interactive">
-        <TileLayer attribution='&copy; contributeurs <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} />
+        {/* Plan Esri : les tuiles tile.openstreetmap.org renvoient 403 sans en-tête Referer (Referrer-Policy same-origin). */}
+        <TileLayer attribution='Fond &copy; Esri, HERE, Garmin, &copy; contributeurs <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}" maxZoom={19} />
         <CoucheMarqueurs points={pts} regrouper={regrouper} />
         <Cadrage points={pts} cadrer={cadrer} />
         {onClic && <Clic onClic={onClic} />}

@@ -218,7 +218,13 @@ CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'senalert',
-    }
+    },
+    # Derniers résultats OpenStreetMap obtenus : conservés sur disque pour survivre à un serveur Overpass saturé.
+    'osm': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': BASE_DIR / '.cache-osm',
+        'TIMEOUT': 30 * 24 * 3600,
+    },
 }
 
 # --- E-mail (réinitialisation du mot de passe) ------------------------------
@@ -249,6 +255,10 @@ GROQ_TIMEOUT = config('GROQ_TIMEOUT', default=15, cast=int)
 
 # --- Services de proximité (OpenStreetMap / Overpass) -----------------------
 OVERPASS_URL = config('OVERPASS_URL', default='https://overpass-api.de/api/interpreter')
+# Serveurs essayés dans l'ordre (le principal est souvent saturé).
+OVERPASS_URLS = [OVERPASS_URL] + [u for u in config('OVERPASS_MIROIRS', cast=Csv(), default=(
+    'https://overpass.private.coffee/api/interpreter,https://overpass.kumi.systems/api/interpreter,'
+    'https://maps.mail.ru/osm/tools/overpass/api/interpreter')) if u != OVERPASS_URL]
 NOMINATIM_URL = config('NOMINATIM_URL', default='https://nominatim.openstreetmap.org/search')
 
 # --- Sécurité en production -------------------------------------------------
@@ -302,3 +312,4 @@ if TESTING:
     GOOGLE_CLIENT_IDS = []
     EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
     LOGGING['root']['level'] = 'CRITICAL'
+    CACHES['osm'] = {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'osm-tests'}

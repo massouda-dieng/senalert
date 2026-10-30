@@ -219,10 +219,10 @@ class _SignalerScreenState extends State<SignalerScreen> {
                     onTap: (_, p) { setState(() { _lat = p.latitude; _lng = p.longitude; _precision = null; }); _sauver(); },
                   ),
                   children: [
-                    TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'sn.senalert.mobile'),
+                    TileLayer(urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', userAgentPackageName: 'sn.senalert.mobile'),
                     if (_lat != null) MarkerLayer(markers: [Marker(point: LatLng(_lat!, _lng!), width: 40, height: 40,
                         child: const Icon(Icons.location_on, color: AppColors.crimson, size: 40))]),
-                    const RichAttributionWidget(attributions: [TextSourceAttribution('© contributeurs OpenStreetMap')]),
+                    const RichAttributionWidget(attributions: [TextSourceAttribution('Fond © Esri · © contributeurs OpenStreetMap')]),
                   ],
                 )),
               ),
