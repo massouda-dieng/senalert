@@ -24,7 +24,17 @@ class AgentProfilSerializer(serializers.ModelSerializer):
         fields = ['service', 'service_nom', 'zones', 'matricule', 'fonction']
 
 
-class UtilisateurSerializer(serializers.ModelSerializer):
+class ProfilAgentSiAgentMixin:
+    """Le service et les zones ne concernent que le rôle agent (un profil conservé après changement de rôle est masqué)."""
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.role != ROLE_AGENT:
+            data['profil_agent'] = None
+        return data
+
+
+class UtilisateurSerializer(ProfilAgentSiAgentMixin, serializers.ModelSerializer):
     """Profil de l'utilisateur connecté. Le rôle est en lecture seule."""
 
     profil_agent = AgentProfilSerializer(read_only=True)
@@ -188,7 +198,7 @@ class DeviceTokenSerializer(serializers.Serializer):
 
 # --- Administration des comptes (superadministrateur) -----------------------
 
-class UtilisateurAdminSerializer(serializers.ModelSerializer):
+class UtilisateurAdminSerializer(ProfilAgentSiAgentMixin, serializers.ModelSerializer):
     profil_agent = AgentProfilSerializer(read_only=True)
     role_libelle = serializers.CharField(source='get_role_display', read_only=True)
     nb_interventions = serializers.IntegerField(read_only=True, default=None)
