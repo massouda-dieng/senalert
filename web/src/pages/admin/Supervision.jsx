@@ -1,5 +1,5 @@
 import {
-  AlertTriangle, CheckCircle2, ClipboardList, Clock, Database, Hourglass, Info, Siren, Timer, Users,
+  AlertTriangle, CheckCircle2, ClipboardList, Clock, Database, Hourglass, Info, Siren, Star, Timer, Users,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -158,6 +158,29 @@ export default function Supervision() {
               </table>
             </Carte>
           </div>
+
+          <Carte className="mt-5" titre="Satisfaction des citoyens (dossiers résolus de la période)">
+            {!s.satisfaction?.nombre ? (
+              <p className="text-sm text-texte-doux">Aucune évaluation sur la période. Après la résolution d’un dossier, le déclarant peut noter l’intervention de 1 à 5.</p>
+            ) : (
+              <div className="grid gap-6 md:grid-cols-[220px_1fr]">
+                <div title={def.satisfaction}>
+                  <p className="flex items-center gap-2 font-titre text-4xl font-extrabold">{s.satisfaction.moyenne.toFixed(1).replace('.', ',')}<Star className="h-7 w-7 fill-or text-or-vif" /></p>
+                  <p className="text-sm text-texte-doux">sur 5 · {nombre(s.satisfaction.nombre)} avis</p>
+                  <p className="mt-1 text-xs text-texte-pale">Taux de réponse : {pct(s.satisfaction.taux_reponse)}</p>
+                </div>
+                <ul className="space-y-2.5">
+                  {s.satisfaction.par_service.map((x) => (
+                    <li key={x.service} className="grid grid-cols-[minmax(0,180px)_1fr_auto] items-center gap-3 text-sm" title={`${x.moyenne} / 5 sur ${x.nombre} avis`}>
+                      <span className="truncate">{x.service}</span>
+                      <span className="h-2 overflow-hidden rounded-full bg-surface-douce"><span className="block h-full rounded-[4px] bg-marque-600" style={{ width: `${(x.moyenne / 5) * 100}%` }} /></span>
+                      <span className="font-semibold tabular-nums">{x.moyenne.toFixed(1).replace('.', ',')} <span className="font-normal text-texte-pale">({x.nombre})</span></span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </Carte>
 
           <Carte className="mt-5" titre="Qualité et complétude des données (incidents de la période)">
             {s.qualite.total === 0 ? <p className="text-sm text-texte-doux">Aucun incident sur la période.</p> : (

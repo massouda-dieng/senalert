@@ -1,10 +1,13 @@
+from datetime import timedelta
+
 from django.utils import timezone
 from rest_framework import serializers
 
-from core.constants import AFFECTE, GRAVITE_CHOICES, NOUVEAU, REGIONS, ROLE_SUPERADMIN
-from core.geo import dans_senegal, region_la_plus_proche
+from core.constants import ACCEPTE, AFFECTE, EN_COURS, GRAVITE_CHOICES, NOUVEAU, REGIONS, ROLE_SUPERADMIN
+from core.geo import dans_senegal, distance_m, region_la_plus_proche
 from core.models import Categorie, Parametre
 
+from . import workflow
 from .models import EvenementDossier, Incident, Intervention, PieceJointe
 
 
@@ -16,11 +19,35 @@ def delai_retard_minutes(est_sos):
 class InterventionSerializer(serializers.ModelSerializer):
     agent_nom = serializers.CharField(source='agent.nom_affiche', default=None, read_only=True)
     service_nom = serializers.CharField(source='service.nom', default=None, read_only=True)
+    position_agent = serializers.SerializerMethodField()
 
     class Meta:
         model = Intervention
         fields = ['agent', 'agent_nom', 'service', 'service_nom', 'date_affectation', 'date_acceptation',
-                  'date_debut', 'date_fin', 'compte_rendu', 'difficultes']
+                  'date_debut', 'date_fin', 'compte_rendu', 'difficultes', 'position_agent',
+                  'note_satisfaction', 'commentaire_satisfaction', 'date_evaluation']
+
+    def get_position_agent(self, obj) -> dict | None:
+        """Position récente de l'agent, seulement pendant l'intervention (pas d'historique conservé)."""
+        dossier = obj.incident or obj.alerte
+        if (obj.position_date is None or dossier is None or dossier.statut not in (ACCEPTE, EN_COURS)
+                or timezone.now() - obj.position_date > timedelta(minutes=workflow.POSITION_VALIDITE_MIN)):
+            return None
+        distance = (round(distance_m(obj.position_lat, obj.position_lng, dossier.latitude, dossier.longitude))
+                    if dossier.a_position else None)
+        return {'lat': obj.position_lat, 'lng': obj.position_lng, 'precision': obj.position_precision,
+                'date': obj.position_date, 'distance_m': distance}
+
+
+class PositionAgentSerializer(serializers.Serializer):
+    latitude = serializers.FloatField(min_value=-90, max_value=90)
+    longitude = serializers.FloatField(min_value=-180, max_value=180)
+    precision = serializers.FloatField(required=False, allow_null=True, min_value=0)
+
+
+class EvaluationSerializer(serializers.Serializer):
+    note = serializers.IntegerField(min_value=1, max_value=5)
+    commentaire = serializers.CharField(required=False, allow_blank=True, max_length=500)
 
 
 class EvenementSerializer(serializers.ModelSerializer):

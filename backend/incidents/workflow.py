@@ -286,8 +286,47 @@ def resoudre(dossier, agent, compte_rendu, difficultes=''):
     inter.compte_rendu = compte_rendu
     inter.difficultes = (difficultes or '').strip()
     inter.date_fin = timezone.now()
-    inter.save(update_fields=['compte_rendu', 'difficultes', 'date_fin'])
+    inter.position_lat = inter.position_lng = inter.position_precision = inter.position_date = None
+    inter.save(update_fields=['compte_rendu', 'difficultes', 'date_fin', 'position_lat', 'position_lng',
+                              'position_precision', 'position_date'])
     _changer_statut(dossier, RESOLU, agent, 'Intervention terminée.')
+    return dossier
+
+
+POSITION_VALIDITE_MIN = 10
+
+
+def partager_position(dossier, agent, lat, lng, precision=None):
+    """Position de l'agent en route ou sur place, visible du déclarant tant que l'intervention est active."""
+    _exiger_statut(dossier, {ACCEPTE, EN_COURS}, 'partager sa position')
+    inter = _exiger_agent_affecte(dossier, agent)
+    Intervention.objects.filter(pk=inter.pk).update(
+        position_lat=lat, position_lng=lng, position_precision=precision, position_date=timezone.now())
+    inter.refresh_from_db()
+    return inter
+
+
+@transaction.atomic
+def evaluer(dossier, citoyen, note, commentaire=''):
+    dossier = _verrouiller(dossier)
+    if dossier.citoyen_id != citoyen.pk:
+        raise PermissionDenied('Seul le déclarant peut évaluer cette intervention.')
+    _exiger_statut(dossier, {RESOLU}, 'évaluer')
+    inter = _intervention(dossier)
+    if inter is None:
+        raise Conflit('Aucune intervention à évaluer pour ce dossier.')
+    if inter.note_satisfaction is not None:
+        raise Conflit('Vous avez déjà évalué cette intervention.')
+    inter.note_satisfaction, inter.commentaire_satisfaction = note, (commentaire or '').strip()[:500]
+    inter.date_evaluation = timezone.now()
+    inter.save(update_fields=['note_satisfaction', 'commentaire_satisfaction', 'date_evaluation'])
+    evenement(dossier, 'evaluation', citoyen, f'Évaluation du citoyen : {note}/5.'
+              + (f' « {inter.commentaire_satisfaction} »' if inter.commentaire_satisfaction else ''))
+    if inter.agent_id:
+        agent = inter.agent
+        transaction.on_commit(lambda: notif.notifier(
+            [agent], 'statut', f'Votre intervention {dossier.reference} a été notée {note}/5', '', dossier,
+            f'evaluation:{dossier.reference}'))
     return dossier
 
 

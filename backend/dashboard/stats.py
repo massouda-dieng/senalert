@@ -14,7 +14,7 @@ from core.constants import (
 )
 from core.models import Categorie, Parametre
 from core.constants import REGIONS
-from incidents.models import Incident
+from incidents.models import Incident, Intervention
 
 DEFINITIONS = {
     'total_incidents': "Incidents signalés pendant la période (tous statuts).",
@@ -28,6 +28,7 @@ DEFINITIONS = {
     'delai_moyen_prise_en_charge_min': "Moyenne, en minutes, entre la création et l'acceptation par un agent (dossiers pris en charge).",
     'delai_moyen_resolution_min': "Moyenne, en minutes, entre la création et la clôture « résolu ».",
     'taux_resolution': "Résolus ÷ (total − rejetés − annulés), en %, sur la période.",
+    'satisfaction': "Moyenne des notes (1 à 5) données par les citoyens après résolution ; taux de réponse = évalués ÷ résolus.",
     'citoyens': "Comptes citoyens actifs (indépendant de la période).",
     'agents': "Comptes agents actifs (indépendant de la période).",
 }
@@ -133,6 +134,24 @@ def qualite(qs):
     }
 
 
+def satisfaction(incidents, sos):
+    """Notes données par les citoyens (1 à 5) sur les dossiers résolus de la période."""
+    qs = Intervention.objects.filter(Q(incident__in=incidents) | Q(alerte__in=sos), note_satisfaction__isnull=False)
+    agg = qs.aggregate(moyenne=Avg('note_satisfaction'), nombre=Count('id'))
+    resolus = incidents.filter(statut=RESOLU).count() + sos.filter(statut=RESOLU).count()
+    par_service = [
+        {'service': l['service__nom'] or 'Sans service', 'moyenne': round(l['m'], 2), 'nombre': l['n']}
+        for l in qs.values('service__nom').annotate(m=Avg('note_satisfaction'), n=Count('id')).order_by('-m')
+    ]
+    return {
+        'moyenne': round(agg['moyenne'], 2) if agg['moyenne'] is not None else None,
+        'nombre': agg['nombre'],
+        'taux_reponse': round(100 * agg['nombre'] / resolus, 1) if resolus else None,
+        'repartition': {n: qs.filter(note_satisfaction=n).count() for n in range(1, 6)},
+        'par_service': par_service,
+    }
+
+
 def statistiques(params):
     debut, fin = periode(params)
     granularite = params.get('granularite', 'jour')
@@ -179,6 +198,7 @@ def statistiques(params):
         'par_gravite': dict(incidents.values_list('gravite').annotate(n=Count('id'))),
         'evolution': {'incidents': serie(incidents, granularite, debut, fin), 'sos': serie(sos, granularite, debut, fin)},
         'qualite': qualite(incidents),
+        'satisfaction': satisfaction(incidents, sos),
         'definitions': DEFINITIONS,
         'genere_le': timezone.now(),
         'donnees_demo': Incident.objects.filter(description__startswith='[DÉMO]').exists(),

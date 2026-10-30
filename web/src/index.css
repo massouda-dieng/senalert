@@ -30,7 +30,8 @@
   .lien { @apply font-semibold text-marque-600 hover:underline; }
 }
 
-.leaflet-container { font: inherit; border-radius: inherit; }
+.leaflet-container { font: inherit; border-radius: inherit; isolation: isolate; z-index: 0; }
+.leaflet-container .leaflet-control-attribution { font-size: 10px; line-height: 1.4; }
 .marker-cluster { background: rgba(0,133,63,.22); border-radius: 999px; background-clip: padding-box; }
 .marker-cluster div { width: 30px; height: 30px; margin: 5px; border-radius: 999px; background: #006E33; color: #fff;
   font: 700 12px/30px Inter, system-ui, sans-serif; text-align: center; box-shadow: 0 0 0 2px #FDEF42; }
@@ -54,7 +55,8 @@
 .dark .text-red-700, .dark .text-red-800, .dark .text-red-900 { color: #FCA5A5; }
 .dark .text-emerald-700, .dark .text-emerald-800, .dark .text-emerald-900, .dark .text-succes { color: #6EE7B7; }
 .dark .text-amber-600, .dark .text-amber-700, .dark .text-amber-800, .dark .text-amber-900, .dark .text-alerte, .dark .text-or-fonce { color: #FCD34D; }
-.dark .text-blue-700 { color: #93C5FD; }
+.dark .text-blue-700, .dark .text-blue-900 { color: #93C5FD; }
+.dark .ring-blue-200 { --tw-ring-color: rgb(29 78 216 / .4); }
 .dark .text-violet-700 { color: #C4B5FD; }
 .dark .text-sky-700 { color: #7DD3FC; }
 .dark .text-rose-700, .dark .text-sos-fonce { color: #FDA4AF; }

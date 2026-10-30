@@ -403,6 +403,45 @@ paths:
               schema:
                 $ref: '#/components/schemas/AlerteSOS'
           description: ''
+  /api/alertes/sos/{id}/evaluer/:
+    post:
+      operationId: alertes_sos_evaluer_create
+      description: |-
+        Alertes SOS.
+
+        La création répond 201 avec la référence du dossier, ou 200 si la même
+        alerte a déjà été reçue (même clé d'idempotence ou SOS actif de moins de
+        2 minutes) : le client affiche alors le dossier existant.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Alerte SOS.
+        required: true
+      tags:
+      - alertes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvaluationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EvaluationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EvaluationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlerteSOS'
+          description: ''
   /api/alertes/sos/{id}/evenements/:
     get:
       operationId: alertes_sos_evenements_retrieve
@@ -498,6 +537,41 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/NoteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlerteSOS'
+          description: ''
+  /api/alertes/sos/{id}/position-agent/:
+    post:
+      operationId: alertes_sos_position_agent_create
+      description: L'agent affecté partage sa position (toutes les ~15 s) pendant
+        que l'intervention est active.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Alerte SOS.
+        required: true
+      tags:
+      - alertes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PositionAgentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PositionAgentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PositionAgentRequest'
         required: true
       security:
       - jwtAuth: []
@@ -2300,6 +2374,45 @@ paths:
               schema:
                 $ref: '#/components/schemas/Incident'
           description: ''
+  /api/incidents/{id}/evaluer/:
+    post:
+      operationId: incidents_evaluer_create
+      description: |-
+        Incidents signalés.
+
+        * Citoyen : crée et consulte uniquement ses propres signalements.
+        * Agent : voit les dossiers qui lui sont affectés et les nouveaux dossiers de son service dans ses zones.
+        * Superadministrateur : voit et gère tout.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvaluationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EvaluationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EvaluationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
   /api/incidents/{id}/evenements/:
     get:
       operationId: incidents_evenements_retrieve
@@ -2425,6 +2538,41 @@ paths:
         required: true
       tags:
       - incidents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/{id}/position-agent/:
+    post:
+      operationId: incidents_position_agent_create
+      description: L'agent affecté partage sa position (toutes les ~15 s) pendant
+        que l'intervention est active.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PositionAgentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PositionAgentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PositionAgentRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
@@ -4127,6 +4275,18 @@ components:
         * `citoyen` - citoyen
         * `agent` - agent
         * `superadmin` - superadmin
+    EvaluationRequest:
+      type: object
+      properties:
+        note:
+          type: integer
+          maximum: 5
+          minimum: 1
+        commentaire:
+          type: string
+          maxLength: 500
+      required:
+      - note
     FicheSecours:
       type: object
       properties:
@@ -5162,6 +5322,27 @@ components:
         * `ios` - ios
         * `web` - web
         * `inconnu` - inconnu
+    PositionAgentRequest:
+      type: object
+      properties:
+        latitude:
+          type: number
+          format: double
+          maximum: 90
+          minimum: -90
+        longitude:
+          type: number
+          format: double
+          maximum: 180
+          minimum: -180
+        precision:
+          type: number
+          format: double
+          minimum: 0
+          nullable: true
+      required:
+      - latitude
+      - longitude
     RegionEnum:
       enum:
       - dakar

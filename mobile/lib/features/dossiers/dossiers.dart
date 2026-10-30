@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -9,6 +10,7 @@ import 'package:provider/provider.dart';
 import '../../core/api.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/format.dart';
+import '../../core/location.dart';
 import '../../core/models.dart';
 import '../../state/session.dart';
 import '../../ui/kit.dart';
@@ -138,13 +140,54 @@ class _DossierScreenState extends State<DossierScreen> {
   List<Evenement> _evenements = [];
   ApiException? _erreur;
   bool _action = false;
+  Timer? _actualisation;
+  // Partage de position de l'agent affecté (toutes les 15 s, jusqu'à la clôture).
+  Timer? _partage;
+  String? _partageInfo;
+  int _note = 0;
+  final _commentaire = TextEditingController();
 
   String get _chemin => widget.sos ? '/alertes/sos/${widget.id}/' : '/incidents/${widget.id}/';
+  bool get _enIntervention => const {'accepte', 'en_cours'}.contains(_d?.statut);
 
   @override
   void initState() {
     super.initState();
     _charger();
+    _actualisation = Timer.periodic(const Duration(seconds: 15), (_) { if (mounted && !_action) _charger(); });
+  }
+
+  @override
+  void dispose() {
+    _actualisation?.cancel();
+    _partage?.cancel();
+    _commentaire.dispose();
+    super.dispose();
+  }
+
+  void _basculerPartage() {
+    if (_partage != null) {
+      _partage!.cancel();
+      setState(() { _partage = null; _partageInfo = null; });
+      return;
+    }
+    setState(() { _partage = Timer.periodic(const Duration(seconds: 15), (_) => _envoyerPosition()); _partageInfo = 'Recherche de votre position…'; });
+    _envoyerPosition();
+  }
+
+  Future<void> _envoyerPosition() async {
+    if (!_enIntervention) { _partage?.cancel(); if (mounted) setState(() => _partage = null); return; }
+    final p = await Localisation.lire(delai: const Duration(seconds: 10));
+    if (!mounted || _partage == null) return;
+    if (!p.ok) { setState(() => _partageInfo = p.erreur); return; }
+    try {
+      final r = await Api.instance.post<Map<String, dynamic>>('${_chemin}position-agent/',
+          data: {'latitude': p.lat, 'longitude': p.lng, 'precision': p.precision});
+      final dist = r['distance_m'] as num?;
+      if (mounted) setState(() => _partageInfo = 'Envoyée à ${TimeOfDay.now().format(context)}${dist != null ? ' · ${distanceLisible(dist)} du lieu' : ''}');
+    } on ApiException catch (e) {
+      if (mounted) setState(() => _partageInfo = e.message);
+    }
   }
 
   Future<void> _charger() async {
@@ -235,6 +278,36 @@ class _DossierScreenState extends State<DossierScreen> {
     return b;
   }
 
+  Widget _evaluation(Dossier d) {
+    final note = d.intervention!['note_satisfaction'] as int?;
+    if (note != null) {
+      final com = (d.intervention!['commentaire_satisfaction'] ?? '').toString();
+      return Carte(couleur: AppColors.jaune.withOpacity(.18), child: Row(children: [
+        _Etoiles(note),
+        const SizedBox(width: 10),
+        Expanded(child: Text('${libellesNote[note]}${com.isEmpty ? '' : ' · « $com »'}', style: const TextStyle(fontWeight: FontWeight.w600))),
+      ]));
+    }
+    return Carte(couleur: AppColors.jaune.withOpacity(.18), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text('Comment s’est passée l’intervention ?', style: titre(16)),
+      const SizedBox(height: 2),
+      Text('Votre avis aide à améliorer les services de secours.', style: TextStyle(color: AppColors.textGrey, fontSize: 13)),
+      const SizedBox(height: 6),
+      Row(children: [
+        for (var n = 1; n <= 5; n++)
+          IconButton(tooltip: '$n sur 5', visualDensity: VisualDensity.compact, onPressed: () => setState(() => _note = n),
+              icon: Icon(n <= _note ? Icons.star_rounded : Icons.star_border_rounded, size: 32, color: n <= _note ? const Color(0xFFF5B400) : AppColors.textGrey)),
+      ]),
+      if (_note > 0) ...[
+        Text(libellesNote[_note]!, style: const TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        TextField(controller: _commentaire, maxLength: 500, maxLines: 2, decoration: const InputDecoration(labelText: 'Un commentaire ? (facultatif)')),
+        FilledButton.icon(onPressed: _action ? null : () => _agir('evaluer', 'Merci pour votre évaluation !', {'note': _note, 'commentaire': _commentaire.text.trim()}),
+            icon: const Icon(Icons.send_rounded), label: const Text('Envoyer mon avis')),
+      ],
+    ]));
+  }
+
   @override
   Widget build(BuildContext context) {
     final u = context.watch<Session>().utilisateur!;
@@ -258,6 +331,13 @@ class _DossierScreenState extends State<DossierScreen> {
                     if (d.enRetard) const Padding(padding: EdgeInsets.only(top: 10), child: Bandeau.alerte('Pas encore pris en charge dans le délai prévu.')),
                     const SizedBox(height: 14),
                     Wrap(spacing: 8, runSpacing: 8, children: _actions(u, d)),
+                    if (u.estAgent && d.agentId == u.id && _enIntervention) Padding(padding: const EdgeInsets.only(top: 12), child: _CartePartage(
+                        actif: _partage != null, info: _partageInfo, onBasculer: _basculerPartage)),
+                    if (!u.estAgent && _enIntervention && d.intervention?['position_agent'] != null)
+                      Padding(padding: const EdgeInsets.only(top: 12), child: _AgentEnRoute(Map<String, dynamic>.from(d.intervention!['position_agent']))),
+                    if (d.statut == 'resolu' && d.intervention != null &&
+                        (d.intervention!['note_satisfaction'] != null || (u.estCitoyen && d.estProprietaire)))
+                      Padding(padding: const EdgeInsets.only(top: 12), child: _evaluation(d)),
                     if (d.description.isNotEmpty) ...[
                       const SizedBox(height: 14),
                       Carte(couleur: AppColors.surfaceSubtle, child: Text(d.description)),
@@ -290,11 +370,22 @@ class _DossierScreenState extends State<DossierScreen> {
                     if (d.lat != null) ...[
                       const SizedBox(height: 12),
                       ClipRRect(borderRadius: BorderRadius.circular(18), child: SizedBox(height: 200, child: FlutterMap(
-                        options: MapOptions(initialCenter: LatLng(d.lat!, d.lng!), initialZoom: 15),
+                        key: ValueKey(d.intervention?['position_agent']?['date']),
+                        options: _enIntervention && d.intervention?['position_agent'] != null
+                            ? MapOptions(initialCameraFit: CameraFit.coordinates(padding: const EdgeInsets.all(40), coordinates: [
+                                LatLng(d.lat!, d.lng!),
+                                LatLng((d.intervention!['position_agent']['lat'] as num).toDouble(), (d.intervention!['position_agent']['lng'] as num).toDouble()),
+                              ]))
+                            : MapOptions(initialCenter: LatLng(d.lat!, d.lng!), initialZoom: 15),
                         children: [
                           TileLayer(urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', userAgentPackageName: 'sn.senalert.mobile'),
-                          MarkerLayer(markers: [Marker(point: LatLng(d.lat!, d.lng!), width: 36, height: 36,
-                              child: Icon(Icons.location_on, size: 36, color: d.estSos ? AppColors.crimson : AppColors.vert700))]),
+                          MarkerLayer(markers: [
+                            Marker(point: LatLng(d.lat!, d.lng!), width: 36, height: 36,
+                                child: Icon(Icons.location_on, size: 36, color: d.estSos ? AppColors.crimson : AppColors.vert700)),
+                            if (_enIntervention && d.intervention?['position_agent'] != null)
+                              Marker(point: LatLng((d.intervention!['position_agent']['lat'] as num).toDouble(), (d.intervention!['position_agent']['lng'] as num).toDouble()),
+                                  width: 34, height: 34, child: const CircleAvatar(backgroundColor: Color(0xFF1E3A8A), child: Icon(Icons.local_shipping, size: 18, color: Colors.white))),
+                          ]),
                           const RichAttributionWidget(attributions: [TextSourceAttribution('Fond © Esri · © contributeurs OpenStreetMap')]),
                         ],
                       ))),
@@ -305,6 +396,60 @@ class _DossierScreenState extends State<DossierScreen> {
                     for (final e in _evenements) _LigneEvenement(e),
                   ]),
                 ),
+    );
+  }
+}
+
+const libellesNote = {1: 'Très insatisfait', 2: 'Insatisfait', 3: 'Correct', 4: 'Satisfait', 5: 'Très satisfait'};
+
+String distanceLisible(num m) => m < 1000 ? '${(m / 10).round() * 10} m' : '${(m / 1000).toStringAsFixed(1).replaceAll('.', ',')} km';
+
+class _Etoiles extends StatelessWidget {
+  final int note;
+  const _Etoiles(this.note);
+  @override
+  Widget build(BuildContext context) => Row(mainAxisSize: MainAxisSize.min, children: [
+        for (var n = 1; n <= 5; n++) Icon(n <= note ? Icons.star_rounded : Icons.star_border_rounded, size: 20, color: const Color(0xFFF5B400)),
+      ]);
+}
+
+class _CartePartage extends StatelessWidget {
+  final bool actif;
+  final String? info;
+  final VoidCallback onBasculer;
+  const _CartePartage({required this.actif, required this.info, required this.onBasculer});
+  @override
+  Widget build(BuildContext context) => Carte(
+        couleur: actif ? const Color(0xFF1E3A8A).withOpacity(.1) : AppColors.surfaceSubtle,
+        child: Row(children: [
+          Icon(Icons.my_location, color: actif ? const Color(0xFF1E3A8A) : AppColors.textGrey),
+          const SizedBox(width: 10),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(actif ? 'Position partagée avec le déclarant' : 'Partager ma position en direct', style: const TextStyle(fontWeight: FontWeight.w700)),
+            Text(info ?? 'Le déclarant voit votre progression jusqu’à la clôture.', style: TextStyle(fontSize: 12, color: AppColors.textGrey)),
+          ])),
+          TextButton(onPressed: onBasculer, child: Text(actif ? 'Arrêter' : 'Partager')),
+        ]),
+      );
+}
+
+class _AgentEnRoute extends StatelessWidget {
+  final Map<String, dynamic> position;
+  const _AgentEnRoute(this.position);
+  @override
+  Widget build(BuildContext context) {
+    final dist = position['distance_m'] as num?;
+    return Carte(
+      couleur: const Color(0xFF1E3A8A).withOpacity(.1),
+      child: Row(children: [
+        const CircleAvatar(radius: 22, backgroundColor: Color(0xFF1E3A8A), child: Icon(Icons.local_shipping, color: Colors.white)),
+        const SizedBox(width: 12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Les secours sont en route', style: titre(16)),
+          Text('${dist != null ? 'À environ ${distanceLisible(dist)} du lieu' : 'Position de l’agent disponible'} · mis à jour ${ilYa(lireDate(position['date']))}',
+              style: TextStyle(fontSize: 13, color: AppColors.textGrey)),
+        ])),
+      ]),
     );
   }
 }

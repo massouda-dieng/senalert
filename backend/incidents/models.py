@@ -75,6 +75,15 @@ class Intervention(models.Model):
     date_fin = models.DateTimeField(null=True, blank=True)
     compte_rendu = models.TextField(blank=True)
     difficultes = models.TextField(blank=True)
+    # Suivi en direct : dernière position partagée par l'agent pendant l'intervention (effacée à la clôture).
+    position_lat = models.FloatField(null=True, blank=True)
+    position_lng = models.FloatField(null=True, blank=True)
+    position_precision = models.FloatField(null=True, blank=True)
+    position_date = models.DateTimeField(null=True, blank=True)
+    # Évaluation du citoyen après résolution (une seule fois).
+    note_satisfaction = models.PositiveSmallIntegerField(null=True, blank=True)
+    commentaire_satisfaction = models.CharField(max_length=500, blank=True)
+    date_evaluation = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         constraints = [
@@ -109,6 +118,7 @@ class EvenementDossier(models.Model):
         ('gravite', 'Changement de gravité'),
         ('doublon', 'Doublon potentiel'),
         ('notification', 'Notification'),
+        ('evaluation', 'Évaluation du citoyen'),
     ]
 
     incident = models.ForeignKey(Incident, null=True, blank=True, on_delete=models.CASCADE, related_name='evenements')

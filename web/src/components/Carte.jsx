@@ -16,6 +16,16 @@ export function icone(couleur, { sos = false, taille = 16 } = {}) {
   });
 }
 
+/** Marqueur de l'agent en route : pastille bleu nuit avec un camion, distincte des statuts. */
+export const ICONE_AGENT = L.divIcon({
+  className: '',
+  iconSize: [30, 30],
+  html: '<span style="display:grid;place-items:center;width:30px;height:30px;border-radius:10px;background:#1E3A8A;border:2.5px solid #fff;box-shadow:0 2px 8px rgba(7,19,48,.45)">'
+    + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62L18.3 9.38a1 1 0 0 0-.78-.38H14"/>'
+    + '<circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg></span>',
+});
+
 /**
  * Couche de marqueurs regroupés.
  * points : [{ id, lat, lng, couleur, sos, popup (HTML échappé), onClick }]
@@ -25,7 +35,7 @@ function CoucheMarqueurs({ points, regrouper }) {
   useEffect(() => {
     const groupe = regrouper ? L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 45 }) : L.layerGroup();
     points.forEach((p) => {
-      const m = L.marker([p.lat, p.lng], { icon: icone(p.couleur, { sos: p.sos }), keyboard: true, title: p.titre || '' });
+      const m = L.marker([p.lat, p.lng], { icon: p.agent ? ICONE_AGENT : icone(p.couleur, { sos: p.sos }), keyboard: true, title: p.titre || '', zIndexOffset: p.agent ? 500 : 0 });
       if (p.popup) m.bindPopup(p.popup);
       if (p.onClick) m.on('click', () => p.onClick());
       groupe.addLayer(m);

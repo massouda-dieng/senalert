@@ -1,9 +1,9 @@
 import clsx from 'clsx';
 import {
-  CheckCircle2, Clock, Copy, ExternalLink, Flag, ImagePlus, MapPin, MessageSquarePlus, Navigation, Phone, Play,
-  Send, UserPlus, X, XCircle,
+  CheckCircle2, Clock, Copy, ExternalLink, Flag, ImagePlus, LocateFixed, MapPin, MessageSquarePlus, Navigation, Phone, Play,
+  Send, Star, Truck, UserPlus, X, XCircle,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api, urlObjetProtege } from '../api/client';
 import { useRessource } from '../api/hooks';
 import { useAuth } from '../auth/AuthContext';
@@ -19,9 +19,13 @@ const chemin = (type, id) => (type === 'sos' ? `/alertes/sos/${id}/` : `/inciden
 export default function DossierDetail({ type = 'incident', id, onFermer, onModifie, compact = false }) {
   const { utilisateur } = useAuth();
   const toast = useToast();
-  const { donnees: d, chargement, erreur, recharger, setDonnees } = useRessource(id ? chemin(type, id) : null);
+  // Rafraîchi régulièrement : le citoyen suit l'agent qui arrive, l'agent voit les compléments.
+  const { donnees: d, chargement, erreur, recharger, setDonnees } = useRessource(id ? chemin(type, id) : null, null, { intervalle: 15000 });
   const evs = useRessource(id ? `${chemin(type, id)}evenements/` : null);
   const [dialogue, setDialogue] = useState(null);
+  const enIntervention = ['accepte', 'en_cours'].includes(d?.statut);
+  const partage = usePartagePosition(utilisateur.role === 'agent' && d?.intervention?.agent === utilisateur.id && enIntervention
+    ? `${chemin(type, id)}position-agent/` : null);
 
   if (!id) return null;
   if (chargement && !d) return <Chargement />;
@@ -92,6 +96,13 @@ export default function DossierDetail({ type = 'incident', id, onFermer, onModif
 
       {actions.length > 0 && <div className="flex flex-wrap gap-2">{actions}</div>}
 
+      {role === 'agent' && estMien && enIntervention && <PartagePosition partage={partage} />}
+      {role !== 'agent' && enIntervention && inter?.position_agent && <AgentEnRoute position={inter.position_agent} />}
+      {inter && s === 'resolu' && (inter.note_satisfaction != null || (role === 'citoyen' && d.est_proprietaire)) && (
+        <Evaluation intervention={inter} peutEvaluer={role === 'citoyen' && d.est_proprietaire}
+          onEvaluer={(corps) => agir('evaluer', corps, 'Merci pour votre évaluation !')} />
+      )}
+
       {d.doublon_potentiel_reference && (
         <Bandeau type="alerte" titre="Doublon potentiel">Ce signalement ressemble à {d.doublon_potentiel_reference} (même catégorie, à proximité, peu de temps avant). Vérifiez avant d’affecter.</Bandeau>
       )}
@@ -129,8 +140,11 @@ export default function DossierDetail({ type = 'incident', id, onFermer, onModif
 
           {d.latitude != null && (
             <div className="space-y-2">
-              <CarteSenAlert hauteur={220} zoom={15} centre={[d.latitude, d.longitude]} regrouper={false}
-                points={[{ id: d.id, lat: d.latitude, lng: d.longitude, couleur: type === 'sos' ? '#E31B23' : STATUTS[s]?.point, sos: type === 'sos' }]} />
+              <CarteSenAlert hauteur={220} zoom={15} centre={[d.latitude, d.longitude]} regrouper={false} cadrer={Boolean(enIntervention && inter?.position_agent)}
+                points={[
+                  { id: d.id, lat: d.latitude, lng: d.longitude, couleur: type === 'sos' ? '#E31B23' : STATUTS[s]?.point, sos: type === 'sos', titre: 'Lieu du dossier' },
+                  ...(enIntervention && inter?.position_agent ? [{ id: 'agent', lat: inter.position_agent.lat, lng: inter.position_agent.lng, agent: true, titre: 'Agent de secours' }] : []),
+                ]} />
               {(role !== 'citoyen') && (
                 <a className="lien inline-flex items-center gap-1.5 text-sm" target="_blank" rel="noreferrer"
                   href={`https://www.google.com/maps/dir/?api=1&destination=${d.latitude},${d.longitude}`}>
@@ -171,6 +185,108 @@ export default function DossierDetail({ type = 'incident', id, onFermer, onModif
       <DialogueCloture ouverte={dialogue === 'resoudre'} onFermer={() => setDialogue(null)} onValider={(corps) => agir('resoudre', corps, 'Intervention clôturée.')} />
       {dialogue === 'affecter' && <DialogueAffectation dossier={d} onFermer={() => setDialogue(null)} onValider={(corps) => agir('affecter', corps, 'Affectation enregistrée.')} />}
       {dialogue === 'completer' && <DialogueComplement type={type} id={id} onFermer={() => setDialogue(null)} onFait={(maj) => { setDonnees(maj); evs.recharger(true); toast('Complément envoyé.'); }} />}
+    </div>
+  );
+}
+
+const distanceLisible = (m) => (m == null ? null : m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1).replace('.', ',')} km`);
+
+/** Partage de la position de l'agent affecté pendant l'intervention (envoi toutes les 15 s au plus). */
+function usePartagePosition(url) {
+  const [actif, setActif] = useState(false);
+  const [etat, setEtat] = useState({ erreur: null, dernier: null });
+  const dernierEnvoi = useRef(0);
+  useEffect(() => {
+    if (!url || !actif) return undefined;
+    if (!navigator.geolocation) { setEtat({ erreur: 'La géolocalisation n’est pas disponible sur cet appareil.', dernier: null }); return undefined; }
+    const id = navigator.geolocation.watchPosition(async (p) => {
+      if (Date.now() - dernierEnvoi.current < 15000) return;
+      dernierEnvoi.current = Date.now();
+      try {
+        const r = await api(url, { methode: 'POST', corps: { latitude: p.coords.latitude, longitude: p.coords.longitude, precision: p.coords.accuracy } });
+        setEtat({ erreur: null, dernier: { date: new Date(), distance: r?.distance_m } });
+      } catch (e) { setEtat((x) => ({ ...x, erreur: e.detail })); }
+    }, (e) => setEtat({ erreur: e.code === 1 ? 'Autorisez la localisation dans le navigateur pour partager votre position.' : 'Position introuvable pour le moment.', dernier: null }),
+    { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 });
+    return () => navigator.geolocation.clearWatch(id);
+  }, [url, actif]);
+  useEffect(() => { if (!url) setActif(false); }, [url]);
+  return { actif, setActif, ...etat };
+}
+
+function PartagePosition({ partage }) {
+  return (
+    <div className={clsx('flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4 text-sm ring-1', partage.actif ? 'bg-blue-50 text-blue-900 ring-blue-200' : 'bg-surface-douce ring-surface-bord')}>
+      <div className="flex items-start gap-3">
+        <LocateFixed className={clsx('mt-0.5 h-5 w-5 shrink-0', partage.actif && 'animate-pulse')} />
+        <div>
+          <p className="font-semibold">{partage.actif ? 'Position partagée avec le déclarant' : 'Partager ma position en direct'}</p>
+          <p className="opacity-80">{partage.erreur || (partage.dernier
+            ? `Envoyée ${ilYa(partage.dernier.date)}${partage.dernier.distance != null ? ` · ${distanceLisible(partage.dernier.distance)} du lieu` : ''}`
+            : partage.actif ? 'Recherche de votre position…' : 'Le déclarant voit votre progression jusqu’à la clôture, puis la position est effacée.')}</p>
+        </div>
+      </div>
+      <Bouton variante={partage.actif ? 'secondaire' : 'primaire'} icone={LocateFixed} onClick={() => partage.setActif(!partage.actif)}>
+        {partage.actif ? 'Arrêter le partage' : 'Partager ma position'}
+      </Bouton>
+    </div>
+  );
+}
+
+function AgentEnRoute({ position }) {
+  return (
+    <div className="flex items-center gap-4 rounded-2xl bg-blue-50 p-4 text-blue-900 ring-1 ring-blue-200">
+      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-blue-600 text-white"><Truck className="h-6 w-6" /></span>
+      <div>
+        <p className="font-bold">Les secours sont en route</p>
+        <p className="text-sm">{position.distance_m != null ? <>L’agent est à environ <b>{distanceLisible(position.distance_m)}</b> du lieu</> : 'Position de l’agent disponible'} · mis à jour {ilYa(position.date)}</p>
+      </div>
+    </div>
+  );
+}
+
+function Etoiles({ valeur, onChange, taille = 'h-7 w-7' }) {
+  const [survol, setSurvol] = useState(0);
+  return (
+    <div className="flex gap-1" role={onChange ? 'radiogroup' : undefined} aria-label="Note sur 5" onMouseLeave={() => setSurvol(0)}>
+      {[1, 2, 3, 4, 5].map((n) => {
+        const plein = n <= (survol || valeur);
+        const etoile = <Star className={clsx(taille, plein ? 'fill-or text-or-vif' : 'text-texte-pale')} />;
+        return onChange
+          ? <button key={n} type="button" role="radio" aria-checked={valeur === n} aria-label={`${n} sur 5`} onMouseEnter={() => setSurvol(n)} onClick={() => onChange(n)} className="rounded transition hover:scale-110">{etoile}</button>
+          : <span key={n} aria-hidden>{etoile}</span>;
+      })}
+    </div>
+  );
+}
+
+const LIBELLES_NOTE = { 1: 'Très insatisfait', 2: 'Insatisfait', 3: 'Correct', 4: 'Satisfait', 5: 'Très satisfait' };
+
+function Evaluation({ intervention, peutEvaluer, onEvaluer }) {
+  const [note, setNote] = useState(0);
+  const [commentaire, setCommentaire] = useState('');
+  const [envoi, setEnvoi] = useState(false);
+  if (intervention.note_satisfaction != null) {
+    return (
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-or-clair p-4 text-sm ring-1 ring-or/40">
+        <Etoiles valeur={intervention.note_satisfaction} taille="h-5 w-5" />
+        <span className="font-semibold">{LIBELLES_NOTE[intervention.note_satisfaction]}</span>
+        {intervention.commentaire_satisfaction && <span className="text-texte-doux">« {intervention.commentaire_satisfaction} »</span>}
+      </div>
+    );
+  }
+  if (!peutEvaluer) return null;
+  return (
+    <div className="rounded-2xl bg-or-clair p-5 ring-1 ring-or/40">
+      <p className="font-bold">Comment s’est passée l’intervention ?</p>
+      <p className="text-sm text-texte-doux">Votre avis aide à améliorer les services de secours. Il est transmis au service concerné.</p>
+      <div className="mt-3 flex items-center gap-3"><Etoiles valeur={note} onChange={setNote} />{note > 0 && <span className="text-sm font-semibold">{LIBELLES_NOTE[note]}</span>}</div>
+      {note > 0 && (
+        <div className="mt-3 space-y-3">
+          <textarea rows={2} maxLength={500} className="champ" placeholder="Un commentaire ? (facultatif)" value={commentaire} onChange={(e) => setCommentaire(e.target.value)} />
+          <Bouton icone={Send} chargement={envoi} onClick={async () => { setEnvoi(true); try { await onEvaluer({ note, commentaire }); } catch { /* message affiché */ } finally { setEnvoi(false); } }}>Envoyer mon avis</Bouton>
+        </div>
+      )}
     </div>
   );
 }

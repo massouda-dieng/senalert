@@ -17,8 +17,8 @@ from core.permissions import est_agent, est_superadmin
 
 from . import workflow
 from .serializers import (
-    AffectationSerializer, ClotureSerializer, EvenementSerializer, GraviteSerializer, MotifSerializer,
-    NoteSerializer,
+    AffectationSerializer, ClotureSerializer, EvaluationSerializer, EvenementSerializer, GraviteSerializer,
+    InterventionSerializer, MotifSerializer, NoteSerializer, PositionAgentSerializer,
 )
 
 
@@ -148,6 +148,25 @@ class ActionsDossierMixin:
         s.is_valid(raise_exception=True)
         ev = workflow.ajouter_note(self.get_object(), request.user, **s.validated_data)
         return Response(EvenementSerializer(ev, context={'request': request}).data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(request=PositionAgentSerializer)
+    @action(detail=True, methods=['post'], url_path='position-agent')
+    def position_agent(self, request, pk=None):
+        """L'agent affecté partage sa position (toutes les ~15 s) pendant que l'intervention est active."""
+        self._exiger(est_agent(request.user), 'Action réservée aux agents.')
+        s = PositionAgentSerializer(data=request.data)
+        s.is_valid(raise_exception=True)
+        d = s.validated_data
+        inter = workflow.partager_position(self.get_object(), request.user, d['latitude'], d['longitude'], d.get('precision'))
+        return Response(InterventionSerializer(inter).data['position_agent'])
+
+    @extend_schema(request=EvaluationSerializer)
+    @action(detail=True, methods=['post'])
+    def evaluer(self, request, pk=None):
+        s = EvaluationSerializer(data=request.data)
+        s.is_valid(raise_exception=True)
+        return self._repondre(workflow.evaluer(self.get_object(), request.user, s.validated_data['note'],
+                                               s.validated_data.get('commentaire', '')))
 
     @action(detail=True, methods=['get'])
     def evenements(self, request, pk=None):
