@@ -4,6 +4,7 @@ import 'package:senalert_mobile/app.dart';
 import 'package:senalert_mobile/core/api.dart';
 import 'package:senalert_mobile/core/format.dart';
 import 'package:senalert_mobile/core/models.dart';
+import 'package:senalert_mobile/ui/credits_photos.dart';
 
 Map<String, dynamic> sos({double? lat}) => {
       'id': 7, 'reference': 'SOS-2026-000007', 'statut': 'nouveau', 'gravite': 'critique', 'latitude': lat, 'longitude': lat == null ? null : -17.4,
@@ -67,6 +68,14 @@ void main() {
     expect(accueilPour('citoyen'), '/accueil');
     expect(accueilPour('agent'), '/agent');
     expect(accueilPour('superadmin'), '/supervision');
+  });
+
+  test('chaque photo d’illustration a un crédit de licence', () {
+    expect(creditsPhotos.length, greaterThanOrEqualTo(9));
+    for (final c in creditsPhotos.values) {
+      expect(c, contains('Photo :'));
+      expect(RegExp(r'CC|Public domain').hasMatch(c), isTrue);
+    }
   });
 
   test('clés d’idempotence uniques', () {

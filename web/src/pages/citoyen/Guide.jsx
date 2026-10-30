@@ -40,7 +40,7 @@ export default function Guide() {
         <Carte className="mt-5" titre="Que faire ?">
           <ol className="space-y-3">
             {fiche.etapes.map((e, i) => (
-              <li key={i} className="flex gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-nuit-800 text-sm font-bold text-white">{i + 1}</span><span className="pt-0.5">{e}</span></li>
+              <li key={i} className="flex gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-marque-800 text-sm font-bold text-white">{i + 1}</span><span className="pt-0.5">{e}</span></li>
             ))}
           </ol>
         </Carte>

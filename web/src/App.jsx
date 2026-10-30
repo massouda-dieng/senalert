@@ -3,7 +3,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ESPACE_PAR_ROLE, useAuth } from './auth/AuthContext';
 import Layout from './components/Layout';
 import { Chargement } from './components/ui';
-import { CarteAgent, Interventions, TableauAgent } from './pages/agent/Agent';
+import { Interventions, TableauAgent } from './pages/agent/Agent';
 import { Audit, Parametres, Referentiels } from './pages/admin/Configuration';
 import { IncidentsAdmin, SOSAdmin } from './pages/admin/Dossiers';
 import Risques from './pages/admin/Risques';
@@ -11,12 +11,16 @@ import Utilisateurs from './pages/admin/Utilisateurs';
 import { Connexion, Inscription, MotDePasseOublie, Reinitialiser } from './pages/auth/Auth';
 import Accueil from './pages/citoyen/Accueil';
 import Assistant from './pages/citoyen/Assistant';
-import CarteIncidents from './pages/citoyen/CarteIncidents';
 import Guide from './pages/citoyen/Guide';
 import MesDossiers from './pages/citoyen/MesDossiers';
 import Services from './pages/citoyen/Services';
 import Signaler from './pages/citoyen/Signaler';
+import AlertesZone from './pages/admin/AlertesZone';
+import CartePage from './pages/commun/CartePage';
+import Communaute from './pages/commun/Communaute';
+import Credits from './pages/commun/Credits';
 import Notifications from './pages/commun/Notifications';
+import Vitrine from './pages/Vitrine';
 import Profil from './pages/commun/Profil';
 
 // Chargé à la demande : les graphiques ne pèsent pas sur les espaces citoyen et agent.
@@ -45,24 +49,31 @@ export default function App() {
       <Route path="/inscription" element={<Public><Inscription /></Public>} />
       <Route path="/mot-de-passe-oublie" element={<Public><MotDePasseOublie /></Public>} />
       <Route path="/reinitialiser" element={<Reinitialiser />} />
+      <Route path="/" element={<Vitrine />} />
+      <Route path="/credits" element={<Credits />} />
 
       <Route element={<Espace><Layout /></Espace>}>
         <Route path="/citoyen" element={<Espace roles={['citoyen']}><Accueil /></Espace>} />
         <Route path="/citoyen/signaler" element={<Espace roles={['citoyen']}><Signaler /></Espace>} />
         <Route path="/citoyen/dossiers" element={<Espace roles={['citoyen']}><MesDossiers /></Espace>} />
-        <Route path="/citoyen/carte" element={<Espace roles={['citoyen']}><CarteIncidents /></Espace>} />
+        <Route path="/citoyen/carte" element={<Espace roles={['citoyen']}><CartePage /></Espace>} />
+        <Route path="/citoyen/communaute" element={<Espace roles={['citoyen']}><Communaute /></Espace>} />
         <Route path="/citoyen/services" element={<Espace roles={['citoyen']}><Services /></Espace>} />
         <Route path="/citoyen/secours" element={<Espace roles={['citoyen']}><Guide /></Espace>} />
         <Route path="/citoyen/assistant" element={<Espace roles={['citoyen']}><Assistant /></Espace>} />
 
         <Route path="/agent" element={<Espace roles={['agent']}><TableauAgent /></Espace>} />
         <Route path="/agent/interventions" element={<Espace roles={['agent']}><Interventions /></Espace>} />
-        <Route path="/agent/carte" element={<Espace roles={['agent']}><CarteAgent /></Espace>} />
+        <Route path="/agent/carte" element={<Espace roles={['agent']}><CartePage /></Espace>} />
+        <Route path="/agent/communaute" element={<Espace roles={['agent']}><Communaute /></Espace>} />
         <Route path="/agent/secours" element={<Espace roles={['agent']}><Guide /></Espace>} />
 
         <Route path="/supervision" element={<Espace roles={['superadmin']}><Suspense fallback={<Chargement />}><Supervision /></Suspense></Espace>} />
         <Route path="/supervision/incidents" element={<Espace roles={['superadmin']}><IncidentsAdmin /></Espace>} />
         <Route path="/supervision/sos" element={<Espace roles={['superadmin']}><SOSAdmin /></Espace>} />
+        <Route path="/supervision/carte" element={<Espace roles={['superadmin']}><CartePage /></Espace>} />
+        <Route path="/supervision/alertes-zone" element={<Espace roles={['superadmin']}><AlertesZone /></Espace>} />
+        <Route path="/supervision/communaute" element={<Espace roles={['superadmin']}><Communaute /></Espace>} />
         <Route path="/supervision/risques" element={<Espace roles={['superadmin']}><Risques /></Espace>} />
         <Route path="/supervision/utilisateurs" element={<Espace roles={['superadmin']}><Utilisateurs /></Espace>} />
         <Route path="/supervision/referentiels" element={<Espace roles={['superadmin']}><Referentiels /></Espace>} />

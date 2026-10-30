@@ -82,7 +82,7 @@ export default function Signaler() {
         <CheckCircle2 className="mx-auto h-16 w-16 text-succes" />
         <h1 className="mt-4 text-2xl font-extrabold">Signalement enregistré</h1>
         <p className="mt-2 text-texte-doux">Référence de votre dossier :</p>
-        <p className="mt-1 font-mono text-2xl font-bold text-nuit-700">{resultat.reference}</p>
+        <p className="mt-1 font-mono text-2xl font-bold text-marque-700">{resultat.reference}</p>
         <p className="mt-4 text-sm text-texte-doux">Transmis au service {resultat.service_nom || 'compétent'}. Vous serez notifié à chaque changement de statut.</p>
         <div className="mt-6 flex justify-center gap-3">
           <Link to={`/citoyen/dossiers?dossier=${resultat.id}`}><Bouton>Suivre le dossier</Bouton></Link>
@@ -98,7 +98,7 @@ export default function Signaler() {
       <ol className="mb-6 grid grid-cols-4 gap-2" aria-label="Étapes">
         {ETAPES.map((e, i) => (
           <li key={e} className="text-center">
-            <div className={clsx('h-1.5 rounded-full', i <= etape ? 'bg-nuit-800' : 'bg-surface-bord')} />
+            <div className={clsx('h-1.5 rounded-full', i <= etape ? 'bg-marque-800' : 'bg-surface-bord')} />
             <p className={clsx('mt-1.5 text-xs font-semibold', i === etape ? 'text-texte' : 'text-texte-pale')} aria-current={i === etape ? 'step' : undefined}>{i + 1}. {e}</p>
           </li>
         ))}
@@ -111,7 +111,7 @@ export default function Signaler() {
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {config.categories.map((c) => (
                 <button key={c.code} type="button" onClick={() => { maj('type_incident', c.code); setEtape(1); }} aria-pressed={f.type_incident === c.code}
-                  className={clsx('rounded-2xl border-2 p-4 text-left transition', f.type_incident === c.code ? 'border-nuit-800 bg-nuit-50' : 'border-surface-bord hover:border-nuit-600/40')}>
+                  className={clsx('rounded-2xl border-2 p-4 text-left transition', f.type_incident === c.code ? 'border-marque-800 bg-marque-50' : 'border-surface-bord hover:border-marque-600/40')}>
                   <span className="mb-2 block h-3 w-3 rounded-full" style={{ background: c.couleur }} aria-hidden />
                   <span className="text-sm font-semibold">{c.libelle}</span>
                 </button>
@@ -132,7 +132,7 @@ export default function Signaler() {
             )}
             <CarteSenAlert hauteur={320} regrouper={false} cadrer={f.latitude != null} zoom={f.latitude != null ? 15 : 7}
               centre={f.latitude != null ? [f.latitude, f.longitude] : CENTRE_SENEGAL}
-              points={f.latitude != null ? [{ id: 'p', lat: f.latitude, lng: f.longitude, couleur: categorie?.couleur || '#0B1F4D' }] : []}
+              points={f.latitude != null ? [{ id: 'p', lat: f.latitude, lng: f.longitude, couleur: categorie?.couleur || '#006E33' }] : []}
               onClic={(ll) => setF((x) => ({ ...x, latitude: ll.lat, longitude: ll.lng, precision_gps: null }))} />
             <div className="grid gap-4 sm:grid-cols-2">
               <Champ libelle="Région" aide="Déduite de la position si vous la laissez vide.">{(id) => <Selecteur id={id} valeur={f.region} onChange={(v) => maj('region', v)} vide="Automatique" options={config.regions} />}</Champ>
@@ -160,7 +160,7 @@ export default function Signaler() {
                   </div>
                 ))}
                 {photos.length < 5 && (
-                  <label className="grid h-20 w-20 cursor-pointer place-items-center rounded-xl border-2 border-dashed border-surface-bord text-texte-pale hover:border-nuit-600/40">
+                  <label className="grid h-20 w-20 cursor-pointer place-items-center rounded-xl border-2 border-dashed border-surface-bord text-texte-pale hover:border-marque-600/40">
                     <ImagePlus className="h-6 w-6" /><span className="sr-only">Ajouter des photos</span>
                     <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only" onChange={(e) => { ajouterPhotos([...e.target.files]); e.target.value = ''; }} />
                   </label>

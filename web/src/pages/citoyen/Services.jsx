@@ -7,7 +7,7 @@ import { dateHeure, distance } from '../../lib/format';
 import { lirePosition } from './Accueil';
 
 const TYPES = {
-  hopital: { libelle: 'Hôpitaux', couleur: '#E11D48' },
+  hopital: { libelle: 'Hôpitaux', couleur: '#E31B23' },
   clinique: { libelle: 'Cliniques', couleur: '#F97316' },
   pharmacie: { libelle: 'Pharmacies', couleur: '#059669' },
   police: { libelle: 'Police / gendarmerie', couleur: '#1D4ED8' },
@@ -37,7 +37,7 @@ export default function Services() {
     chercher(p);
   };
   const points = useMemo(() => [
-    ...(position ? [{ id: 'moi', lat: position.lat, lng: position.lng, couleur: '#0B1F4D', titre: 'Ma position', popup: 'Ma position' }] : []),
+    ...(position ? [{ id: 'moi', lat: position.lat, lng: position.lng, couleur: '#006E33', titre: 'Ma position', popup: 'Ma position' }] : []),
     ...(donnees?.resultats || []).map((s) => ({ id: s.id, lat: s.latitude, lng: s.longitude, couleur: TYPES[s.type].couleur, titre: s.nom,
       popup: `<b>${echapper(s.nom || 'Sans nom')}</b><br/>${echapper(TYPES[s.type].libelle)} · ${echapper(distance(s.distance_m))}` })),
   ], [position, donnees]);
@@ -69,7 +69,7 @@ export default function Services() {
                       <p className="font-semibold">{s.nom || <span className="italic text-texte-doux">Nom non renseigné</span>}</p>
                       <p className="text-xs text-texte-doux">{TYPES[s.type].libelle}{s.adresse ? ` · ${s.adresse}` : ''}{s.horaires ? ` · ${s.horaires}` : ''}</p>
                     </div>
-                    <span className="whitespace-nowrap text-sm font-semibold text-nuit-700">{distance(s.distance_m)}</span>
+                    <span className="whitespace-nowrap text-sm font-semibold text-marque-700">{distance(s.distance_m)}</span>
                   </div>
                   <div className="mt-2 flex gap-4 text-sm">
                     {s.telephone && <a className="lien inline-flex items-center gap-1" href={`tel:${s.telephone}`}><Phone className="h-3.5 w-3.5" />{s.telephone}</a>}

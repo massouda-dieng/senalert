@@ -6,7 +6,7 @@ import { GRAVITES, STATUTS, ilYa } from '../lib/format';
 /* ---------------------------------------------------------------- Boutons */
 
 const VARIANTES = {
-  primaire: 'bg-nuit-800 text-white hover:bg-nuit-700 shadow-sm',
+  primaire: 'bg-marque-800 text-white hover:bg-marque-700 shadow-sm',
   secondaire: 'bg-white text-texte border border-surface-bord hover:bg-surface-douce',
   fantome: 'text-texte-doux hover:bg-surface-douce hover:text-texte',
   danger: 'bg-sos text-white hover:bg-sos-fonce shadow-sm',
@@ -64,7 +64,7 @@ export function Pastille({ couleur = '#475569', children }) {
 export function Chargement({ texte = 'Chargement…', className }) {
   return (
     <div role="status" className={clsx('flex items-center justify-center gap-2 py-10 text-sm text-texte-doux', className)}>
-      <Loader2 className="h-5 w-5 animate-spin text-nuit-600" aria-hidden /> {texte}
+      <Loader2 className="h-5 w-5 animate-spin text-marque-600" aria-hidden /> {texte}
     </div>
   );
 }
@@ -100,7 +100,7 @@ export function EtatErreur({ erreur, onReessayer }) {
 
 export function Bandeau({ type = 'info', titre, children, className }) {
   const styles = {
-    info: ['border-nuit-600/20 bg-nuit-50 text-nuit-900', Info],
+    info: ['border-marque-600/20 bg-marque-50 text-marque-900', Info],
     alerte: ['border-amber-300 bg-alerte-clair text-amber-900', AlertTriangle],
     danger: ['border-red-200 bg-red-50 text-red-900', XCircle],
     succes: ['border-emerald-200 bg-succes-clair text-emerald-900', CheckCircle2],
@@ -154,7 +154,7 @@ export function Carte({ titre, action, className, corpsClassName, children }) {
 
 export function Indicateur({ libelle, valeur, icone: Icone, ton = 'nuit', aide, sous }) {
   const tons = {
-    nuit: 'bg-nuit-50 text-nuit-700', sos: 'bg-sos-clair text-sos', alerte: 'bg-alerte-clair text-amber-700',
+    nuit: 'bg-marque-50 text-marque-700', sos: 'bg-sos-clair text-sos', alerte: 'bg-alerte-clair text-amber-700',
     succes: 'bg-succes-clair text-emerald-700', neutre: 'bg-slate-100 text-slate-600',
   };
   return (
@@ -223,7 +223,7 @@ export function Fenetre({ ouverte, onFermer, titre, children, pied, large }) {
   }, [ouverte, onFermer]);
   if (!ouverte) return null;
   return (
-    <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-nuit-950/50 p-0 backdrop-blur-[2px] sm:items-center sm:p-4" onMouseDown={(e) => e.target === e.currentTarget && onFermer()}>
+    <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-marque-950/50 p-0 backdrop-blur-[2px] sm:items-center sm:p-4" onMouseDown={(e) => e.target === e.currentTarget && onFermer()}>
       <div ref={ref} role="dialog" aria-modal="true" aria-label={titre} className={clsx('w-full animate-apparition rounded-t-3xl bg-white shadow-flottant sm:rounded-3xl', large ? 'sm:max-w-2xl' : 'sm:max-w-md')}>
         <div className="flex items-center justify-between border-b border-surface-bord px-5 py-4">
           <h2 className="text-lg font-bold">{titre}</h2>
@@ -280,7 +280,7 @@ export function FournisseurToasts({ children }) {
       <div className="pointer-events-none fixed bottom-4 right-4 z-[1100] flex w-[min(92vw,380px)] flex-col gap-2" aria-live="polite">
         {toasts.map((t) => (
           <div key={t.id} className={clsx('pointer-events-auto flex animate-apparition items-start gap-2.5 rounded-2xl px-4 py-3 text-sm font-medium text-white shadow-flottant',
-            t.type === 'erreur' ? 'bg-red-700' : t.type === 'info' ? 'bg-nuit-800' : 'bg-emerald-700')}>
+            t.type === 'erreur' ? 'bg-red-700' : t.type === 'info' ? 'bg-marque-800' : 'bg-emerald-700')}>
             {t.type === 'erreur' ? <XCircle className="mt-0.5 h-4 w-4 shrink-0" /> : <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />}
             <span>{t.message}</span>
           </div>
@@ -299,7 +299,7 @@ export function Onglets({ onglets, actif, onChange }) {
     <div role="tablist" className="inline-flex rounded-xl bg-white p-1 ring-1 ring-surface-bord">
       {onglets.map((o) => (
         <button key={o.code} role="tab" type="button" aria-selected={actif === o.code} onClick={() => onChange(o.code)}
-          className={clsx('rounded-lg px-3 py-1.5 text-[13px] font-semibold transition', actif === o.code ? 'bg-nuit-800 text-white' : 'text-texte-doux hover:text-texte')}>
+          className={clsx('rounded-lg px-3 py-1.5 text-[13px] font-semibold transition', actif === o.code ? 'bg-marque-800 text-white' : 'text-texte-doux hover:text-texte')}>
           {o.libelle}{o.compte != null && <span className="ml-1.5 opacity-70">{o.compte}</span>}
         </button>
       ))}

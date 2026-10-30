@@ -76,7 +76,7 @@ export default function DossierDetail({ type = 'incident', id, onFermer, onModif
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" className="group inline-flex items-center gap-1.5 font-mono text-sm font-bold text-nuit-700"
+            <button type="button" className="group inline-flex items-center gap-1.5 font-mono text-sm font-bold text-marque-700"
               onClick={() => { navigator.clipboard?.writeText(d.reference); toast('Référence copiée.', 'info'); }} title="Copier la référence">
               {d.reference}<Copy className="h-3.5 w-3.5 opacity-0 transition group-hover:opacity-100" />
             </button>
@@ -130,7 +130,7 @@ export default function DossierDetail({ type = 'incident', id, onFermer, onModif
           {d.latitude != null && (
             <div className="space-y-2">
               <CarteSenAlert hauteur={220} zoom={15} centre={[d.latitude, d.longitude]} regrouper={false}
-                points={[{ id: d.id, lat: d.latitude, lng: d.longitude, couleur: type === 'sos' ? '#E11D48' : STATUTS[s]?.point, sos: type === 'sos' }]} />
+                points={[{ id: d.id, lat: d.latitude, lng: d.longitude, couleur: type === 'sos' ? '#E31B23' : STATUTS[s]?.point, sos: type === 'sos' }]} />
               {(role !== 'citoyen') && (
                 <a className="lien inline-flex items-center gap-1.5 text-sm" target="_blank" rel="noreferrer"
                   href={`https://www.google.com/maps/dir/?api=1&destination=${d.latitude},${d.longitude}`}>

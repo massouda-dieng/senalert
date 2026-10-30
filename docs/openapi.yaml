@@ -624,6 +624,167 @@ paths:
               schema:
                 $ref: '#/components/schemas/AlerteSOS'
           description: ''
+  /api/alertes/zones/:
+    get:
+      operationId: alertes_zones_list
+      description: |-
+        Alertes de zone. Lecture publique des alertes en cours (information de sécurité),
+        filtrable par `region` ; le superadministrateur voit tout et publie.
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Quel champ utiliser pour classer les résultats.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      - name: taille
+        required: false
+        in: query
+        description: Nombre de résultats à retourner par page.
+        schema:
+          type: integer
+      tags:
+      - alertes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAlerteZoneList'
+          description: ''
+    post:
+      operationId: alertes_zones_create
+      description: |-
+        Alertes de zone. Lecture publique des alertes en cours (information de sécurité),
+        filtrable par `region` ; le superadministrateur voit tout et publie.
+      tags:
+      - alertes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlerteZoneRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlerteZoneRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlerteZoneRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlerteZone'
+          description: ''
+  /api/alertes/zones/{id}/:
+    get:
+      operationId: alertes_zones_retrieve
+      description: |-
+        Alertes de zone. Lecture publique des alertes en cours (information de sécurité),
+        filtrable par `region` ; le superadministrateur voit tout et publie.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Alerte de
+          zone.
+        required: true
+      tags:
+      - alertes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlerteZone'
+          description: ''
+    patch:
+      operationId: alertes_zones_partial_update
+      description: |-
+        Alertes de zone. Lecture publique des alertes en cours (information de sécurité),
+        filtrable par `region` ; le superadministrateur voit tout et publie.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Alerte de
+          zone.
+        required: true
+      tags:
+      - alertes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAlerteZoneRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAlerteZoneRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAlerteZoneRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlerteZone'
+          description: ''
+  /api/alertes/zones/{id}/terminer/:
+    post:
+      operationId: alertes_zones_terminer_create
+      description: |-
+        Alertes de zone. Lecture publique des alertes en cours (information de sécurité),
+        filtrable par `region` ; le superadministrateur voit tout et publie.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Alerte de
+          zone.
+        required: true
+      tags:
+      - alertes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlerteZoneRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlerteZoneRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlerteZoneRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlerteZone'
+          description: ''
   /api/analyse/assistant/:
     post:
       operationId: analyse_assistant_create
@@ -651,6 +812,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Assistant'
+          description: ''
+  /api/analyse/niveaux-regions/:
+    get:
+      operationId: analyse_niveaux_regions_retrieve
+      description: Niveau de risque par région (sans détail chiffré), pour la couche
+        « zones à risque » de la carte citoyenne.
+      tags:
+      - analyse
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
           description: ''
   /api/analyse/zones-risque/:
     get:
@@ -1334,6 +1512,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FicheSecours'
+          description: ''
+  /api/geocodage/:
+    get:
+      operationId: geocodage_retrieve
+      description: Recherche d'un lieu au Sénégal (adresse, quartier, établissement).
+        Résultats mis en cache 24 h.
+      tags:
+      - geocodage
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
           description: ''
   /api/gestion/utilisateurs/:
     get:
@@ -2201,6 +2396,186 @@ paths:
               schema:
                 $ref: '#/components/schemas/Incident'
           description: ''
+  /api/incidents/communaute/:
+    get:
+      operationId: incidents_communaute_list
+      description: 'GET ?lat=&lng=&rayon_km=&jours=&type_incident= : incidents récents
+        (tri par distance si position fournie).'
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Quel champ utiliser pour classer les résultats.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      - name: taille
+        required: false
+        in: query
+        description: Nombre de résultats à retourner par page.
+        schema:
+          type: integer
+      tags:
+      - incidents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFilList'
+          description: ''
+  /api/incidents/communaute/{id}/commentaires/:
+    get:
+      operationId: incidents_communaute_commentaires_retrieve
+      description: 'GET ?lat=&lng=&rayon_km=&jours=&type_incident= : incidents récents
+        (tri par distance si position fournie).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) incident.
+        required: true
+      tags:
+      - incidents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fil'
+          description: ''
+    post:
+      operationId: incidents_communaute_commentaires_create
+      description: 'GET ?lat=&lng=&rayon_km=&jours=&type_incident= : incidents récents
+        (tri par distance si position fournie).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FilRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FilRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FilRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fil'
+          description: ''
+  /api/incidents/communaute/{id}/confirmer/:
+    post:
+      operationId: incidents_communaute_confirmer_create
+      description: « Je le vois aussi ». Réservé aux citoyens, pas sur son propre
+        signalement.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FilRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FilRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FilRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fil'
+          description: ''
+    delete:
+      operationId: incidents_communaute_confirmer_destroy
+      description: « Je le vois aussi ». Réservé aux citoyens, pas sur son propre
+        signalement.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) incident.
+        required: true
+      tags:
+      - incidents
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/incidents/communaute/commentaires/{commentaire_id}/masquer/:
+    post:
+      operationId: incidents_communaute_commentaires_masquer_create
+      description: 'GET ?lat=&lng=&rayon_km=&jours=&type_incident= : incidents récents
+        (tri par distance si position fournie).'
+      parameters:
+      - in: path
+        name: commentaire_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FilRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FilRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FilRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fil'
+          description: ''
   /api/incidents/resume/:
     get:
       operationId: incidents_resume_retrieve
@@ -2562,6 +2937,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/Service'
           description: ''
+  /api/statistiques-publiques/:
+    get:
+      operationId: statistiques_publiques_retrieve
+      description: Chiffres réels et agrégés pour la page de présentation (aucune
+        donnée personnelle).
+      tags:
+      - statistiques-publiques
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/tableau-de-bord/activite-agent/:
     get:
       operationId: tableau_de_bord_activite_agent_retrieve
@@ -2863,6 +3256,90 @@ components:
         motif_cloture:
           type: string
           maxLength: 255
+    AlerteZone:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        titre:
+          type: string
+          maxLength: 120
+        message:
+          type: string
+          maxLength: 1000
+        consignes:
+          type: string
+          maxLength: 1000
+        niveau:
+          $ref: '#/components/schemas/NiveauEnum'
+        categorie:
+          type: string
+          description: Code de catégorie concernée (facultatif).
+          maxLength: 30
+        regions:
+          description: Codes des régions concernées (vide = tout le pays).
+        regions_libelles:
+          type: array
+          items: {}
+          readOnly: true
+        date_debut:
+          type: string
+          format: date-time
+        date_fin:
+          type: string
+          format: date-time
+          nullable: true
+        active:
+          type: boolean
+        en_cours:
+          type: boolean
+          readOnly: true
+        date_creation:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - date_creation
+      - en_cours
+      - id
+      - message
+      - regions_libelles
+      - titre
+    AlerteZoneRequest:
+      type: object
+      properties:
+        titre:
+          type: string
+          minLength: 1
+          maxLength: 120
+        message:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        consignes:
+          type: string
+          maxLength: 1000
+        niveau:
+          $ref: '#/components/schemas/NiveauEnum'
+        categorie:
+          type: string
+          description: Code de catégorie concernée (facultatif).
+          maxLength: 30
+        regions:
+          description: Codes des régions concernées (vide = tout le pays).
+        date_debut:
+          type: string
+          format: date-time
+        date_fin:
+          type: string
+          format: date-time
+          nullable: true
+        active:
+          type: boolean
+      required:
+      - message
+      - titre
     Assistant:
       type: object
       properties:
@@ -3201,6 +3678,96 @@ components:
       - slug
       - titre
       - validee
+    Fil:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type_incident:
+          type: string
+          maxLength: 30
+        categorie_libelle:
+          type: string
+          readOnly: true
+        region:
+          oneOf:
+          - $ref: '#/components/schemas/RegionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        region_libelle:
+          type: string
+        statut:
+          $ref: '#/components/schemas/StatutEnum'
+        gravite:
+          $ref: '#/components/schemas/GraviteEnum'
+        date_creation:
+          type: string
+          format: date-time
+        latitude:
+          type: number
+          format: double
+          readOnly: true
+        longitude:
+          type: number
+          format: double
+          readOnly: true
+        distance_m:
+          type: string
+          readOnly: true
+        nb_confirmations:
+          type: integer
+        nb_commentaires:
+          type: integer
+        je_confirme:
+          type: boolean
+        est_mien:
+          type: boolean
+          readOnly: true
+      required:
+      - categorie_libelle
+      - distance_m
+      - est_mien
+      - id
+      - je_confirme
+      - latitude
+      - longitude
+      - nb_commentaires
+      - nb_confirmations
+      - region_libelle
+      - type_incident
+    FilRequest:
+      type: object
+      properties:
+        type_incident:
+          type: string
+          minLength: 1
+          maxLength: 30
+        region:
+          oneOf:
+          - $ref: '#/components/schemas/RegionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        region_libelle:
+          type: string
+          minLength: 1
+        statut:
+          $ref: '#/components/schemas/StatutEnum'
+        gravite:
+          $ref: '#/components/schemas/GraviteEnum'
+        date_creation:
+          type: string
+          format: date-time
+        nb_confirmations:
+          type: integer
+        nb_commentaires:
+          type: integer
+        je_confirme:
+          type: boolean
+      required:
+      - je_confirme
+      - nb_commentaires
+      - nb_confirmations
+      - region_libelle
+      - type_incident
     Google:
       type: object
       properties:
@@ -3351,6 +3918,9 @@ components:
         doublon_potentiel_reference:
           type: string
           readOnly: true
+        nb_confirmations:
+          type: integer
+          readOnly: true
       required:
       - categorie_libelle
       - citoyen_contact
@@ -3360,6 +3930,7 @@ components:
       - est_proprietaire
       - id
       - intervention
+      - nb_confirmations
       - photos
       - reference
       - region_libelle
@@ -3592,6 +4163,16 @@ components:
           maxLength: 255
       required:
       - motif
+    NiveauEnum:
+      enum:
+      - info
+      - vigilance
+      - danger
+      type: string
+      description: |-
+        * `info` - Information
+        * `vigilance` - Vigilance
+        * `danger` - Danger
     NoteRequest:
       type: object
       properties:
@@ -3690,6 +4271,52 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AlerteSOS'
+    PaginatedAlerteZoneList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlerteZone'
+    PaginatedFilList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Fil'
     PaginatedIncidentList:
       type: object
       required:
@@ -3806,6 +4433,37 @@ components:
       - description
       - modifie_par_nom
       - valeur
+    PatchedAlerteZoneRequest:
+      type: object
+      properties:
+        titre:
+          type: string
+          minLength: 1
+          maxLength: 120
+        message:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        consignes:
+          type: string
+          maxLength: 1000
+        niveau:
+          $ref: '#/components/schemas/NiveauEnum'
+        categorie:
+          type: string
+          description: Code de catégorie concernée (facultatif).
+          maxLength: 30
+        regions:
+          description: Codes des régions concernées (vide = tout le pays).
+        date_debut:
+          type: string
+          format: date-time
+        date_fin:
+          type: string
+          format: date-time
+          nullable: true
+        active:
+          type: boolean
     PatchedCategorieRequest:
       type: object
       properties:
@@ -4136,6 +4794,7 @@ components:
       - statut
       - resolution
       - complement
+      - alerte_zone
       - systeme
       type: string
       description: |-
@@ -4144,6 +4803,7 @@ components:
         * `statut` - Changement de statut
         * `resolution` - Résolution
         * `complement` - Complément
+        * `alerte_zone` - Alerte de zone
         * `systeme` - Système
     Utilisateur:
       type: object

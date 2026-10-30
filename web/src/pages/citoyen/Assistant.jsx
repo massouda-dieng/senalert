@@ -45,7 +45,7 @@ export default function Assistant() {
       <div className="carte flex-1 space-y-4 overflow-y-auto p-4 sm:p-5" aria-live="polite">
         {messages.length === 0 && (
           <div className="py-6 text-center">
-            <Bot className="mx-auto h-10 w-10 text-nuit-600" />
+            <Bot className="mx-auto h-10 w-10 text-marque-600" />
             <p className="mt-2 font-semibold">Posez une question</p>
             <div className="mt-4 flex flex-wrap justify-center gap-2">
               {SUGGESTIONS.map((s) => <button key={s} type="button" onClick={() => envoyer(s)} className="rounded-full border border-surface-bord px-3.5 py-1.5 text-sm hover:bg-surface-douce">{s}</button>)}
@@ -54,7 +54,7 @@ export default function Assistant() {
         )}
         {messages.map((m, i) => (
           <div key={i} className={clsx('flex', m.role === 'user' ? 'justify-end' : 'justify-start')}>
-            <div className={clsx('max-w-[85%] space-y-2 rounded-2xl px-4 py-3 text-sm', m.role === 'user' ? 'bg-nuit-800 text-white' : m.erreur ? 'bg-red-50 text-red-900' : 'bg-surface-douce')}>
+            <div className={clsx('max-w-[85%] space-y-2 rounded-2xl px-4 py-3 text-sm', m.role === 'user' ? 'bg-marque-800 text-white' : m.erreur ? 'bg-red-50 text-red-900' : 'bg-surface-douce')}>
               {m.alerte && <p className="flex gap-2 rounded-xl bg-sos px-3 py-2 font-semibold text-white"><Siren className="h-4 w-4 shrink-0" />{m.alerte}</p>}
               <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
               {m.fiches?.length > 0 && <p className="text-xs">Fiches utiles : {m.fiches.map((f, j) => <span key={f.slug}>{j > 0 && ', '}<Link className="lien" to="/citoyen/secours">{f.titre}</Link></span>)}</p>}

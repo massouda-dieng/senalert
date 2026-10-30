@@ -6,13 +6,14 @@ import { Link } from 'react-router-dom';
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useRessource } from '../../api/hooks';
 import CarteSenAlert, { Legende, echapper } from '../../components/Carte';
+import Photo from '../../components/Photo';
 import { Bandeau, Carte, Chargement, EnTetePage, EtatErreur, IndicateurSynchro, Indicateur, Selecteur } from '../../components/ui';
 import { useConfig } from '../../lib/config';
 import { STATUTS, date, duree, isoJour, nombre, pct } from '../../lib/format';
 
-// Palette validée (scripts/validate_palette.js : toutes vérifications réussies, fond clair).
-const COULEUR_INCIDENTS = '#1D4ED8';
-const COULEUR_SOS = '#E11D48';
+// Palette validée (validate_palette.js : vert et rouge du drapeau, ΔE daltonisme 8,5 ; SOS en pointillé en plus).
+const COULEUR_INCIDENTS = '#00853F';
+const COULEUR_SOS = '#E31B23';
 const AXE = { fontSize: 12, fill: '#5B6680' };
 
 function Infobulle({ active, payload, label }) {
@@ -59,8 +60,18 @@ export default function Supervision() {
 
   return (
     <>
-      <EnTetePage titre="Centre de supervision" sousTitre="Indicateurs calculés en direct depuis la base SenAlert."
-        actions={<IndicateurSynchro date={derniereSynchro} chargement={chargement} onRafraichir={recharger} />} />
+      <div className="relative mb-6 overflow-hidden rounded-3xl text-white">
+        <Photo nom="dakar-cote" className="absolute inset-0 h-full w-full" alt="" credit={false} />
+        <div className="absolute inset-0 bg-gradient-to-r from-marque-950/95 via-marque-900/85 to-marque-700/40" aria-hidden />
+        <div className="relative flex flex-wrap items-end justify-between gap-4 px-6 py-8 sm:px-8">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-widest text-or">Supervision nationale</p>
+            <h1 className="font-titre text-3xl font-extrabold">Centre de supervision</h1>
+            <p className="mt-1 text-white/80">Indicateurs calculés en direct depuis la base SenAlert.</p>
+          </div>
+          <div className="rounded-xl bg-white/90 text-texte"><IndicateurSynchro date={derniereSynchro} chargement={chargement} onRafraichir={recharger} /></div>
+        </div>
+      </div>
 
       <div className="carte mb-5 flex flex-wrap items-center gap-3 p-3">
         <Selecteur aria-label="Période" className="w-auto" vide={null} valeur={periode} onChange={setPeriode}
@@ -103,7 +114,7 @@ export default function Supervision() {
                       <Tooltip content={<Infobulle />} cursor={{ stroke: '#94A3B8', strokeDasharray: '3 3' }} />
                       <Legend iconType="circle" wrapperStyle={{ fontSize: 12, color: '#5B6680' }} />
                       <Line type="linear" dataKey="incidents" name="Incidents" stroke={COULEUR_INCIDENTS} strokeWidth={2} dot={false} activeDot={{ r: 5, stroke: '#fff', strokeWidth: 2 }} />
-                      <Line type="linear" dataKey="sos" name="SOS" stroke={COULEUR_SOS} strokeWidth={2} dot={false} activeDot={{ r: 5, stroke: '#fff', strokeWidth: 2 }} />
+                      <Line type="linear" dataKey="sos" name="SOS" stroke={COULEUR_SOS} strokeWidth={2} strokeDasharray="5 3" dot={false} activeDot={{ r: 5, stroke: '#fff', strokeWidth: 2 }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -158,7 +169,7 @@ export default function Supervision() {
                   <div key={k} title={s.qualite.definitions[k]}>
                     <p className="text-xs text-texte-doux">{l}</p>
                     <p className="font-titre text-xl font-extrabold">{pct(s.qualite[k])}</p>
-                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-douce"><div className="h-full rounded-full bg-nuit-600" style={{ width: `${s.qualite[k]}%` }} /></div>
+                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-douce"><div className="h-full rounded-full bg-marque-600" style={{ width: `${s.qualite[k]}%` }} /></div>
                   </div>
                 ))}
                 <div>
@@ -173,7 +184,7 @@ export default function Supervision() {
           <details className="carte mt-5 p-5 text-sm">
             <summary className="flex cursor-pointer items-center gap-2 font-semibold"><Info className="h-4 w-4" /> Définition des indicateurs</summary>
             <dl className="mt-3 grid gap-2 sm:grid-cols-2">
-              {Object.entries(def).map(([k, v]) => <div key={k}><dt className="font-mono text-xs text-nuit-700">{k}</dt><dd className="text-texte-doux">{v}</dd></div>)}
+              {Object.entries(def).map(([k, v]) => <div key={k}><dt className="font-mono text-xs text-marque-700">{k}</dt><dd className="text-texte-doux">{v}</dd></div>)}
             </dl>
             <p className="mt-3 flex items-center gap-2 text-xs text-texte-pale"><Database className="h-3.5 w-3.5" /> Calcul serveur à {new Date(s.genere_le).toLocaleTimeString('fr-FR')}. <AlertTriangle className="h-3.5 w-3.5" /> Les volumes reflètent les signalements reçus, pas la totalité des événements réels.</p>
           </details>

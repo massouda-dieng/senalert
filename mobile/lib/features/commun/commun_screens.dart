@@ -60,7 +60,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           itemBuilder: (_, i) {
                             final n = _liste![i];
                             return Carte(
-                              couleur: n['lue'] == true ? null : AppColors.blue50,
+                              couleur: n['lue'] == true ? null : AppColors.vert50,
                               onTap: () async {
                                 if (n['lue'] != true) Api.instance.post('/notifications/${n['id']}/lire/').then((_) {}, onError: (_) {});
                                 final d = n['dossier'];
@@ -150,14 +150,14 @@ class _ProfilScreenState extends State<ProfilScreen> {
       appBar: AppBar(title: const Text('Profil')),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         Carte(child: Row(children: [
-          CircleAvatar(radius: 28, backgroundColor: AppColors.navy800,
+          CircleAvatar(radius: 28, backgroundColor: AppColors.vert800,
               child: Text(u.nomAffiche.isEmpty ? '?' : u.nomAffiche[0].toUpperCase(), style: titre(22, couleur: Colors.white))),
           const SizedBox(width: 14),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(u.nomAffiche, style: titre(18)),
             Text(u.email, style: const TextStyle(color: AppColors.textGrey)),
             const SizedBox(height: 4),
-            Text('${u.roleLibelle}${u.serviceNom != null ? ' · ${u.serviceNom}' : ''}', style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.navy700)),
+            Text('${u.roleLibelle}${u.serviceNom != null ? ' · ${u.serviceNom}' : ''}', style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.vert700)),
           ])),
         ])),
         if (u.doitChangerMotDePasse) const Padding(padding: EdgeInsets.only(top: 12), child: Bandeau.alerte('Votre compte utilise un mot de passe initial : remplacez-le.')),

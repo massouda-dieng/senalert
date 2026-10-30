@@ -24,6 +24,7 @@ class Notification(models.Model):
         ('statut', 'Changement de statut'),
         ('resolution', 'Résolution'),
         ('complement', 'Complément'),
+        ('alerte_zone', 'Alerte de zone'),
         ('systeme', 'Système'),
     ]
 

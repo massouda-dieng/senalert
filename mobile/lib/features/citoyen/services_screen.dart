@@ -77,7 +77,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     style: const TextStyle(fontSize: 12.5, color: AppColors.textGrey)),
               ])),
               if (s['telephone'] != null) IconButton(tooltip: 'Appeler', onPressed: () => appeler(s['telephone']), icon: const Icon(Icons.call_rounded, color: AppColors.success)),
-              IconButton(tooltip: 'Itinéraire', onPressed: () => itineraire(s['latitude'], s['longitude']), icon: const Icon(Icons.directions_rounded, color: AppColors.blue600)),
+              IconButton(tooltip: 'Itinéraire', onPressed: () => itineraire(s['latitude'], s['longitude']), icon: const Icon(Icons.directions_rounded, color: AppColors.vert600)),
             ])),
           ),
           Text('${_donnees!['source']} · données du ${dateHeure(lireDate(_donnees!['donnees_du']))}. ${_donnees!['avertissement']}',

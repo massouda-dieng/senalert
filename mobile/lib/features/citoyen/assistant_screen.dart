@@ -77,7 +77,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
                 constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.82),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: m['role'] == 'user' ? AppColors.navy800 : m['erreur'] == true ? const Color(0xFFFEE2E2) : AppColors.white,
+                  color: m['role'] == 'user' ? AppColors.vert800 : m['erreur'] == true ? const Color(0xFFFEE2E2) : AppColors.white,
                   borderRadius: BorderRadius.circular(16), border: m['role'] == 'user' ? null : Border.all(color: AppColors.border),
                 ),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

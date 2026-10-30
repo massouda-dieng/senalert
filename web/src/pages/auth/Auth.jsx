@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../api/client';
 import { ESPACE_PAR_ROLE, useAuth } from '../../auth/AuthContext';
-import { Logo } from '../../components/Logo';
+import { BandeDrapeau, Logo } from '../../components/Logo';
+import Photo from '../../components/Photo';
 import { Bandeau, Bouton, Champ, Selecteur } from '../../components/ui';
 import { useConfig } from '../../lib/config';
 
@@ -11,23 +12,25 @@ function Cadre({ titre, sousTitre, children }) {
   const config = useConfig();
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
-      <div className="relative hidden overflow-hidden bg-gradient-to-br from-nuit-950 via-nuit-900 to-nuit-700 p-12 text-white lg:flex lg:flex-col">
-        <div className="absolute inset-0 opacity-[.07]" style={{ backgroundImage: 'linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)', backgroundSize: '44px 44px' }} aria-hidden />
-        <div className="relative flex items-center gap-3"><Logo className="h-11 w-11" /><span className="font-titre text-2xl font-extrabold">SenAlert</span></div>
-        <div className="relative mt-auto max-w-md">
-          <h2 className="font-titre text-4xl font-extrabold leading-tight">Signaler. Coordonner.<br />Protéger.</h2>
-          <p className="mt-4 text-white/70">Plateforme de prévention, de signalement et de suivi des urgences au Sénégal : citoyens, agents de secours et superviseurs sur un même canal.</p>
+      <div className="relative hidden overflow-hidden lg:flex lg:flex-col">
+        <Photo nom="pompiers-bnsp" className="absolute inset-0 h-full w-full" alt="Brigade nationale des sapeurs-pompiers" priorite />
+        <div className="absolute inset-0 bg-gradient-to-t from-marque-950 via-marque-900/80 to-marque-800/40" aria-hidden />
+        <BandeDrapeau className="relative h-1.5" />
+        <div className="relative flex items-center gap-3 p-12 text-white"><Logo className="h-11 w-11" clair /><span className="font-titre text-2xl font-extrabold">SenAlert</span></div>
+        <div className="relative mt-auto max-w-lg p-12 text-white">
+          <h2 className="font-titre text-4xl font-extrabold leading-tight">Signaler. Coordonner.<br /><span className="text-or">Protéger.</span></h2>
+          <p className="mt-4 text-white/80">Citoyens, agents de secours et superviseurs réunis sur un même canal, partout au Sénégal.</p>
           <div className="mt-8 flex flex-wrap gap-2">
             {config?.numeros_urgence?.map((n) => (
-              <a key={n.numero} href={`tel:${n.numero}`} className="rounded-full bg-white/10 px-3.5 py-1.5 text-sm font-semibold ring-1 ring-white/20 hover:bg-white/20">{n.service} · {n.numero}</a>
+              <a key={n.numero} href={`tel:${n.numero}`} className="rounded-full bg-white/15 px-3.5 py-1.5 text-sm font-semibold ring-1 ring-white/25 hover:bg-white/25">{n.service} · {n.numero}</a>
             ))}
           </div>
-          <p className="mt-6 text-xs text-white/50">SenAlert ne remplace pas les services officiels de secours.</p>
+          <p className="mt-6 text-xs text-white/60">SenAlert ne remplace pas les services officiels de secours.</p>
         </div>
       </div>
       <div className="flex items-center justify-center px-4 py-10 sm:px-8">
         <div className="w-full max-w-[420px]">
-          <div className="mb-8 flex items-center gap-2.5 lg:hidden"><Logo className="h-9 w-9" /><span className="font-titre text-xl font-extrabold">SenAlert</span></div>
+          <Link to="/" className="mb-8 flex items-center gap-2.5 lg:hidden"><Logo className="h-9 w-9" /><span className="font-titre text-xl font-extrabold">SenAlert</span></Link>
           <h1 className="text-[26px] font-extrabold">{titre}</h1>
           {sousTitre && <p className="mt-1.5 text-sm text-texte-doux">{sousTitre}</p>}
           <div className="mt-7">{children}</div>

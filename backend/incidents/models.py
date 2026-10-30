@@ -124,3 +124,28 @@ class EvenementDossier(models.Model):
     class Meta:
         ordering = ['date', 'pk']
         verbose_name = 'Événement de dossier'
+
+
+class Confirmation(models.Model):
+    """Un citoyen confirme avoir constaté le même incident (« je le vois aussi »)."""
+
+    incident = models.ForeignKey(Incident, on_delete=models.CASCADE, related_name='confirmations')
+    citoyen = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='+')
+    date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['incident', 'citoyen'], name='confirmation_unique')]
+
+
+class Commentaire(models.Model):
+    """Message communautaire public sur un incident, modérable par le superadministrateur."""
+
+    incident = models.ForeignKey(Incident, on_delete=models.CASCADE, related_name='commentaires')
+    auteur = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')
+    texte = models.CharField(max_length=500)
+    masque = models.BooleanField(default=False)
+    masque_par = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
+    date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['date']

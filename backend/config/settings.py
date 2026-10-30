@@ -246,6 +246,7 @@ GROQ_TIMEOUT = config('GROQ_TIMEOUT', default=15, cast=int)
 
 # --- Services de proximité (OpenStreetMap / Overpass) -----------------------
 OVERPASS_URL = config('OVERPASS_URL', default='https://overpass-api.de/api/interpreter')
+NOMINATIM_URL = config('NOMINATIM_URL', default='https://nominatim.openstreetmap.org/search')
 
 # --- Sécurité en production -------------------------------------------------
 SESSION_COOKIE_HTTPONLY = True

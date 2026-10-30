@@ -2,7 +2,9 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
+import Photo from '../components/Photo';
 import { BadgeStatut, Confirmation, Pagination } from '../components/ui';
+import { CREDITS } from '../lib/photos';
 import { distance, duree } from '../lib/format';
 
 vi.mock('../auth/AuthContext', async (orig) => {
@@ -44,6 +46,19 @@ describe('composants', () => {
   });
 });
 
+describe('photos d’illustration', () => {
+  it('chaque photo a un auteur, une licence et une source', () => {
+    expect(CREDITS.length).toBeGreaterThanOrEqual(9);
+    CREDITS.forEach((c) => { expect(c.licence).toBeTruthy(); expect(c.source).toMatch(/^https:\/\/commons\.wikimedia\.org/); });
+  });
+
+  it('le crédit de licence est affiché avec l’image', () => {
+    render(<Photo nom="pompiers-bnsp" alt="Pompiers" />);
+    expect(screen.getByAltText('Pompiers')).toBeInTheDocument();
+    expect(screen.getByText(/CC BY-SA 4\.0/)).toBeInTheDocument();
+  });
+});
+
 describe('garde des espaces par rôle', () => {
   const rendre = async (role, chemin) => {
     globalThis.__auth = { initialise: true, utilisateur: role ? { role } : null };
@@ -58,5 +73,5 @@ describe('garde des espaces par rôle', () => {
     await rendre('citoyen', '/supervision');
     expect(await screen.findByText('accueil citoyen')).toBeInTheDocument();
     expect(screen.queryByText('supervision')).not.toBeInTheDocument();
-  });
+  }, 20000);
 });

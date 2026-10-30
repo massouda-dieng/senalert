@@ -195,3 +195,21 @@ def notifier_superadmins(dossier, type_, titre, message, cle):
         notifier(superadmins(), type_, titre, message, dossier, cle)
     except Exception:
         logger.exception('Notification des superadministrateurs impossible')
+
+
+def notifier_alerte_zone(alerte):
+    """Prévient les citoyens et agents des régions concernées (préférences respectées)."""
+    try:
+        from accounts.models import User
+        from core.constants import ROLE_AGENT, ROLE_CITOYEN
+
+        qs = User.objects.filter(is_active=True, role__in=[ROLE_CITOYEN, ROLE_AGENT]).select_related('profil_agent')
+        cibles = []
+        for u in qs:
+            zones = (u.profil_agent.zones if getattr(u, 'profil_agent', None) else []) or ([u.region] if u.region else [])
+            if not alerte.regions or set(zones) & set(alerte.regions):
+                cibles.append(u)
+        prefixe = {'danger': '⚠ Danger', 'vigilance': 'Vigilance', 'info': 'Info'}.get(alerte.niveau, 'Alerte')
+        notifier(cibles, 'alerte_zone', f'{prefixe} : {alerte.titre}', alerte.message[:500], None, f'alerte_zone:{alerte.pk}')
+    except Exception:
+        logger.exception("Notification d'alerte de zone impossible")

@@ -8,7 +8,9 @@ import '../../core/format.dart';
 import '../../core/models.dart';
 import '../../state/configuration.dart';
 import '../../state/session.dart';
+import '../../ui/alertes_zone.dart';
 import '../../ui/kit.dart';
+import '../../ui/photo.dart';
 
 class AccueilAgent extends StatefulWidget {
   const AccueilAgent({super.key});
@@ -72,13 +74,25 @@ class _AccueilAgentState extends State<AccueilAgent> {
               child: TuileDossier(d, onTap: () => context.push('/dossier/${d.estSos ? 'sos' : 'incident'}/${d.id}').then((_) => _charger()))),
         ]);
     return Scaffold(
-      appBar: AppBar(title: Text('Bonjour ${u.prenom}'.trim())),
       body: RefreshIndicator(
         onRefresh: _charger,
         child: !_charge
             ? const Chargement()
-            : ListView(padding: const EdgeInsets.all(16), children: [
-                Text('${u.serviceNom ?? 'Service non défini'} · zones : ${zones.isEmpty ? 'aucune' : zones}', style: const TextStyle(color: AppColors.textGrey)),
+            : ListView(padding: EdgeInsets.zero, children: [
+                SizedBox(
+                  height: 170 + MediaQuery.of(context).padding.top,
+                  child: PhotoIllustration('pompiers-bnsp', credit: false, superposition: DecoratedBox(
+                    decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xF2003A1B), Color(0x99006E33)])),
+                    child: SafeArea(child: Padding(padding: const EdgeInsets.all(20), child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.end, children: [
+                        const Text('ESPACE AGENT', style: TextStyle(color: AppColors.jaune, fontWeight: FontWeight.w700, letterSpacing: 1.5, fontSize: 12)),
+                        Text('Bonjour ${u.prenom}'.trim(), style: titre(26, couleur: Colors.white)),
+                        Text('${u.serviceNom ?? 'Service non défini'} · ${zones.isEmpty ? 'aucune zone' : zones}', style: const TextStyle(color: Colors.white70)),
+                      ]))),
+                  )),
+                ),
+                BandeauAlertesZone(region: u.zones.isEmpty ? null : u.zones.first),
+                Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 if (u.serviceNom == null || u.zones.isEmpty) const Padding(padding: EdgeInsets.only(top: 10),
                     child: Bandeau.alerte('Compte non rattaché à un service ou à une zone : vous ne verrez que les dossiers qui vous sont affectés.')),
                 if (_erreur != null) Padding(padding: const EdgeInsets.only(top: 10), child: Bandeau.erreur(_erreur!.message)),
@@ -94,6 +108,7 @@ class _AccueilAgentState extends State<AccueilAgent> {
                 section('Nouvelles alertes de ma zone', _nouveaux, 'Aucune nouvelle alerte dans vos zones.'),
                 if (_synchro != null) Padding(padding: const EdgeInsets.only(top: 12),
                     child: Text('Actualisé ${ilYa(_synchro)} · tirez pour rafraîchir', textAlign: TextAlign.center, style: const TextStyle(fontSize: 12, color: AppColors.textMuted))),
+                ])),
               ]),
       ),
     );

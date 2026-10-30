@@ -99,6 +99,7 @@ class IncidentSerializer(DossierLectureMixin, serializers.ModelSerializer):
     categorie_libelle = serializers.SerializerMethodField()
     photos = PieceJointeSerializer(source='pieces_jointes', many=True, read_only=True)
     doublon_potentiel_reference = serializers.CharField(source='doublon_potentiel_de.reference', default=None, read_only=True)
+    nb_confirmations = serializers.SerializerMethodField()
 
     class Meta:
         model = Incident
@@ -108,7 +109,11 @@ class IncidentSerializer(DossierLectureMixin, serializers.ModelSerializer):
             'statut', 'statut_libelle', 'gravite', 'service', 'service_nom', 'date_creation', 'date_modification',
             'date_prise_en_charge', 'date_cloture', 'motif_cloture', 'en_retard', 'intervention', 'photos',
             'citoyen_contact', 'est_proprietaire', 'doublon_potentiel_de', 'doublon_potentiel_reference',
+            'nb_confirmations',
         ]
+
+    def get_nb_confirmations(self, obj) -> int:
+        return obj.confirmations.count()
 
     def get_categorie_libelle(self, obj) -> str:
         cats = self.context.setdefault('_categories', {c.code: c.libelle for c in Categorie.objects.all()})

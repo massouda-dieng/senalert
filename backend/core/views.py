@@ -270,3 +270,67 @@ class ServicesProximiteView(APIView):
             'avertissement': ("Données collaboratives : vérifiez avant de vous déplacer. "
                               "La disponibilité des établissements n'est pas connue."),
         })
+
+
+# --- Recherche d'adresse (OpenStreetMap / Nominatim) --------------------------
+
+class GeocodageView(APIView):
+    """Recherche d'un lieu au Sénégal (adresse, quartier, établissement). Résultats mis en cache 24 h."""
+
+    throttle_scope = 'services'
+
+    def get_throttles(self):
+        return [ScopedRateThrottle()]
+
+    @extend_schema(responses=OpenApiTypes.OBJECT)
+    def get(self, request):
+        q = (request.query_params.get('q') or '').strip()
+        if len(q) < 3 or len(q) > 120:
+            raise serializers.ValidationError({'q': 'Saisissez entre 3 et 120 caractères.'})
+        cle = f'geo:{q.lower()}'
+        resultats = cache.get(cle)
+        if resultats is None:
+            try:
+                r = requests.get(settings.NOMINATIM_URL, timeout=10, params={
+                    'q': q, 'format': 'jsonv2', 'countrycodes': 'sn', 'limit': 6, 'accept-language': 'fr'},
+                    headers={'User-Agent': 'SenAlert/3.0 (projet academique ISEP Diamniadio)'})
+                r.raise_for_status()
+                resultats = [{'nom': x.get('display_name'), 'latitude': float(x['lat']), 'longitude': float(x['lon']),
+                              'type': x.get('type')} for x in r.json()]
+            except Exception as exc:
+                logger.warning('Nominatim indisponible : %s', exc.__class__.__name__)
+                raise ServiceIndisponible("La recherche d'adresse est momentanément indisponible.")
+            cache.set(cle, resultats, 60 * 60 * 24)
+        return Response({'resultats': resultats, 'source': '© contributeurs OpenStreetMap (Nominatim)'})
+
+
+# --- Chiffres publics (page d'accueil) -----------------------------------------
+
+class StatistiquesPubliquesView(APIView):
+    """Chiffres réels et agrégés pour la page de présentation (aucune donnée personnelle)."""
+
+    permission_classes = [permissions.AllowAny]
+
+    @extend_schema(responses=OpenApiTypes.OBJECT)
+    def get(self, request):
+        donnees = cache.get('stats_publiques')
+        if donnees is None:
+            from accounts.models import User
+            from alerts.models import AlerteSOS
+            from incidents.models import Incident
+            from .constants import RESOLU, ROLE_AGENT, ROLE_CITOYEN
+
+            incidents = Incident.objects.all()
+            donnees = {
+                'signalements': incidents.count(),
+                'resolus': incidents.filter(statut=RESOLU).count() + AlerteSOS.objects.filter(statut=RESOLU).count(),
+                'alertes_sos': AlerteSOS.objects.count(),
+                'citoyens': User.objects.filter(role=ROLE_CITOYEN, is_active=True).count(),
+                'agents': User.objects.filter(role=ROLE_AGENT, is_active=True).count(),
+                'regions_couvertes': incidents.exclude(region='').values('region').distinct().count(),
+                'services': Service.objects.filter(actif=True).count(),
+                'donnees_demo': incidents.filter(description__startswith='[DÉMO]').exists(),
+                'calcule_le': timezone.now(),
+            }
+            cache.set('stats_publiques', donnees, 300)
+        return Response(donnees)

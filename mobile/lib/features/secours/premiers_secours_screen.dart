@@ -96,7 +96,7 @@ class _FicheScreen extends StatelessWidget {
         for (var i = 0; i < etapes.length; i++) Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            CircleAvatar(radius: 14, backgroundColor: AppColors.navy800, child: Text('${i + 1}', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700))),
+            CircleAvatar(radius: 14, backgroundColor: AppColors.vert800, child: Text('${i + 1}', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700))),
             const SizedBox(width: 12),
             Expanded(child: Text(etapes[i], style: const TextStyle(fontSize: 15.5, height: 1.4))),
           ]),

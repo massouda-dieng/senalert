@@ -14,9 +14,9 @@ class AppTheme {
     final base = ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.navy800,
-        primary: AppColors.navy800,
-        secondary: AppColors.orange,
+        seedColor: AppColors.vert800,
+        primary: AppColors.vert800,
+        secondary: AppColors.jaune,
         error: AppColors.crimson,
         surface: AppColors.white,
       ),
@@ -35,11 +35,11 @@ class AppTheme {
         titleTextStyle: GoogleFonts.plusJakartaSans(color: AppColors.textDark, fontSize: 19, fontWeight: FontWeight.w800),
       ),
       filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(
-        backgroundColor: AppColors.navy800, minimumSize: const Size(64, 52), shape: rond,
+        backgroundColor: AppColors.vert800, minimumSize: const Size(64, 52), shape: rond,
         textStyle: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w700),
       )),
       outlinedButtonTheme: OutlinedButtonThemeData(style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.navy800, minimumSize: const Size(64, 52), shape: rond,
+        foregroundColor: AppColors.vert800, minimumSize: const Size(64, 52), shape: rond,
         side: const BorderSide(color: AppColors.border, width: 1.4),
         textStyle: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w700),
       )),
@@ -49,13 +49,13 @@ class AppTheme {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.blue600, width: 1.6)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.vert600, width: 1.6)),
       ),
-      snackBarTheme: SnackBarThemeData(behavior: SnackBarBehavior.floating, backgroundColor: AppColors.navy900,
+      snackBarTheme: SnackBarThemeData(behavior: SnackBarBehavior.floating, backgroundColor: AppColors.vert900,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.white,
-        indicatorColor: AppColors.blue50,
+        indicatorColor: AppColors.vert50,
         labelTextStyle: WidgetStatePropertyAll(GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600)),
       ),
       cardTheme: CardTheme(color: AppColors.white, elevation: 0, shape: RoundedRectangleBorder(
@@ -118,7 +118,7 @@ class Bandeau extends StatelessWidget {
   final Color fond;
   final Widget? action;
   const Bandeau(this.texte, {super.key, this.titre, this.icone = Icons.info_outline_rounded,
-      this.couleur = AppColors.navy700, this.fond = AppColors.blue50, this.action});
+      this.couleur = AppColors.vert700, this.fond = AppColors.vert50, this.action});
   const Bandeau.alerte(this.texte, {super.key, this.titre, this.action})
       : icone = Icons.warning_amber_rounded, couleur = const Color(0xFF92400E), fond = const Color(0xFFFEF3C7);
   const Bandeau.erreur(this.texte, {super.key, this.titre, this.action})
@@ -280,14 +280,14 @@ class TuileDossier extends StatelessWidget {
         child: Row(children: [
           Container(
             width: 44, height: 44,
-            decoration: BoxDecoration(color: (d.estSos ? AppColors.crimson : AppColors.navy700).withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
+            decoration: BoxDecoration(color: (d.estSos ? AppColors.crimson : AppColors.vert700).withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
             child: Icon(d.estSos ? Icons.sos_rounded : (iconesCategories[d.typeIncident] ?? Icons.report_rounded),
-                color: d.estSos ? AppColors.crimson : AppColors.navy700),
+                color: d.estSos ? AppColors.crimson : AppColors.vert700),
           ),
           const SizedBox(width: 12),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              Flexible(child: Text(d.reference, style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w700, color: AppColors.navy700, fontSize: 13))),
+              Flexible(child: Text(d.reference, style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w700, color: AppColors.vert700, fontSize: 13))),
               if (d.enRetard) const Padding(padding: EdgeInsets.only(left: 6), child: Icon(Icons.schedule_rounded, size: 15, color: AppColors.warning)),
             ]),
             const SizedBox(height: 2),

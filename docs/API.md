@@ -61,6 +61,21 @@ Conventions :
 | GET/POST | `/api/analyse/zones-risque/historique/` | GET agent/superadmin, POST superadmin | Instantanés `ZoneRisque` |
 | POST | `/api/analyse/assistant/` | connecté (20/min, 200/jour) | `{message ≤ 1000 car., historique?}` → `{reponse, source: groq|secours_local, alerte_urgence, fiches}` |
 
+## Fonctionnalités v3.1
+
+| Méthode | Chemin | Accès | Description |
+|---|---|---|---|
+| GET | `/api/alertes/zones/?region=&en_cours=1` | public | Alertes de zone en cours (le superadmin voit aussi les terminées) |
+| POST/PATCH | `/api/alertes/zones/`, `/api/alertes/zones/{id}/` | superadmin | `{titre, message, consignes, niveau: info|vigilance|danger, categorie, regions[], date_debut, date_fin}` ; notifie citoyens et agents des régions ; journalisé |
+| POST | `/api/alertes/zones/{id}/terminer/` | superadmin | Met fin à l'alerte |
+| GET | `/api/incidents/communaute/?lat=&lng=&rayon_km=&jours=&type_incident=` | connecté | Fil des incidents récents (sans description ni identité, positions arrondies), tri par distance |
+| POST/DELETE | `/api/incidents/communaute/{id}/confirmer/` | citoyen (pas sur son propre signalement) | « Je le vois aussi » (idempotent) |
+| GET/POST | `/api/incidents/communaute/{id}/commentaires/` | connecté (POST limité à 30/h) | Messages publics (prénom + initiale seulement) |
+| POST | `/api/incidents/communaute/commentaires/{id}/masquer/` | superadmin | Modération `{masque: true|false}` ; journalisée |
+| GET | `/api/geocodage/?q=` | connecté (30/min) | Recherche de lieu au Sénégal (Nominatim, cache 24 h) |
+| GET | `/api/statistiques-publiques/` | public | Chiffres réels agrégés pour la page d'accueil (cache 5 min) |
+| GET | `/api/analyse/niveaux-regions/` | connecté | Niveau de risque par région (sans détail chiffré) pour la carte |
+
 ## Supervision, gestion, référentiels
 
 | Méthode | Chemin | Accès | Description |

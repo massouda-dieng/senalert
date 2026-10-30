@@ -35,8 +35,8 @@ export default function Notifications() {
           <ul className="divide-y divide-surface-bord">
             {donnees.results.map((n) => (
               <li key={n.id}>
-                <button type="button" onClick={() => ouvrir(n)} className={clsx('flex w-full gap-3 px-5 py-4 text-left hover:bg-surface-douce', !n.lue && 'bg-nuit-50/50')}>
-                  <span className={clsx('mt-1.5 h-2 w-2 shrink-0 rounded-full', n.lue ? 'bg-transparent' : 'bg-nuit-600')} aria-label={n.lue ? undefined : 'Non lue'} />
+                <button type="button" onClick={() => ouvrir(n)} className={clsx('flex w-full gap-3 px-5 py-4 text-left hover:bg-surface-douce', !n.lue && 'bg-marque-50/50')}>
+                  <span className={clsx('mt-1.5 h-2 w-2 shrink-0 rounded-full', n.lue ? 'bg-transparent' : 'bg-marque-600')} aria-label={n.lue ? undefined : 'Non lue'} />
                   <span className="min-w-0 flex-1">
                     <span className="block font-semibold">{n.titre}</span>
                     <span className="block text-sm text-texte-doux">{n.message}</span>

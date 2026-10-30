@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'core/constants/app_colors.dart';
 import 'features/agent/agent_home_screen.dart';
 import 'features/auth/auth_screens.dart';
+import 'features/auth/bienvenue_screen.dart';
 import 'features/citoyen/assistant_screen.dart';
 import 'features/citoyen/carte_screen.dart';
 import 'features/citoyen/home_screen.dart';
@@ -12,14 +13,16 @@ import 'features/citoyen/report_screen.dart';
 import 'features/citoyen/services_screen.dart';
 import 'features/citoyen/sos_screen.dart';
 import 'features/commun/commun_screens.dart';
+import 'features/communaute/communaute_screen.dart';
 import 'features/dossiers/dossiers.dart';
 import 'features/secours/premiers_secours_screen.dart';
 import 'state/session.dart';
 import 'ui/kit.dart';
 
-const _publiques = {'/connexion', '/inscription', '/mot-de-passe-oublie', '/secours'};
+const _publiques = {'/bienvenue', '/connexion', '/inscription', '/mot-de-passe-oublie', '/secours'};
 const _citoyen = {'/accueil', '/signaler', '/sos', '/services', '/assistant', '/carte', '/dossiers'};
 const _agent = {'/agent', '/interventions', '/carte-agent'};
+const _citoyenEtAgent = {'/communaute'};
 
 String accueilPour(String role) => switch (role) { 'agent' => '/agent', 'superadmin' => '/supervision', _ => '/accueil' };
 
@@ -30,8 +33,9 @@ GoRouter creerRouteur(Session session) => GoRouter(
         final lieu = state.matchedLocation;
         if (!session.initialisee) return lieu == '/' ? null : '/';
         final u = session.utilisateur;
-        if (u == null) return _publiques.contains(lieu) ? null : '/connexion';
-        if (lieu == '/' || const {'/connexion', '/inscription', '/mot-de-passe-oublie'}.contains(lieu)) return accueilPour(u.role);
+        if (u == null) return _publiques.contains(lieu) ? null : '/bienvenue';
+        if (lieu == '/' || const {'/bienvenue', '/connexion', '/inscription', '/mot-de-passe-oublie'}.contains(lieu)) return accueilPour(u.role);
+        if (_citoyenEtAgent.contains(lieu) && u.estSuperadmin) return accueilPour(u.role);
         if (_citoyen.contains(lieu) && !u.estCitoyen) return accueilPour(u.role);
         if (_agent.contains(lieu) && !u.estAgent) return accueilPour(u.role);
         if (lieu == '/supervision' && !u.estSuperadmin) return accueilPour(u.role);
@@ -39,6 +43,7 @@ GoRouter creerRouteur(Session session) => GoRouter(
       },
       routes: [
         GoRoute(path: '/', builder: (_, __) => const _Demarrage()),
+        GoRoute(path: '/bienvenue', builder: (_, __) => const BienvenueScreen()),
         GoRoute(path: '/connexion', builder: (_, __) => const ConnexionScreen()),
         GoRoute(path: '/inscription', builder: (_, __) => const InscriptionScreen()),
         GoRoute(path: '/mot-de-passe-oublie', builder: (_, __) => const MotDePasseOublieScreen()),
@@ -56,6 +61,7 @@ GoRouter creerRouteur(Session session) => GoRouter(
             GoRoute(path: '/dossiers', builder: (_, __) => const ListeDossiersScreen()),
             GoRoute(path: '/carte', builder: (_, __) => const CarteScreen()),
             GoRoute(path: '/secours', builder: (_, __) => const PremiersSecoursScreen()),
+            GoRoute(path: '/communaute', builder: (_, __) => const CommunauteScreen()),
             GoRoute(path: '/profil', builder: (_, __) => const ProfilScreen()),
             GoRoute(path: '/agent', builder: (_, __) => const AccueilAgent()),
             GoRoute(path: '/interventions', builder: (_, __) => const ListeDossiersScreen(agent: true)),
@@ -76,9 +82,9 @@ class _Coquille extends StatelessWidget {
     if (u == null) return child; // fiches de premiers secours consultables sans compte
     final onglets = u.estAgent
         ? const [('/agent', Icons.space_dashboard_outlined, 'Tableau'), ('/interventions', Icons.assignment_outlined, 'Interventions'),
-            ('/carte-agent', Icons.map_outlined, 'Carte'), ('/secours', Icons.healing_outlined, 'Secours'), ('/profil', Icons.person_outline, 'Profil')]
+            ('/carte-agent', Icons.map_outlined, 'Carte'), ('/communaute', Icons.groups_outlined, 'Autour'), ('/profil', Icons.person_outline, 'Profil')]
         : const [('/accueil', Icons.home_outlined, 'Accueil'), ('/dossiers', Icons.folder_open_outlined, 'Dossiers'),
-            ('/carte', Icons.map_outlined, 'Carte'), ('/secours', Icons.healing_outlined, 'Secours'), ('/profil', Icons.person_outline, 'Profil')];
+            ('/communaute', Icons.groups_outlined, 'Autour'), ('/carte', Icons.map_outlined, 'Carte'), ('/profil', Icons.person_outline, 'Profil')];
     final index = onglets.indexWhere((o) => o.$1 == lieu);
     return Scaffold(
       body: child,
@@ -95,7 +101,7 @@ class _Demarrage extends StatelessWidget {
   const _Demarrage();
   @override
   Widget build(BuildContext context) => Scaffold(
-        backgroundColor: AppColors.navy900,
+        backgroundColor: AppColors.vert800,
         body: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
           Image.asset('assets/images/senalert_logo.png', width: 88, height: 88, errorBuilder: (_, __, ___) => const Icon(Icons.shield, size: 88, color: Colors.white)),
           const SizedBox(height: 16),

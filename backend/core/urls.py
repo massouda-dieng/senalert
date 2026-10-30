@@ -13,4 +13,6 @@ router.register('fiches-secours', views.FicheSecoursViewSet, basename='fiche-sec
 urlpatterns = [
     path('configuration/', views.ConfigurationPubliqueView.as_view(), name='configuration'),
     path('services-proximite/', views.ServicesProximiteView.as_view(), name='services-proximite'),
+    path('geocodage/', views.GeocodageView.as_view(), name='geocodage'),
+    path('statistiques-publiques/', views.StatistiquesPubliquesView.as_view(), name='statistiques-publiques'),
 ] + router.urls

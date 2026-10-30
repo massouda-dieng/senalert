@@ -118,6 +118,21 @@ class ZonesRisqueView(APIView):
         })
 
 
+class NiveauxRegionsView(APIView):
+    """Niveau de risque par région (sans détail chiffré), pour la couche « zones à risque » de la carte citoyenne."""
+
+    @extend_schema(responses=OpenApiTypes.OBJECT)
+    def get(self, request):
+        zones, reference = calculer()
+        return Response({
+            'methode': METHODE,
+            'date_calcul': timezone.now(),
+            'zones': [{k: z[k] for k in ('region', 'region_libelle', 'latitude', 'longitude', 'niveau', 'donnees_insuffisantes')}
+                      for z in zones],
+            'avertissement': "Indicateur fondé sur les signalements reçus. Peu de signalements ne signifie pas qu'une zone est sûre.",
+        })
+
+
 class InstantaneView(APIView):
     """GET : historique des scores ; POST (superadmin) : enregistre un instantané reproductible."""
 

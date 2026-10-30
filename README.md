@@ -28,6 +28,9 @@ Détails : [docs/EXPLOITATION.md](docs/EXPLOITATION.md).
 
 ## Fonctionnalités
 
+* **Vitrine publique** illustrée de photos réelles sous licence libre (crédits affichés), aux couleurs du Sénégal, avec les chiffres réels de la plateforme.
+* **Alertes de zone**, **communauté « Autour de moi »** et **carte avancée** (satellite, carte de chaleur, zones à risque, recherche d'adresse) pour tous les rôles.
+
 * **Citoyen** : SOS géolocalisé (5 s pour annuler, précision GPS, confirmation réelle), signalement en 4 étapes avec photos et brouillon, suivi des dossiers et historique, carte des incidents, services de proximité (OpenStreetMap), fiches de premiers secours hors ligne, assistant IA avec mode secours, notifications, profil et confidentialité, connexion Google.
 * **Agent de secours** : tableau de bord, interventions de sa zone et de son service, prise en charge / acceptation / refus / démarrage / clôture avec compte rendu, itinéraire, notes, carte opérationnelle.
 * **Superadministrateur** : centre de supervision (indicateurs définis, évolution, catégories, régions, carte, qualité des données), gestion des incidents et SOS (affectation, réaffectation, rejet, doublons), exports CSV/PDF, score de risque par région (méthode du mémoire), utilisateurs et agents, services et catégories, paramètres, journal d'audit.

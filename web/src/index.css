@@ -6,7 +6,7 @@
   html { -webkit-font-smoothing: antialiased; }
   body { @apply bg-surface-douce text-texte font-sans; }
   h1, h2, h3 { @apply font-titre tracking-tight; }
-  :focus-visible { @apply outline-none ring-2 ring-nuit-600 ring-offset-2; }
+  :focus-visible { @apply outline-none ring-2 ring-marque-600 ring-offset-2; }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
   }
@@ -15,11 +15,13 @@
 @layer components {
   .carte { @apply bg-surface rounded-2xl border border-surface-bord shadow-carte; }
   .champ { @apply w-full rounded-xl border border-surface-bord bg-white px-3.5 py-2.5 text-sm text-texte placeholder:text-texte-pale
-           focus:border-nuit-600 focus:ring-2 focus:ring-nuit-600/20 focus:outline-none disabled:bg-surface-douce; }
+           focus:border-marque-600 focus:ring-2 focus:ring-marque-600/20 focus:outline-none disabled:bg-surface-douce; }
   .etiquette { @apply block text-[13px] font-semibold text-texte mb-1.5; }
-  .lien { @apply font-semibold text-nuit-600 hover:underline; }
+  .lien { @apply font-semibold text-marque-600 hover:underline; }
 }
 
 .leaflet-container { font: inherit; border-radius: inherit; }
-.marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background: rgba(11,31,77,.18) !important; }
-.marker-cluster div { background: #0B1F4D !important; color: #fff !important; font-weight: 700; }
+.marker-cluster { background: rgba(0,133,63,.22); border-radius: 999px; background-clip: padding-box; }
+.marker-cluster div { width: 30px; height: 30px; margin: 5px; border-radius: 999px; background: #006E33; color: #fff;
+  font: 700 12px/30px Inter, system-ui, sans-serif; text-align: center; box-shadow: 0 0 0 2px #FDEF42; }
+.marker-cluster span { line-height: 30px; }

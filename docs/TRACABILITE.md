@@ -35,6 +35,15 @@ Tests : `B:` backend (`python manage.py test`), `W:` web (`npx vitest run`), `F:
 | 28 | Réduction du délai signalement → prise en charge (ch. 1 résultats attendus) | indicateur « délai moyen de prise en charge » | `date_prise_en_charge` | statistiques | superadmin | B: `test_indicateurs_coherents_avec_la_base` | 🟡 mesurable ; la comparaison avec un appel téléphonique nécessite une étude terrain |
 | 29 | Connexion future aux systèmes SAMU / Gendarmerie / ANASER (ch. 1 résultats attendus) | — | — | — | — | — | ⛔ hors périmètre (aucune API officielle disponible) |
 
+### Extensions v3.1 (hors mémoire, demandées au cours du projet)
+
+| # | Fonction | Écran(s) | Modèle | Endpoint | Permission | Test | Statut |
+|---|---|---|---|---|---|---|---|
+| 30 | Alertes de zone | `/supervision/alertes-zone`, bandeaux web/mobile, couches de carte | `AlerteZone` | `/api/alertes/zones/` | lecture publique, écriture superadmin | B: `AlertesZoneTests` · E2E | ✅ |
+| 31 | Communauté / entraide | `/citoyen/communaute`, onglet mobile « Autour » | `Confirmation`, `Commentaire` | `/api/incidents/communaute/…` | citoyens confirment ; modération superadmin | B: `CommunauteTests` · E2E | ✅ |
+| 32 | Carte avancée | `/…/carte` (3 rôles), `CarteScreen` mobile | — | `/api/geocodage/`, `/api/analyse/niveaux-regions/` + existants | connecté | B: `CarteEtVitrineTests` · E2E (chaleur, satellite) | ✅ |
+| 33 | Page vitrine | `/app/` | — | `/api/statistiques-publiques/` | public | B: `test_chiffres_publics_reels` · W: crédits photos · E2E | ✅ |
+
 ## Points du mémoire à mettre à jour
 
 * Ch. 3 §2b « position transmise automatiquement **à l'agent le plus proche** » : l'implémentation notifie **tous les agents de la région** (et du service pour un incident). La distance à l'agent n'est pas connue (pas de suivi de position des équipes, choix de confidentialité). Formulation proposée : « transmise aux agents de secours couvrant la zone ».

@@ -170,7 +170,7 @@ class _SignalerScreenState extends State<SignalerScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 3),
                   child: Column(children: [
                     AnimatedContainer(duration: const Duration(milliseconds: 250), height: 5,
-                        decoration: BoxDecoration(color: i <= _etape ? AppColors.navy800 : AppColors.border, borderRadius: BorderRadius.circular(4))),
+                        decoration: BoxDecoration(color: i <= _etape ? AppColors.vert800 : AppColors.border, borderRadius: BorderRadius.circular(4))),
                     const SizedBox(height: 4),
                     Text(etapes[i], style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: i == _etape ? AppColors.textDark : AppColors.textMuted)),
                   ]),
@@ -187,7 +187,7 @@ class _SignalerScreenState extends State<SignalerScreen> {
                 children: [
                   for (final c in config.categories)
                     Carte(
-                      couleur: _type == c.code ? AppColors.blue50 : null,
+                      couleur: _type == c.code ? AppColors.vert50 : null,
                       onTap: () { setState(() { _type = c.code; _etape = 1; }); _sauver(); },
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       child: Row(children: [

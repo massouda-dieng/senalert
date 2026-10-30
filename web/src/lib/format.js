@@ -1,5 +1,5 @@
 export const STATUTS = {
-  nouveau: { libelle: 'Nouveau', classe: 'bg-nuit-50 text-nuit-700 ring-nuit-600/20', point: '#1D4ED8' },
+  nouveau: { libelle: 'Nouveau', classe: 'bg-blue-50 text-blue-700 ring-blue-600/20', point: '#1D4ED8' },
   affecte: { libelle: 'Affecté', classe: 'bg-violet-50 text-violet-700 ring-violet-600/20', point: '#7C3AED' },
   accepte: { libelle: 'Pris en charge', classe: 'bg-sky-50 text-sky-700 ring-sky-600/20', point: '#0284C7' },
   en_cours: { libelle: 'En cours', classe: 'bg-alerte-clair text-amber-800 ring-amber-600/20', point: '#D97706' },
@@ -10,13 +10,13 @@ export const STATUTS = {
 
 export const GRAVITES = {
   faible: { libelle: 'Faible', classe: 'text-slate-600 bg-slate-100' },
-  moyenne: { libelle: 'Moyenne', classe: 'text-nuit-700 bg-nuit-50' },
+  moyenne: { libelle: 'Moyenne', classe: 'text-marque-700 bg-marque-50' },
   elevee: { libelle: 'Élevée', classe: 'text-amber-800 bg-alerte-clair' },
   critique: { libelle: 'Critique', classe: 'text-white bg-sos' },
 };
 
 export const NIVEAUX_RISQUE = {
-  critique: { libelle: 'Critique', couleur: '#E11D48' },
+  critique: { libelle: 'Critique', couleur: '#E31B23' },
   eleve: { libelle: 'Élevé', couleur: '#F97316' },
   moyen: { libelle: 'Moyen', couleur: '#D97706' },
   faible: { libelle: 'Faible', couleur: '#059669' },

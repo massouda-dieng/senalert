@@ -18,6 +18,12 @@ SenAlert ne remplace pas les services officiels de secours. En cas de danger imm
 
 **Autres fonctions** — Carte des incidents récents (positions arrondies) ; Services proches (hôpitaux, cliniques, pharmacies, police, pompiers d'après OpenStreetMap, avec distance, téléphone si connu et itinéraire) ; Premiers secours (12 fiches consultables hors connexion) ; Assistant (questions de prévention et d'utilisation ; historique gardé sur votre appareil) ; Notifications ; Profil (préférences, mot de passe, déconnexion de tous les appareils, suppression du compte).
 
+**Autour de moi** — incidents récents près de chez vous (après localisation), triés par distance. « Je le vois aussi » confirme un incident et aide les secours à prioriser ; les messages sont publics : n'y mettez aucune donnée personnelle.
+
+**Carte interactive** — bouton « Couches » : fond plan / clair / satellite, incidents, carte de chaleur, zones à risque, alertes de zone, services proches (« Charger les services autour du centre »). Barre de recherche pour trouver un lieu, bouton « Me localiser ».
+
+**Alertes de zone** — les alertes officielles de votre région apparaissent en bandeau (jaune : vigilance, rouge : danger) et en notification.
+
 ## Agent de secours (web : `/app/agent`, mobile)
 
 Le compte est créé par le superadministrateur, avec un **service** (Police, Pompiers, Santé, SENELEC, ONAS…) et des **zones** (régions). À la première connexion, changez le mot de passe initial (bandeau d'invitation).
@@ -37,6 +43,10 @@ Le détail donne la position et sa précision, l'**itinéraire** (Google Maps), 
 ## Superadministrateur (web uniquement : `/app/supervision`)
 
 **Supervision** — indicateurs calculés en direct (filtres période, région, catégorie, granularité), évolution, répartition par catégorie et par région, carte des dossiers ouverts, qualité des données (position, précision GPS, description, photos, doublons). Survolez un indicateur pour sa définition ; la section « Définition des indicateurs » les détaille.
+
+**Alertes de zone** — « Nouvelle alerte » : titre, message, consignes, niveau, régions (aucune = tout le pays), fin éventuelle. Les citoyens et agents concernés sont notifiés ; « Terminer » met fin à l'alerte.
+
+**Communauté** — fil des incidents avec le nombre de confirmations ; modération des messages (masquer / rétablir), journalisée.
 
 **Incidents / Alertes SOS** — tableau paginé, filtres combinables (référence, statut, catégorie, région, gravité, dates, doublons potentiels), panneau de détail. Actions : **Affecter / Réaffecter** (agents actifs couvrant la région, filtrables par service), **Rejeter** (signalement non fondé), **Annuler**, gravité, notes. Exports **CSV** (tableur, sans données personnelles) et **Rapport PDF**.
 

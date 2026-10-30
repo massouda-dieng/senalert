@@ -87,7 +87,7 @@ class _SosScreenState extends State<SosScreen> {
     return PopScope(
       canPop: _etape != _Etape.envoi,
       child: Scaffold(
-        backgroundColor: AppColors.navy900,
+        backgroundColor: AppColors.vert900,
         appBar: AppBar(backgroundColor: Colors.transparent, foregroundColor: Colors.white, title: Text('Alerte SOS', style: titre(19, couleur: Colors.white))),
         body: SafeArea(
           child: ListView(padding: const EdgeInsets.all(24), children: [

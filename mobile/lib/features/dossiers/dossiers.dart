@@ -294,7 +294,7 @@ class _DossierScreenState extends State<DossierScreen> {
                         children: [
                           TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'sn.senalert.mobile'),
                           MarkerLayer(markers: [Marker(point: LatLng(d.lat!, d.lng!), width: 36, height: 36,
-                              child: Icon(Icons.location_on, size: 36, color: d.estSos ? AppColors.crimson : AppColors.navy700))]),
+                              child: Icon(Icons.location_on, size: 36, color: d.estSos ? AppColors.crimson : AppColors.vert700))]),
                         ],
                       ))),
                     ],

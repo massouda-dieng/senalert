@@ -115,11 +115,12 @@ Flutter 3.24 / Dart 3.5, `provider` + `go_router`.
 
 | Jeton | Valeur | Usage |
 |---|---|---|
-| Bleu nuit | `#071330` / `#0B1F4D` | navigation, en-têtes, actions principales |
-| Surfaces | `#FFFFFF`, `#F3F6FC`, bordures `#E1E7F2` | zones de travail |
-| Rouge | `#E11D48` | **réservé** au SOS et à l'urgence critique |
-| Orange | `#D97706` / `#F97316` | avertissements, retards |
-| Vert | `#059669` | résolution confirmée |
+| Vert drapeau | `#00853F` (gamme `#00210F` → `#ECF8F1`) | identité, navigation, actions principales |
+| Jaune drapeau | `#FDEF42` | accents, étoile, alertes de vigilance |
+| Rouge drapeau | `#E31B23` | **réservé** au SOS, au danger et à l'urgence critique |
+| Surfaces | `#FFFFFF`, `#F8F7F1`, bordures `#E7E4D8` | zones de travail |
+| Orange | `#C2410C` / `#EA580C` | avertissements, retards |
+| Photos | 9 images Wikimedia Commons sous licence libre, créditées (`web/src/lib/credits-photos.json`, `mobile/assets/images/photos/credits.json`) | illustration uniquement |
 | Typographie | Plus Jakarta Sans (titres), Inter (texte) | |
 
-Statuts : chaque badge associe couleur **et** libellé/icône (jamais la couleur seule). Graphiques : palette incidents `#1D4ED8` / SOS `#E11D48` validée (contraste, daltonisme) par script.
+Statuts : chaque badge associe couleur **et** libellé/icône (jamais la couleur seule). Graphiques : incidents `#00853F` / SOS `#E31B23` (trait pointillé) validés par script (contraste, daltonisme ΔE 8,5).

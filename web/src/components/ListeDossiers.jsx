@@ -127,8 +127,8 @@ export default function ListeDossiers({ type = 'incident', filtresVisibles = FIL
                 <tbody className="divide-y divide-surface-bord">
                   {lignes.map((d) => (
                     <tr key={d.id} onClick={() => ouvrir(d.id)} onKeyDown={(e) => e.key === 'Enter' && ouvrir(d.id)} tabIndex={0}
-                      className={clsx('cursor-pointer transition hover:bg-nuit-50/60 focus:bg-nuit-50', String(d.id) === selection && 'bg-nuit-50')}>
-                      <td className="px-4 py-3 font-mono text-[13px] font-semibold text-nuit-700">{d.reference}{d.en_retard && <Clock className="ml-1.5 inline h-3.5 w-3.5 text-amber-600" aria-label="En retard" />}</td>
+                      className={clsx('cursor-pointer transition hover:bg-marque-50/60 focus:bg-marque-50', String(d.id) === selection && 'bg-marque-50')}>
+                      <td className="px-4 py-3 font-mono text-[13px] font-semibold text-marque-700">{d.reference}{d.en_retard && <Clock className="ml-1.5 inline h-3.5 w-3.5 text-amber-600" aria-label="En retard" />}</td>
                       <td className="px-4 py-3">{type === 'sos' ? (d.latitude != null ? `± ${Math.round(d.precision_gps ?? 0)} m` : <span className="text-amber-700">GPS indisponible</span>) : d.categorie_libelle}</td>
                       <td className="px-4 py-3 text-texte-doux">{d.region_libelle || '—'}</td>
                       <td className="px-4 py-3"><BadgeStatut statut={d.statut} /></td>
@@ -144,7 +144,7 @@ export default function ListeDossiers({ type = 'incident', filtresVisibles = FIL
                   <li key={d.id}>
                     <button type="button" onClick={() => ouvrir(d.id)} className="w-full px-4 py-3 text-left">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-mono text-[13px] font-semibold text-nuit-700">{d.reference}</span>
+                        <span className="font-mono text-[13px] font-semibold text-marque-700">{d.reference}</span>
                         <BadgeStatut statut={d.statut} />
                       </div>
                       <p className="mt-1 text-sm font-medium">{type === 'sos' ? 'Alerte SOS' : d.categorie_libelle} · {d.region_libelle || '—'}</p>

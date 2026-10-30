@@ -7,7 +7,9 @@ import '../../core/constants/app_colors.dart';
 import '../../core/models.dart';
 import '../../state/configuration.dart';
 import '../../state/session.dart';
+import '../../ui/alertes_zone.dart';
 import '../../ui/kit.dart';
+import '../../ui/photo.dart';
 
 class AccueilCitoyen extends StatefulWidget {
   const AccueilCitoyen({super.key});
@@ -46,8 +48,9 @@ class _AccueilCitoyenState extends State<AccueilCitoyen> {
     final u = context.watch<Session>().utilisateur!;
     final config = context.watch<Configuration>();
     final actions = [
-      ('Signaler', 'Accident, incendie…', Icons.report_rounded, const Color(0xFFB45309), '/signaler'),
-      ('Carte', 'Incidents récents', Icons.map_rounded, const Color(0xFF0369A1), '/carte'),
+      ('Signaler', 'Accident, incendie…', Icons.report_rounded, AppColors.jauneFonce, '/signaler'),
+      ('Autour de moi', 'Incidents proches', Icons.groups_rounded, const Color(0xFF1D4ED8), '/communaute'),
+      ('Premiers secours', 'Fiches hors ligne', Icons.healing_rounded, AppColors.crimson, '/secours'),
       ('Services proches', 'Hôpitaux, pharmacies…', Icons.local_hospital_rounded, const Color(0xFF047857), '/services'),
       ('Assistant', 'Questions, prévention', Icons.smart_toy_rounded, const Color(0xFF6D28D9), '/assistant'),
     ];
@@ -56,41 +59,49 @@ class _AccueilCitoyenState extends State<AccueilCitoyen> {
         onRefresh: _charger,
         child: CustomScrollView(slivers: [
           SliverToBoxAdapter(
-            child: Container(
-              decoration: const BoxDecoration(gradient: AppColors.headerGradient, borderRadius: BorderRadius.vertical(bottom: Radius.circular(32))),
-              padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 16, 20, 28),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Bonjour ${u.prenom}'.trim(), style: titre(24, couleur: Colors.white)),
-                const Text('Besoin d’aide immédiate ?', style: TextStyle(color: Colors.white70)),
-                const SizedBox(height: 22),
-                Center(
-                  child: Semantics(
-                    button: true,
-                    label: 'Déclencher une alerte SOS',
-                    child: GestureDetector(
-                      onTap: () => context.push('/sos'),
-                      child: Container(
-                        width: 168, height: 168,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle, gradient: AppColors.sosGradient,
-                          boxShadow: [BoxShadow(color: AppColors.crimson.withOpacity(0.45), blurRadius: 36, spreadRadius: 4)],
-                          border: Border.all(color: Colors.white24, width: 8),
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+              child: Stack(children: [
+                const Positioned.fill(child: PhotoIllustration('dakar-vue', credit: false)),
+                const Positioned.fill(child: DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(
+                    begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xF2003A1B), Color(0xD9005527), Color(0xB3B5121A)])))),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 16, 20, 28),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Bonjour ${u.prenom}'.trim(), style: titre(24, couleur: Colors.white)),
+                    const Text('Besoin d’aide immédiate ?', style: TextStyle(color: AppColors.jaune, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 22),
+                    Center(
+                      child: Semantics(
+                        button: true,
+                        label: 'Déclencher une alerte SOS',
+                        child: GestureDetector(
+                          onTap: () => context.push('/sos'),
+                          child: Container(
+                            width: 168, height: 168,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle, gradient: AppColors.sosGradient,
+                              boxShadow: [BoxShadow(color: AppColors.crimson.withOpacity(0.5), blurRadius: 36, spreadRadius: 4)],
+                              border: Border.all(color: Colors.white30, width: 8),
+                            ),
+                            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                              const Icon(Icons.crisis_alert_rounded, color: Colors.white, size: 40),
+                              Text('SOS', style: titre(34, couleur: Colors.white)),
+                            ]),
+                          ),
                         ),
-                        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                          const Icon(Icons.crisis_alert_rounded, color: Colors.white, size: 40),
-                          Text('SOS', style: titre(34, couleur: Colors.white)),
-                        ]),
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 14),
+                    const Center(child: Text('5 secondes pour annuler · position jointe si autorisée', style: TextStyle(color: Colors.white70, fontSize: 12.5))),
+                    const SizedBox(height: 18),
+                    NumerosUrgence(config.numeros, sombre: true),
+                  ]),
                 ),
-                const SizedBox(height: 14),
-                const Center(child: Text('5 secondes pour annuler · position jointe si autorisée', style: TextStyle(color: Colors.white60, fontSize: 12.5))),
-                const SizedBox(height: 18),
-                NumerosUrgence(config.numeros, sombre: true),
               ]),
             ),
           ),
+          SliverToBoxAdapter(child: BandeauAlertesZone(region: u.region.isEmpty ? null : u.region)),
           SliverPadding(
             padding: const EdgeInsets.all(16),
             sliver: SliverGrid.count(
