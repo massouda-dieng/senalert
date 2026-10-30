@@ -1,0 +1,23 @@
+{
+  "name": "SenAlert — urgences au Sénégal",
+  "short_name": "SenAlert",
+  "description": "Signaler une urgence, suivre l'intervention des secours et recevoir les alertes de votre région.",
+  "lang": "fr",
+  "start_url": "/app/",
+  "scope": "/app/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B110E",
+  "theme_color": "#00853F",
+  "categories": ["utilities", "lifestyle"],
+  "icons": [
+    { "src": "/static/icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/static/icone-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/static/icone-masquable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "SOS", "url": "/app/citoyen", "icons": [{ "src": "/static/icone-192.png", "sizes": "192x192" }] },
+    { "name": "Signaler un incident", "url": "/app/citoyen/signaler" },
+    { "name": "Premiers secours", "url": "/app/citoyen/secours" }
+  ]
+}

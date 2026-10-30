@@ -109,7 +109,7 @@ class _CommunauteScreenState extends State<CommunauteScreen> {
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(i['categorie_libelle'], style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                       Text('${i['region_libelle']} · ${ilYa(lireDate(i['date_creation']))}${i['distance_m'] != null ? ' · à ${distance(i['distance_m'])}' : ''}',
-                          style: const TextStyle(color: AppColors.textGrey, fontSize: 13)),
+                          style: TextStyle(color: AppColors.textGrey, fontSize: 13)),
                     ])),
                     BadgeStatut(i['statut']),
                   ]),
@@ -128,7 +128,7 @@ class _CommunauteScreenState extends State<CommunauteScreen> {
               );
             },
           ),
-          const SliverToBoxAdapter(child: Padding(padding: EdgeInsets.all(20), child: Text(
+          SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.all(20), child: Text(
               'Positions arrondies (~100 m). Ni description ni identité des déclarants ne sont affichées.',
               textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppColors.textMuted)))),
         ]),
@@ -181,13 +181,13 @@ class _CommentairesState extends State<_Commentaires> {
           ConstrainedBox(
             constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
             child: _liste == null ? const Chargement() : _liste!.isEmpty
-                ? const Padding(padding: EdgeInsets.all(12), child: Text('Aucun message pour l’instant.', style: TextStyle(color: AppColors.textGrey)))
+                ? Padding(padding: const EdgeInsets.all(12), child: Text('Aucun message pour l’instant.', style: TextStyle(color: AppColors.textGrey)))
                 : ListView(shrinkWrap: true, children: [
                     for (final c in _liste!) ListTile(
                       dense: true,
                       title: Text(c['auteur_nom'], style: const TextStyle(fontWeight: FontWeight.w700)),
                       subtitle: Text(c['texte']),
-                      trailing: Text(ilYa(lireDate(c['date'])), style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                      trailing: Text(ilYa(lireDate(c['date'])), style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
                     ),
                   ]),
           ),

@@ -1,5 +1,16 @@
 # Bilan de la refonte v3
 
+## Version 3.2 (30/10/2026)
+
+* **Démonstration guidée** (`/app/supervision/demo`) : parcours SOS → signalement → affectation → acceptation → intervention → clôture, joué avec les comptes de test et la vraie machine à états, narration pour le jury, lecture automatique. Données « [DÉMO] » supprimables. Désactivée hors développement (`DEMO_GUIDEE`).
+* **Alertes en direct** (agents, superadmin) : nouveau SOS / signalement détecté en ≈ 5 s (interrogation périodique de `/api/tableau-de-bord/flux/`, pas de WebSocket), sirène générée par le navigateur, carte d'alerte rouge, notifications du navigateur, bouton pour couper le son.
+* **Mode sombre** web (bouton dans la barre supérieure, choix dans le profil) et mobile (Profil → Apparence : système / clair / sombre).
+* **Application installable (PWA)** : manifeste, icônes, service worker (pages et fichiers disponibles hors connexion, jamais l'API), bouton « Installer l'application ». Vérifié : aucune erreur d'installabilité dans Chrome.
+* **SOS par SMS de secours** : quand l'envoi échoue, bouton « Envoyer le SOS par SMS » avec position GPS, vers le numéro du paramètre `sms_secours` (inactif par défaut : il faut un numéro de réception réel).
+* **Simulateur mobile** (`/app/simulateur`) : l'app Flutter dans un cadre iPhone / Android.
+* Guide Android pas à pas : `docs/ANDROID.md`.
+* Non réalisés car ils dépendent de vous : vos propres photos (à me transmettre), traductions wolof / pulaar validées par des locuteurs, installation d'Android Studio (licences à accepter), identifiants Google Cloud.
+
 ## Version 3.1 (30/10/2026)
 
 * **Nouvelle identité « Sénégal vibrant »** (web + mobile) : vert `#00853F`, jaune `#FDEF42` et rouge `#E31B23` du drapeau (rouge toujours réservé au SOS), bande tricolore, étoile, logo redessiné. Graphiques : couple vert/rouge validé pour le daltonisme (ΔE 8,5) avec trait pointillé pour les SOS.

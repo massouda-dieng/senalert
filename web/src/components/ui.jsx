@@ -7,7 +7,7 @@ import { GRAVITES, STATUTS, ilYa } from '../lib/format';
 
 const VARIANTES = {
   primaire: 'bg-marque-800 text-white hover:bg-marque-700 shadow-sm',
-  secondaire: 'bg-white text-texte border border-surface-bord hover:bg-surface-douce',
+  secondaire: 'bg-surface text-texte border border-surface-bord hover:bg-surface-douce',
   fantome: 'text-texte-doux hover:bg-surface-douce hover:text-texte',
   danger: 'bg-sos text-white hover:bg-sos-fonce shadow-sm',
   succes: 'bg-succes text-white hover:bg-emerald-700 shadow-sm',
@@ -116,7 +116,7 @@ export function Bandeau({ type = 'info', titre, children, className }) {
 
 export function IndicateurSynchro({ date, chargement, onRafraichir }) {
   return (
-    <button type="button" onClick={() => onRafraichir?.()} className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-texte-doux hover:bg-white" title="Actualiser">
+    <button type="button" onClick={() => onRafraichir?.()} className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-texte-doux hover:bg-surface" title="Actualiser">
       <RefreshCw className={clsx('h-3.5 w-3.5', chargement && 'animate-spin')} aria-hidden />
       {date ? `Synchronisé ${ilYa(date)}` : 'Non synchronisé'}
     </button>
@@ -224,7 +224,7 @@ export function Fenetre({ ouverte, onFermer, titre, children, pied, large }) {
   if (!ouverte) return null;
   return (
     <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-marque-950/50 p-0 backdrop-blur-[2px] sm:items-center sm:p-4" onMouseDown={(e) => e.target === e.currentTarget && onFermer()}>
-      <div ref={ref} role="dialog" aria-modal="true" aria-label={titre} className={clsx('w-full animate-apparition rounded-t-3xl bg-white shadow-flottant sm:rounded-3xl', large ? 'sm:max-w-2xl' : 'sm:max-w-md')}>
+      <div ref={ref} role="dialog" aria-modal="true" aria-label={titre} className={clsx('w-full animate-apparition rounded-t-3xl bg-surface shadow-flottant sm:rounded-3xl', large ? 'sm:max-w-2xl' : 'sm:max-w-md')}>
         <div className="flex items-center justify-between border-b border-surface-bord px-5 py-4">
           <h2 className="text-lg font-bold">{titre}</h2>
           <button type="button" data-fermer onClick={onFermer} className="rounded-lg p-1.5 text-texte-doux hover:bg-surface-douce" aria-label="Fermer"><X className="h-5 w-5" /></button>
@@ -296,7 +296,7 @@ export const useToast = () => useContext(ContexteToast);
 
 export function Onglets({ onglets, actif, onChange }) {
   return (
-    <div role="tablist" className="inline-flex rounded-xl bg-white p-1 ring-1 ring-surface-bord">
+    <div role="tablist" className="inline-flex rounded-xl bg-surface p-1 ring-1 ring-surface-bord">
       {onglets.map((o) => (
         <button key={o.code} role="tab" type="button" aria-selected={actif === o.code} onClick={() => onChange(o.code)}
           className={clsx('rounded-lg px-3 py-1.5 text-[13px] font-semibold transition', actif === o.code ? 'bg-marque-800 text-white' : 'text-texte-doux hover:text-texte')}>

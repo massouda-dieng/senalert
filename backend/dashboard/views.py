@@ -13,7 +13,7 @@ from rest_framework.views import APIView
 from alerts.models import AlerteSOS
 from analyse.views import calculer
 from core.audit import journaliser
-from core.permissions import EstAgent, EstSuperAdmin
+from core.permissions import EstAgent, EstAgentOuSuperAdmin, EstSuperAdmin
 from incidents.models import Incident
 from incidents.views import FiltreIncident
 
@@ -32,6 +32,41 @@ class StatistiquesView(APIView):
     @extend_schema(responses=OpenApiTypes.OBJECT)
     def get(self, request):
         return Response(stats.statistiques(request.query_params))
+
+
+class FluxView(APIView):
+    """Nouveaux SOS et incidents depuis `depuis` (ISO 8601), selon la visibilité de l'utilisateur.
+
+    Interrogé toutes les quelques secondes par le web (alertes sonores de la supervision
+    et des agents). Premier appel sans `depuis` : renvoie seulement l'heure du serveur.
+    """
+
+    permission_classes = [EstAgentOuSuperAdmin]
+
+    @extend_schema(responses=OpenApiTypes.OBJECT)
+    def get(self, request):
+        from datetime import datetime
+        from incidents.serializers import IncidentSerializer
+        from incidents.workflow import filtre_visibilite
+        from alerts.serializers import AlerteSOSSerializer
+
+        maintenant = timezone.now()
+        brut = request.query_params.get('depuis')
+        if not brut:
+            return Response({'maintenant': maintenant, 'sos': [], 'incidents': []})
+        try:
+            depuis = datetime.fromisoformat(brut.replace('Z', '+00:00'))
+        except ValueError:
+            return Response({'detail': 'Paramètre depuis invalide.', 'code': 'invalide'}, status=400)
+        depuis = max(depuis, maintenant - timezone.timedelta(minutes=10))  # jamais de rafale après une longue coupure
+        ctx = {'request': request}
+        sos = AlerteSOS.objects.filter(filtre_visibilite(request.user, True), date_creation__gt=depuis).distinct()[:20]
+        inc = Incident.objects.filter(filtre_visibilite(request.user, False), date_creation__gt=depuis).distinct()[:20]
+        return Response({
+            'maintenant': maintenant,
+            'sos': AlerteSOSSerializer(sos, many=True, context=ctx).data,
+            'incidents': IncidentSerializer(inc, many=True, context=ctx).data,
+        })
 
 
 class ActiviteAgentView(APIView):
@@ -152,6 +187,12 @@ class ExportPDFView(APIView):
 
 def application_web(request, chemin=''):
     """Sert l'application web React compilée (web/dist) pour toutes les routes /app/…"""
+    if chemin == 'sw.js' and (settings.WEB_DIST_DIR / 'sw.js').exists():
+        # Service worker servi sous /app/ : son périmètre couvre toute l'application.
+        reponse = HttpResponse((settings.WEB_DIST_DIR / 'sw.js').read_bytes(), content_type='application/javascript; charset=utf-8')
+        reponse['Cache-Control'] = 'no-cache'
+        reponse['Service-Worker-Allowed'] = '/app/'
+        return reponse
     index = settings.WEB_DIST_DIR / 'index.html'
     if not index.exists():
         return HttpResponse(

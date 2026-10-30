@@ -290,6 +290,9 @@ LOGGING = {
     },
 }
 
+# Démonstration guidée (soutenance) : active par défaut en développement uniquement.
+DEMO_GUIDEE = config('DEMO_GUIDEE', default=DEBUG, cast=bool)
+
 TESTING = os.environ.get('SENALERT_TESTING') == '1'
 if TESTING:
     PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']  # tests rapides uniquement

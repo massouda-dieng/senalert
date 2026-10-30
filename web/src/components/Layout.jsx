@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import {
   Activity, Bell, BookOpenCheck, Bot, Building2, ClipboardList, FileClock, FolderOpen, Gauge, Home, LogOut, Map,
-  MapPinned, Megaphone, Menu, PanelLeftClose, PanelLeftOpen, Search, Settings2, ShieldAlert, Siren, SlidersHorizontal,
+  MapPinned, Megaphone, Menu, Moon, Presentation, Sun, PanelLeftClose, PanelLeftOpen, Search, Settings2, ShieldAlert, Siren, SlidersHorizontal,
   Smartphone, Tags, UserCircle2, Users, UsersRound, WifiOff, X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -9,6 +9,9 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { useRessource } from '../api/hooks';
 import { useAuth } from '../auth/AuthContext';
 import { useConfig } from '../lib/config';
+import { useInstallation } from '../lib/installation';
+import { appliquerTheme, choisirTheme, themeChoisi } from '../lib/theme';
+import AlertesTempsReel from './AlertesTempsReel';
 import { BandeDrapeau, Logo } from './Logo';
 
 export const NAVIGATION = {
@@ -37,6 +40,7 @@ export const NAVIGATION = {
     { a: '/supervision/risques', libelle: 'Zones de risque', icone: Activity },
     { a: '/supervision/alertes-zone', libelle: 'Alertes de zone', icone: Megaphone },
     { a: '/supervision/communaute', libelle: 'Communauté', icone: UsersRound },
+    { a: '/supervision/demo', libelle: 'Démonstration', icone: Presentation },
     { groupe: 'Administration' },
     { a: '/supervision/utilisateurs', libelle: 'Utilisateurs', icone: Users },
     { a: '/supervision/referentiels', libelle: 'Services & catégories', icone: Tags },
@@ -96,6 +100,7 @@ export default function Layout() {
   const [replie, setReplie] = useState(() => { try { return localStorage.getItem('senalert.menu') === 'replie'; } catch { return false; } });
   const [mobileOuvert, setMobileOuvert] = useState(false);
   const [recherche, setRecherche] = useState('');
+  const [sombre, setSombre] = useState(() => appliquerTheme(themeChoisi()));
   const { donnees: compteur } = useRessource('/notifications/compteur/', null, { intervalle: 30000 });
   const liens = NAVIGATION[utilisateur.role] || [];
   const nonLues = compteur?.non_lues || 0;
@@ -115,7 +120,7 @@ export default function Layout() {
 
   return (
     <div className="flex min-h-screen">
-      <a href="#contenu" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[2000] focus:rounded-lg focus:bg-white focus:px-3 focus:py-2">Aller au contenu</a>
+      <a href="#contenu" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[2000] focus:rounded-lg focus:bg-surface focus:px-3 focus:py-2">Aller au contenu</a>
 
       <aside className={clsx('fixed inset-y-0 left-0 z-[900] flex flex-col overflow-hidden bg-gradient-to-b from-[#0B1F15] to-[#040B07] text-white transition-all duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0',
         replie ? 'lg:w-[78px]' : 'lg:w-64', mobileOuvert ? 'w-72 translate-x-0' : 'w-72 -translate-x-full')}>
@@ -152,7 +157,7 @@ export default function Layout() {
       {mobileOuvert && <div className="fixed inset-0 z-[800] bg-marque-950/50 lg:hidden" onClick={() => setMobileOuvert(false)} aria-hidden />}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-[700] border-b border-surface-bord bg-white/90 backdrop-blur">
+        <header className="sticky top-0 z-[700] border-b border-surface-bord bg-surface/90 backdrop-blur">
           <div className="flex h-16 items-center gap-3 px-4 sm:px-6">
             <button type="button" className="rounded-lg p-2 hover:bg-surface-douce lg:hidden" onClick={() => setMobileOuvert(true)} aria-label="Ouvrir le menu"><Menu className="h-5 w-5" /></button>
             <form onSubmit={rechercher} className="relative hidden max-w-md flex-1 sm:block" role="search">
@@ -167,6 +172,10 @@ export default function Layout() {
                   <Siren className="h-4 w-4" /> SOS
                 </NavLink>
               )}
+              <button type="button" onClick={() => setSombre(choisirTheme(sombre ? 'clair' : 'sombre'))} className="rounded-xl p-2.5 text-texte-doux hover:bg-surface-douce"
+                aria-label={sombre ? 'Passer en mode clair' : 'Passer en mode sombre'} title={sombre ? 'Mode clair' : 'Mode sombre'}>
+                {sombre ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </button>
               <NavLink to="/notifications" className="relative rounded-xl p-2.5 text-texte-doux hover:bg-surface-douce" aria-label={`Notifications${nonLues ? ` (${nonLues} non lues)` : ''}`}>
                 <Bell className="h-5 w-5" />
                 {nonLues > 0 && <span className="absolute right-1 top-1 min-w-[18px] rounded-full bg-sos px-1 text-center text-[10px] font-bold leading-[18px] text-white">{nonLues > 99 ? '99+' : nonLues}</span>}
@@ -184,6 +193,7 @@ export default function Layout() {
         )}
         {config?.erreur && <div className="bg-red-50 px-6 py-2 text-sm text-red-800">Configuration indisponible : certaines listes peuvent être vides. {config.erreur.detail}</div>}
 
+        {utilisateur.role !== 'citoyen' && <AlertesTempsReel role={utilisateur.role} />}
         <main id="contenu" className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6 lg:px-8" tabIndex={-1}>
           <Outlet />
         </main>
@@ -198,6 +208,7 @@ export default function Layout() {
 
 function MenuProfil({ utilisateur, onDeconnexion }) {
   const [ouvert, setOuvert] = useState(false);
+  const installation = useInstallation();
   const initiale = (utilisateur.first_name || utilisateur.username || '?')[0].toUpperCase();
   useEffect(() => {
     if (!ouvert) return undefined;
@@ -215,12 +226,13 @@ function MenuProfil({ utilisateur, onDeconnexion }) {
       {ouvert && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOuvert(false)} aria-hidden />
-          <div role="menu" className="absolute right-0 z-20 mt-2 w-60 animate-apparition rounded-2xl border border-surface-bord bg-white p-1.5 shadow-flottant">
+          <div role="menu" className="absolute right-0 z-20 mt-2 w-60 animate-apparition rounded-2xl border border-surface-bord bg-surface p-1.5 shadow-flottant">
             <div className="px-3 py-2">
               <p className="truncate text-sm font-semibold">{utilisateur.email || utilisateur.username}</p>
               <p className="text-xs text-texte-doux">{utilisateur.role_libelle}{utilisateur.profil_agent?.service_nom ? ` · ${utilisateur.profil_agent.service_nom}` : ''}</p>
             </div>
             <NavLink role="menuitem" to="/profil" onClick={() => setOuvert(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-surface-douce"><UserCircle2 className="h-4 w-4" /> Profil et sécurité</NavLink>
+            {installation.possible && !installation.ios && <button role="menuitem" type="button" onClick={() => { setOuvert(false); installation.installer(); }} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-surface-douce"><Smartphone className="h-4 w-4" /> Installer l’application</button>}
             <NavLink role="menuitem" to="/simulateur" onClick={() => setOuvert(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-surface-douce"><Smartphone className="h-4 w-4" /> Simulateur mobile</NavLink>
             {utilisateur.role === 'superadmin' && <a role="menuitem" href="/admin/" className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-surface-douce"><Settings2 className="h-4 w-4" /> Administration technique</a>}
             {utilisateur.role === 'superadmin' && <a role="menuitem" href="/api/docs/" target="_blank" rel="noreferrer" className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-surface-douce"><Building2 className="h-4 w-4" /> Documentation API</a>}

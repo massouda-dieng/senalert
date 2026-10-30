@@ -115,7 +115,9 @@ function EditeurObjet({ valeur, onChange }) {
           <span className="etiquette font-mono text-xs">{k}</span>
           {typeof v === 'boolean'
             ? <span className="inline-flex items-center gap-2"><input type="checkbox" checked={v} onChange={(e) => onChange({ ...valeur, [k]: e.target.checked })} /> {v ? 'Activé' : 'Désactivé'}</span>
-            : <input className="champ" type="number" min={0} value={v} onChange={(e) => onChange({ ...valeur, [k]: Number(e.target.value) })} />}
+            : typeof v === 'string'
+              ? <input className="champ" value={v} onChange={(e) => onChange({ ...valeur, [k]: e.target.value })} />
+              : <input className="champ" type="number" min={0} value={v} onChange={(e) => onChange({ ...valeur, [k]: Number(e.target.value) })} />}
         </label>
       ))}
     </div>

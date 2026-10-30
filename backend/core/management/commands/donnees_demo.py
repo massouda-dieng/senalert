@@ -38,9 +38,13 @@ class Command(BaseCommand):
     def handle(self, nombre, supprimer, **opts):
         qs = Incident.objects.filter(description__startswith=ETIQUETTE)
         if supprimer:
+            from alerts.models import AlerteSOS
             n = qs.count()
             qs.delete()
-            self.stdout.write(self.style.SUCCESS(f'{n} incident(s) de démonstration supprimé(s).'))
+            sos = AlerteSOS.objects.filter(message__startswith=ETIQUETTE)
+            ns = sos.count()
+            sos.delete()
+            self.stdout.write(self.style.SUCCESS(f'{n} incident(s) et {ns} SOS de démonstration supprimé(s).'))
             return
         citoyen = User.objects.filter(username='citoyen.test@senalert.local').first()
         if citoyen is None:

@@ -21,16 +21,17 @@ class AppColors {
   static const Color crimson = Color(0xFFE31B23);
   static const Color crimsonDeep = Color(0xFFB5121A);
 
-  // Surfaces
-  static const Color background = Color(0xFFF8F7F1);
-  static const Color white = Color(0xFFFFFFFF);
-  static const Color surfaceSubtle = Color(0xFFF1EFE6);
-  static const Color border = Color(0xFFE7E4D8);
+  /// Mode sombre actif (piloté par state/apparence.dart ; l'application est reconstruite au changement).
+  static bool sombre = false;
 
-  // Texte
-  static const Color textDark = Color(0xFF10231A);
-  static const Color textGrey = Color(0xFF53645B);
-  static const Color textMuted = Color(0xFF8A978F);
+  // Surfaces et texte : dépendent du thème clair / sombre
+  static Color get background => sombre ? const Color(0xFF0B110E) : const Color(0xFFF8F7F1);
+  static Color get white => sombre ? const Color(0xFF141C18) : const Color(0xFFFFFFFF);
+  static Color get surfaceSubtle => sombre ? const Color(0xFF1C2620) : const Color(0xFFF1EFE6);
+  static Color get border => sombre ? const Color(0xFF2A362F) : const Color(0xFFE7E4D8);
+  static Color get textDark => sombre ? const Color(0xFFE8EEEA) : const Color(0xFF10231A);
+  static Color get textGrey => sombre ? const Color(0xFFA8B6AE) : const Color(0xFF53645B);
+  static Color get textMuted => sombre ? const Color(0xFF7D8B83) : const Color(0xFF8A978F);
 
   // États
   static const Color success = Color(0xFF047857);

@@ -205,7 +205,7 @@ class _SignalerScreenState extends State<SignalerScreen> {
                   icon: _gpsEnCours ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.my_location),
                   label: const Text('Utiliser ma position')),
               const SizedBox(height: 6),
-              const Text('ou touchez la carte pour placer l’incident.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textGrey)),
+              Text('ou touchez la carte pour placer l’incident.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textGrey)),
               if (_gpsErreur != null) Padding(padding: const EdgeInsets.only(top: 8), child: Bandeau.alerte(_gpsErreur!,
                   action: const TextButton(onPressed: Localisation.ouvrirReglages, child: Text('Ouvrir les réglages')))),
               const SizedBox(height: 10),
@@ -256,7 +256,7 @@ class _SignalerScreenState extends State<SignalerScreen> {
                 ],
               ]),
               const SizedBox(height: 6),
-              const Text('Les métadonnées des photos (dont la position) sont supprimées par le serveur.', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+              Text('Les métadonnées des photos (dont la position) sont supprimées par le serveur.', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
             ],
             if (_etape == 3) ...[
               Text('Vérifiez avant l’envoi', style: titre(18)),
@@ -278,7 +278,7 @@ class _SignalerScreenState extends State<SignalerScreen> {
           ])),
           Container(
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-            decoration: const BoxDecoration(color: AppColors.white, border: Border(top: BorderSide(color: AppColors.border))),
+            decoration: BoxDecoration(color: AppColors.white, border: Border(top: BorderSide(color: AppColors.border))),
             child: Row(children: [
               if (_etape > 0) Expanded(child: OutlinedButton(onPressed: () => setState(() => _etape--), child: const Text('Retour'))),
               if (_etape > 0) const SizedBox(width: 10),

@@ -30,7 +30,7 @@ function Commentaires({ incident, onFermer, onChange }) {
                 <p className="font-semibold">{c.auteur_nom}</p>
                 <div className="flex items-center gap-2 text-xs text-texte-pale">{ilYa(c.date)}
                   {moderateur && (
-                    <button type="button" title={c.masque ? 'Rétablir' : 'Masquer'} aria-label={c.masque ? 'Rétablir le message' : 'Masquer le message'} className="rounded p-1 hover:bg-white"
+                    <button type="button" title={c.masque ? 'Rétablir' : 'Masquer'} aria-label={c.masque ? 'Rétablir le message' : 'Masquer le message'} className="rounded p-1 hover:bg-surface"
                       onClick={async () => { await api(`/incidents/communaute/commentaires/${c.id}/masquer/`, { methode: 'POST', corps: { masque: !c.masque } }); recharger(true); toast('Modération enregistrée.'); }}>
                       {c.masque ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                     </button>

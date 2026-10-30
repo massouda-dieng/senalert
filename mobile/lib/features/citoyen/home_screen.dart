@@ -112,7 +112,7 @@ class _AccueilCitoyenState extends State<AccueilCitoyen> {
                     Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: a.$4.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: Icon(a.$3, color: a.$4)),
                     Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(a.$1, style: const TextStyle(fontWeight: FontWeight.w700)),
-                      Text(a.$2, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.textGrey, fontSize: 12)),
+                      Text(a.$2, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: AppColors.textGrey, fontSize: 12)),
                     ]),
                   ])),
               ],
@@ -128,7 +128,7 @@ class _AccueilCitoyenState extends State<AccueilCitoyen> {
           if (_erreur != null) SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.all(16),
               child: Bandeau.erreur(_erreur!.message, action: TextButton(onPressed: _charger, child: const Text('Réessayer')))))
           else if (_recents == null) const SliverToBoxAdapter(child: Chargement())
-          else if (_recents!.isEmpty) const SliverToBoxAdapter(child: Padding(padding: EdgeInsets.all(16), child: Text('Aucun signalement pour l’instant.', style: TextStyle(color: AppColors.textGrey))))
+          else if (_recents!.isEmpty) SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.all(16), child: Text('Aucun signalement pour l’instant.', style: TextStyle(color: AppColors.textGrey))))
           else SliverList.separated(
             itemCount: _recents!.length,
             separatorBuilder: (_, __) => const SizedBox(height: 10),
@@ -136,7 +136,7 @@ class _AccueilCitoyenState extends State<AccueilCitoyen> {
                 child: TuileDossier(_recents![i], onTap: () => context.push('/dossier/${_recents![i].estSos ? 'sos' : 'incident'}/${_recents![i].id}').then((_) => _charger()))),
           ),
           SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.all(20),
-              child: Text(config.avertissement, textAlign: TextAlign.center, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)))),
+              child: Text(config.avertissement, textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppColors.textMuted)))),
         ]),
       ),
     );

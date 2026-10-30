@@ -10,12 +10,14 @@ import '../core/models.dart';
 /// Système de design SenAlert (mêmes jetons que le web : bleu nuit, rouge réservé au SOS,
 /// orange avertissement, vert résolution).
 class AppTheme {
+  /// Thème courant (clair ou sombre selon AppColors.sombre).
   static ThemeData clair() {
     final base = ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
+        brightness: AppColors.sombre ? Brightness.dark : Brightness.light,
         seedColor: AppColors.vert800,
-        primary: AppColors.vert800,
+        primary: AppColors.sombre ? AppColors.vert600 : AppColors.vert800,
         secondary: AppColors.jaune,
         error: AppColors.crimson,
         surface: AppColors.white,
@@ -40,15 +42,15 @@ class AppTheme {
       )),
       outlinedButtonTheme: OutlinedButtonThemeData(style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.vert800, minimumSize: const Size(64, 52), shape: rond,
-        side: const BorderSide(color: AppColors.border, width: 1.4),
+        side: BorderSide(color: AppColors.border, width: 1.4),
         textStyle: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w700),
       )),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.white,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: AppColors.border)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: AppColors.border)),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.vert600, width: 1.6)),
       ),
       snackBarTheme: SnackBarThemeData(behavior: SnackBarBehavior.floating, backgroundColor: AppColors.vert900,
@@ -59,13 +61,13 @@ class AppTheme {
         labelTextStyle: WidgetStatePropertyAll(GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600)),
       ),
       cardTheme: CardTheme(color: AppColors.white, elevation: 0, shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20), side: const BorderSide(color: AppColors.border))),
+          borderRadius: BorderRadius.circular(20), side: BorderSide(color: AppColors.border))),
     );
   }
 }
 
-TextStyle titre(double taille, {Color couleur = AppColors.textDark}) =>
-    GoogleFonts.plusJakartaSans(fontSize: taille, fontWeight: FontWeight.w800, color: couleur, height: 1.2);
+TextStyle titre(double taille, {Color? couleur}) =>
+    GoogleFonts.plusJakartaSans(fontSize: taille, fontWeight: FontWeight.w800, color: couleur ?? AppColors.textDark, height: 1.2);
 
 void afficherMessage(BuildContext context, String message, {bool erreur = false}) {
   ScaffoldMessenger.of(context)
@@ -104,7 +106,7 @@ class Carte extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Material(
         color: couleur ?? AppColors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: AppColors.border)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: AppColors.border)),
         clipBehavior: Clip.antiAlias,
         child: InkWell(onTap: onTap, child: Padding(padding: padding, child: child)),
       );
@@ -159,7 +161,7 @@ class EtatVide extends StatelessWidget {
             const SizedBox(height: 14),
             Text(titre, style: titre_(16), textAlign: TextAlign.center),
             if (texte != null) Padding(padding: const EdgeInsets.only(top: 6),
-                child: Text(texte!, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textGrey))),
+                child: Text(texte!, textAlign: TextAlign.center, style: TextStyle(color: AppColors.textGrey))),
             if (action != null) Padding(padding: const EdgeInsets.only(top: 16), child: action!),
           ]),
         ),
@@ -190,7 +192,7 @@ class Chargement extends StatelessWidget {
           padding: const EdgeInsets.all(28),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             const CircularProgressIndicator(strokeWidth: 2.6),
-            if (texte != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text(texte!, style: const TextStyle(color: AppColors.textGrey))),
+            if (texte != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text(texte!, style: TextStyle(color: AppColors.textGrey))),
           ]),
         ),
       );
@@ -263,7 +265,7 @@ class LigneInfo extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          SizedBox(width: 128, child: Text(libelle, style: const TextStyle(color: AppColors.textGrey, fontSize: 13))),
+          SizedBox(width: 128, child: Text(libelle, style: TextStyle(color: AppColors.textGrey, fontSize: 13))),
           Expanded(child: Text(valeur, style: const TextStyle(fontWeight: FontWeight.w600))),
         ]),
       );
@@ -293,7 +295,7 @@ class TuileDossier extends StatelessWidget {
             const SizedBox(height: 2),
             Text('${d.titre} · ${d.regionLibelle.isEmpty ? 'région inconnue' : d.regionLibelle}', maxLines: 1, overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontWeight: FontWeight.w600)),
-            Text(ilYa(d.creation), style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+            Text(ilYa(d.creation), style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
           ])),
           const SizedBox(width: 8),
           BadgeStatut(d.statut),

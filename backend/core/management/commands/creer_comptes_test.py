@@ -42,8 +42,9 @@ class Command(BaseCommand):
                     'service': Service.objects.get(code=service), 'zones': ['dakar', 'thies'], 'fonction': 'Compte de test',
                 })
             lignes.append(f'{user.get_role_display():22} {email:34} {mdp}')
-        dossier = Path(settings.PROJECT_DIR) / 'backups'
-        dossier.mkdir(exist_ok=True)
+        # En test, ne jamais écraser le fichier réel de l'utilisateur.
+        dossier = Path(settings.MEDIA_ROOT) / 'comptes-test' if settings.TESTING else Path(settings.PROJECT_DIR) / 'backups'
+        dossier.mkdir(parents=True, exist_ok=True)
         fichier = dossier / 'comptes_test.txt'
         fichier.write_text('\n'.join(lignes) + '\n', encoding='utf-8')
         fichier.chmod(0o600)

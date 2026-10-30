@@ -11,6 +11,7 @@ class Configuration extends ChangeNotifier {
   List<Categorie> categories = [];
   List<Region> regions = [];
   List<NumeroUrgence> numeros = [];
+  String? smsSecours;
   String avertissement = 'SenAlert ne remplace pas les services officiels de secours.';
   bool chargee = false;
   String? erreur;
@@ -35,6 +36,7 @@ class Configuration extends ChangeNotifier {
     regions = (j['regions'] as List).map((r) => Region.depuis(r)).toList();
     numeros = (j['numeros_urgence'] as List).map((n) => NumeroUrgence.depuis(n)).toList();
     avertissement = j['avertissement'] ?? avertissement;
+    smsSecours = j['sms_secours'];
     chargee = true;
   }
 

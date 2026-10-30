@@ -1,6 +1,7 @@
 /** Système de design SenAlert « Sénégal vibrant » — mêmes jetons que l'application Flutter (AppColors). */
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
@@ -12,8 +13,9 @@ export default {
         sos: { DEFAULT: '#E31B23', fonce: '#B5121A', clair: '#FDE3E4' },
         alerte: { DEFAULT: '#C2410C', clair: '#FFEDD5', vif: '#EA580C' },
         succes: { DEFAULT: '#047857', clair: '#D1FAE5' },
-        surface: { DEFAULT: '#FFFFFF', douce: '#F8F7F1', bord: '#E7E4D8' },
-        texte: { DEFAULT: '#10231A', doux: '#53645B', pale: '#8A978F' },
+        // Surfaces et texte : variables CSS (index.css) → modes clair et sombre
+        surface: { DEFAULT: 'rgb(var(--c-surface) / <alpha-value>)', douce: 'rgb(var(--c-surface-douce) / <alpha-value>)', bord: 'rgb(var(--c-bord) / <alpha-value>)' },
+        texte: { DEFAULT: 'rgb(var(--c-texte) / <alpha-value>)', doux: 'rgb(var(--c-texte-doux) / <alpha-value>)', pale: 'rgb(var(--c-texte-pale) / <alpha-value>)' },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],

@@ -3,6 +3,16 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --c-surface: 255 255 255; --c-surface-douce: 248 247 241; --c-bord: 231 228 216;
+    --c-texte: 16 35 26; --c-texte-doux: 83 100 91; --c-texte-pale: 138 151 143;
+    color-scheme: light;
+  }
+  .dark {
+    --c-surface: 19 27 23; --c-surface-douce: 11 17 14; --c-bord: 40 52 46;
+    --c-texte: 232 238 234; --c-texte-doux: 168 182 174; --c-texte-pale: 120 135 127;
+    color-scheme: dark;
+  }
   html { -webkit-font-smoothing: antialiased; }
   body { @apply bg-surface-douce text-texte font-sans; }
   h1, h2, h3 { @apply font-titre tracking-tight; }
@@ -14,7 +24,7 @@
 
 @layer components {
   .carte { @apply bg-surface rounded-2xl border border-surface-bord shadow-carte; }
-  .champ { @apply w-full rounded-xl border border-surface-bord bg-white px-3.5 py-2.5 text-sm text-texte placeholder:text-texte-pale
+  .champ { @apply w-full rounded-xl border border-surface-bord bg-surface px-3.5 py-2.5 text-sm text-texte placeholder:text-texte-pale
            focus:border-marque-600 focus:ring-2 focus:ring-marque-600/20 focus:outline-none disabled:bg-surface-douce; }
   .etiquette { @apply block text-[13px] font-semibold text-texte mb-1.5; }
   .lien { @apply font-semibold text-marque-600 hover:underline; }
@@ -25,3 +35,29 @@
 .marker-cluster div { width: 30px; height: 30px; margin: 5px; border-radius: 999px; background: #006E33; color: #fff;
   font: 700 12px/30px Inter, system-ui, sans-serif; text-align: center; box-shadow: 0 0 0 2px #FDEF42; }
 .marker-cluster span { line-height: 30px; }
+
+/* ---- Mode sombre : pastilles et bandeaux clairs adaptés ---- */
+.dark .bg-marque-50, .dark .bg-marque-50\/60, .dark .bg-marque-50\/50 { background-color: rgb(0 133 63 / .16); }
+.dark .bg-marque-100 { background-color: rgb(0 133 63 / .28); }
+.dark .bg-or-clair { background-color: rgb(253 239 66 / .12); }
+.dark .bg-sos-clair, .dark .bg-red-50 { background-color: rgb(227 27 35 / .16); }
+.dark .bg-alerte-clair, .dark .bg-amber-50, .dark .bg-amber-100 { background-color: rgb(234 88 12 / .16); }
+.dark .bg-succes-clair, .dark .bg-succes-clair\/50, .dark .bg-emerald-50, .dark .bg-emerald-100 { background-color: rgb(4 120 87 / .2); }
+.dark .bg-blue-50 { background-color: rgb(29 78 216 / .2); }
+.dark .bg-violet-50 { background-color: rgb(124 58 237 / .2); }
+.dark .bg-sky-50 { background-color: rgb(2 132 199 / .2); }
+.dark .bg-rose-50 { background-color: rgb(225 29 72 / .18); }
+.dark .bg-slate-100, .dark .bg-slate-200, .dark .bg-slate-200\/70 { background-color: rgb(148 163 184 / .14); }
+.dark .border-red-200 { border-color: rgb(227 27 35 / .35); }
+.dark .border-emerald-200 { border-color: rgb(4 120 87 / .4); }
+.dark .text-marque-700, .dark .text-marque-800 { color: #4ADE80; }
+.dark .text-red-700, .dark .text-red-800, .dark .text-red-900 { color: #FCA5A5; }
+.dark .text-emerald-700, .dark .text-emerald-800, .dark .text-emerald-900, .dark .text-succes { color: #6EE7B7; }
+.dark .text-amber-600, .dark .text-amber-700, .dark .text-amber-800, .dark .text-amber-900, .dark .text-alerte, .dark .text-or-fonce { color: #FCD34D; }
+.dark .text-blue-700 { color: #93C5FD; }
+.dark .text-violet-700 { color: #C4B5FD; }
+.dark .text-sky-700 { color: #7DD3FC; }
+.dark .text-rose-700, .dark .text-sos-fonce { color: #FDA4AF; }
+.dark .text-slate-500, .dark .text-slate-600 { color: #CBD5E1; }
+.dark .leaflet-popup-content-wrapper, .dark .leaflet-popup-tip { background: rgb(var(--c-surface)); color: rgb(var(--c-texte)); }
+.dark .recharts-cartesian-grid line { stroke: rgb(var(--c-bord)); }

@@ -100,15 +100,15 @@ export default function Simulateur() {
                       {a.ios && !a.bouton && <span className="absolute left-1/2 top-2.5 h-[30px] w-[118px] -translate-x-1/2 rounded-full bg-black ring-1 ring-white/5" aria-hidden />}
                       {!a.ios && <span className="absolute left-1/2 top-1.5 h-3.5 w-3.5 -translate-x-1/2 rounded-full bg-[#111] ring-2 ring-[#222]" aria-hidden />}
                       <span className="flex items-center gap-1.5" aria-hidden>
-                        <span className="flex items-end gap-[2px]">{[4, 6, 8, 10].map((h) => <span key={h} className="w-[3px] rounded-sm bg-white" style={{ height: h }} />)}</span>
+                        <span className="flex items-end gap-[2px]">{[4, 6, 8, 10].map((h) => <span key={h} className="w-[3px] rounded-sm bg-surface" style={{ height: h }} />)}</span>
                         <span className="text-[11px]">4G</span>
-                        <span className="relative h-[11px] w-[22px] rounded-[3px] border border-white/70"><span className="absolute inset-[1.5px] right-[5px] rounded-[1.5px] bg-white" /></span>
+                        <span className="relative h-[11px] w-[22px] rounded-[3px] border border-white/70"><span className="absolute inset-[1.5px] right-[5px] rounded-[1.5px] bg-surface" /></span>
                       </span>
                     </div>
                   )}
                   {etat === 'pret' && (
                     <iframe key={`${cle}-${appareil}-${paysage}`} src="/mobile/" title={`Application SenAlert sur ${a.libelle}`}
-                      className="w-full flex-1 border-0 bg-white" allow="geolocation; camera; clipboard-write" />
+                      className="w-full flex-1 border-0 bg-surface" allow="geolocation; camera; clipboard-write" />
                   )}
                 </div>
               </div>

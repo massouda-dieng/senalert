@@ -132,7 +132,7 @@ class _CarteScreenState extends State<CarteScreen> {
             SwitchListTile(value: _couches['services']!, onChanged: _services.isEmpty ? null : (v) => bascule('services', v), title: Text('Services proches (${_services.length})')),
             OutlinedButton.icon(onPressed: () { Navigator.pop(c); _chargerServices(); }, icon: const Icon(Icons.local_hospital_outlined), label: const Text('Charger les services autour du centre')),
             const SizedBox(height: 8),
-            const Text('L’absence d’incident ne signifie pas qu’une zone est sans danger. Positions publiques arrondies à ~100 m.',
+            Text('L’absence d’incident ne signifie pas qu’une zone est sans danger. Positions publiques arrondies à ~100 m.',
                 style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
           ]);
         }),
@@ -164,7 +164,7 @@ class _CarteScreenState extends State<CarteScreen> {
               const SizedBox(height: 8),
               Row(children: [BadgeStatut(p['statut']), const SizedBox(width: 8), Text(dateHeure(lireDate(p['date_creation'])))]),
               const SizedBox(height: 8),
-              const Text('Position arrondie à ~100 m.', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+              Text('Position arrondie à ~100 m.', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
             ])))),
       if (widget.agent && _couches['dossiers']!)
         for (final d in _dossiers.where((d) => d['latitude'] != null))

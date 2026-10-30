@@ -8,6 +8,7 @@ import '../../core/config.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/format.dart';
 import '../../core/push.dart';
+import '../../state/apparence.dart';
 import '../../state/configuration.dart';
 import '../../state/session.dart';
 import '../../ui/kit.dart';
@@ -69,9 +70,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               },
                               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                 Text(n['titre'], style: const TextStyle(fontWeight: FontWeight.w700)),
-                                Text(n['message'], style: const TextStyle(color: AppColors.textGrey)),
+                                Text(n['message'], style: TextStyle(color: AppColors.textGrey)),
                                 const SizedBox(height: 4),
-                                Text(ilYa(lireDate(n['date_creation'])), style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                                Text(ilYa(lireDate(n['date_creation'])), style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
                               ]),
                             );
                           },
@@ -155,12 +156,24 @@ class _ProfilScreenState extends State<ProfilScreen> {
           const SizedBox(width: 14),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(u.nomAffiche, style: titre(18)),
-            Text(u.email, style: const TextStyle(color: AppColors.textGrey)),
+            Text(u.email, style: TextStyle(color: AppColors.textGrey)),
             const SizedBox(height: 4),
             Text('${u.roleLibelle}${u.serviceNom != null ? ' · ${u.serviceNom}' : ''}', style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.vert700)),
           ])),
         ])),
         if (u.doitChangerMotDePasse) const Padding(padding: EdgeInsets.only(top: 12), child: Bandeau.alerte('Votre compte utilise un mot de passe initial : remplacez-le.')),
+        const SizedBox(height: 16),
+        Text('Apparence', style: titre(16)),
+        const SizedBox(height: 8),
+        SegmentedButton<String>(
+          segments: const [
+            ButtonSegment(value: 'systeme', label: Text('Système'), icon: Icon(Icons.brightness_auto_outlined)),
+            ButtonSegment(value: 'clair', label: Text('Clair'), icon: Icon(Icons.light_mode_outlined)),
+            ButtonSegment(value: 'sombre', label: Text('Sombre'), icon: Icon(Icons.dark_mode_outlined)),
+          ],
+          selected: {context.watch<Apparence>().mode},
+          onSelectionChanged: (s) => context.read<Apparence>().choisir(s.first),
+        ),
         const SizedBox(height: 16),
         Text('Notifications', style: titre(16)),
         SwitchListTile(value: u.preferences['notifications_push'] != false, onChanged: (v) => _preference('notifications_push', v),
@@ -179,7 +192,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
             title: const Text('Supprimer mon compte', style: TextStyle(color: AppColors.crimson)), onTap: _supprimer),
         const SizedBox(height: 16),
         Text('Confidentialité : vos données sont traitées conformément à la loi n° 2008-12. Votre position n’est transmise qu’à l’envoi d’un SOS ou d’un signalement. ${config.avertissement}',
-            style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+            style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
       ]),
     );
   }

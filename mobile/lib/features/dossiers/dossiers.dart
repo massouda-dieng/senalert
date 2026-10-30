@@ -95,7 +95,7 @@ class _ListeDossiersScreenState extends State<ListeDossiersScreen> with SingleTi
           ]),
         ),
         if (_synchro != null) Padding(padding: const EdgeInsets.only(bottom: 4),
-            child: Text('Actualisé ${ilYa(_synchro)} · tirez pour rafraîchir', style: const TextStyle(fontSize: 11.5, color: AppColors.textMuted))),
+            child: Text('Actualisé ${ilYa(_synchro)} · tirez pour rafraîchir', style: TextStyle(fontSize: 11.5, color: AppColors.textMuted))),
         Expanded(child: RefreshIndicator(
           onRefresh: _recharger,
           child: _erreur != null && _elements.isEmpty
@@ -254,7 +254,7 @@ class _DossierScreenState extends State<DossierScreen> {
                     ]),
                     const SizedBox(height: 4),
                     Text('${d.regionLibelle.isEmpty ? 'Région inconnue' : d.regionLibelle} · ${dateHeure(d.creation)}',
-                        style: const TextStyle(color: AppColors.textGrey)),
+                        style: TextStyle(color: AppColors.textGrey)),
                     if (d.enRetard) const Padding(padding: EdgeInsets.only(top: 10), child: Bandeau.alerte('Pas encore pris en charge dans le délai prévu.')),
                     const SizedBox(height: 14),
                     Wrap(spacing: 8, runSpacing: 8, children: _actions(u, d)),
@@ -322,8 +322,8 @@ class _LigneEvenement extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(e.type == 'transition' ? s.libelle : (libelles[e.type] ?? e.type) + (e.visibleCitoyen ? '' : ' · interne'), style: const TextStyle(fontWeight: FontWeight.w700)),
-          if (e.message.isNotEmpty) Text(e.message, style: const TextStyle(color: AppColors.textGrey)),
-          Text('${dateHeure(e.date)} · ${e.acteur}', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+          if (e.message.isNotEmpty) Text(e.message, style: TextStyle(color: AppColors.textGrey)),
+          Text('${dateHeure(e.date)} · ${e.acteur}', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
         ])),
       ]),
     );

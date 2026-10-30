@@ -108,3 +108,57 @@ class SimulateurMobileTests(SenAlertTestCase):
                     self.assertNotIn(b'SECRET', b''.join(r.streaming_content) if r.streaming else r.content)
                 finally:
                     (Path(d).parent / 'secret.txt').unlink()
+
+
+class FluxTempsReelTests(SenAlertTestCase):
+    URL = '/api/tableau-de-bord/flux/'
+
+    def test_nouveaux_dossiers_selon_visibilite(self):
+        from datetime import timedelta
+        self.en_tant_que(self.citoyen())
+        self.assertEqual(self.client.get(self.URL).status_code, 403)
+        pompier = self.en_tant_que(self.agent('pompier', 'pompiers', ['dakar']))
+        depuis = self.client.get(self.URL).data['maintenant']
+        AlerteSOS.objects.create(region='dakar')
+        AlerteSOS.objects.create(region='matam')
+        Incident.objects.create(type_incident='incendie', region='dakar', service_id=pompier.profil_agent.service_id)
+        Incident.objects.create(type_incident='agression', region='dakar')  # autre service
+        r = self.client.get(self.URL, {'depuis': depuis.isoformat()})
+        self.assertEqual(len(r.data['sos']), 1)
+        self.assertEqual(len(r.data['incidents']), 1)
+        self.en_tant_que(self.superadmin())
+        r = self.client.get(self.URL, {'depuis': (depuis - timedelta(seconds=1)).isoformat()})
+        self.assertEqual((len(r.data['sos']), len(r.data['incidents'])), (2, 2))
+        self.assertEqual(self.client.get(self.URL, {'depuis': 'hier'}).status_code, 400)
+
+
+class DemonstrationGuideeTests(SenAlertTestCase):
+    URL = '/api/tableau-de-bord/demo/'
+
+    def test_parcours_complet(self):
+        from django.core.management import call_command
+        from django.test import override_settings
+        from io import StringIO
+        call_command('creer_comptes_test', stdout=StringIO())
+        self.en_tant_que(self.citoyen('intrus'))
+        self.assertEqual(self.client.post(self.URL, {'etape': 1}, format='json').status_code, 403)
+        self.en_tant_que(self.superadmin())
+        with override_settings(DEMO_GUIDEE=True), self.captureOnCommitCallbacks(execute=True):
+            ids = {}
+            for n in range(1, 7):
+                r = self.client.post(self.URL, {'etape': n, **ids}, format='json')
+                self.assertEqual(r.status_code, 200, r.data)
+                if r.data['sos']: ids['sos'] = r.data['sos']['id']
+                if r.data['incident']: ids['incident'] = r.data['incident']['id']
+        self.assertEqual(r.data['incident']['statut'], 'resolu')
+        self.assertEqual(r.data['sos']['statut'], 'resolu')
+        self.assertTrue(Incident.objects.get(pk=ids['incident']).description.startswith('[DÉMO]'))
+        call_command('donnees_demo', '--supprimer', stdout=StringIO())
+        self.assertFalse(Incident.objects.filter(pk=ids['incident']).exists())
+        self.assertFalse(AlerteSOS.objects.filter(pk=ids['sos']).exists())
+
+    def test_desactivee_en_production(self):
+        from django.test import override_settings
+        self.en_tant_que(self.superadmin())
+        with override_settings(DEMO_GUIDEE=False):
+            self.assertEqual(self.client.post(self.URL, {'etape': 1}, format='json').status_code, 403)

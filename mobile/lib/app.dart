@@ -16,6 +16,7 @@ import 'features/commun/commun_screens.dart';
 import 'features/communaute/communaute_screen.dart';
 import 'features/dossiers/dossiers.dart';
 import 'features/secours/premiers_secours_screen.dart';
+import 'state/apparence.dart';
 import 'state/session.dart';
 import 'ui/kit.dart';
 
@@ -122,10 +123,13 @@ class SenAlertApp extends StatefulWidget {
 class _SenAlertAppState extends State<SenAlertApp> {
   late final GoRouter _routeur = creerRouteur(widget.session);
   @override
-  Widget build(BuildContext context) => MaterialApp.router(
+  Widget build(BuildContext context) {
+    context.watch<Apparence>();
+    return MaterialApp.router(
         title: 'SenAlert',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.clair(),
         routerConfig: _routeur,
       );
+  }
 }

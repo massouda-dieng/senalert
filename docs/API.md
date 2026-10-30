@@ -75,6 +75,8 @@ Conventions :
 | GET | `/api/geocodage/?q=` | connecté (30/min) | Recherche de lieu au Sénégal (Nominatim, cache 24 h) |
 | GET | `/api/statistiques-publiques/` | public | Chiffres réels agrégés pour la page d'accueil (cache 5 min) |
 | GET | `/api/analyse/niveaux-regions/` | connecté | Niveau de risque par région (sans détail chiffré) pour la carte |
+| GET | `/api/tableau-de-bord/flux/?depuis=ISO` | agent, superadmin | Nouveaux SOS et incidents visibles depuis l'instant donné (alertes en direct) |
+| GET/POST | `/api/tableau-de-bord/demo/` | superadmin (si `DEMO_GUIDEE`) | Démonstration guidée : `{etape: 1..6, sos?, incident?}` |
 
 ## Supervision, gestion, référentiels
 

@@ -86,11 +86,11 @@ class _AssistantScreenState extends State<AssistantScreen> {
                   Text(m['content'] ?? '', style: TextStyle(color: m['role'] == 'user' ? Colors.white : AppColors.textDark, height: 1.4)),
                   if (m['source'] != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(
                       m['source'] == 'groq' ? 'Réponse générée par IA — indicative' : 'Mode secours (sans IA), d’après les fiches SenAlert',
-                      style: const TextStyle(fontSize: 11, color: AppColors.textMuted))),
+                      style: TextStyle(fontSize: 11, color: AppColors.textMuted))),
                 ]),
               ),
             ),
-            if (_envoi) const Text('L’assistant rédige une réponse…', style: TextStyle(color: AppColors.textGrey)),
+            if (_envoi) Text('L’assistant rédige une réponse…', style: TextStyle(color: AppColors.textGrey)),
           ])),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),

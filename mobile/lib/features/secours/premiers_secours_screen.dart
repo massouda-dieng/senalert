@@ -58,7 +58,7 @@ class _PremiersSecoursScreenState extends State<PremiersSecoursScreen> {
       appBar: AppBar(title: const Text('Premiers secours')),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         TextField(onChanged: (v) => setState(() => _q = v), decoration: const InputDecoration(hintText: 'Brûlure, saignement…', prefixIcon: Icon(Icons.search))),
-        Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text('Version $_source · disponible hors connexion', style: const TextStyle(fontSize: 12, color: AppColors.textMuted))),
+        Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text('Version $_source · disponible hors connexion', style: TextStyle(fontSize: 12, color: AppColors.textMuted))),
         for (final f in filtrees) Padding(
           padding: const EdgeInsets.only(bottom: 10),
           child: Carte(
@@ -68,7 +68,7 @@ class _PremiersSecoursScreenState extends State<PremiersSecoursScreen> {
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(f['titre'], style: const TextStyle(fontWeight: FontWeight.w700)),
-                Text(f['resume'], style: const TextStyle(color: AppColors.textGrey, fontSize: 13)),
+                Text(f['resume'], style: TextStyle(color: AppColors.textGrey, fontSize: 13)),
               ])),
               const Icon(Icons.chevron_right),
             ]),
@@ -89,7 +89,7 @@ class _FicheScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(f['titre'])),
       body: ListView(padding: const EdgeInsets.all(16), children: [
-        Text(f['resume'], style: const TextStyle(color: AppColors.textGrey, fontSize: 15)),
+        Text(f['resume'], style: TextStyle(color: AppColors.textGrey, fontSize: 15)),
         if (f['validee'] != true) const Padding(padding: EdgeInsets.only(top: 12),
             child: Bandeau.alerte('Fiche rédigée d’après les recommandations citées, en attente de validation par un professionnel de santé.')),
         const SizedBox(height: 14),
@@ -112,7 +112,7 @@ class _FicheScreen extends StatelessWidget {
         ],
         const SizedBox(height: 12),
         Text('Sources : ${List<String>.from(f['sources']).join(' ; ')} · mise à jour ${f['date_mise_a_jour']}',
-            style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+            style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
       ]),
     );
   }

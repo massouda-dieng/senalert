@@ -16,6 +16,7 @@ import MesDossiers from './pages/citoyen/MesDossiers';
 import Services from './pages/citoyen/Services';
 import Signaler from './pages/citoyen/Signaler';
 import AlertesZone from './pages/admin/AlertesZone';
+import Demonstration from './pages/admin/Demonstration';
 import CartePage from './pages/commun/CartePage';
 import Communaute from './pages/commun/Communaute';
 import Credits from './pages/commun/Credits';
@@ -74,6 +75,7 @@ export default function App() {
         <Route path="/supervision/incidents" element={<Espace roles={['superadmin']}><IncidentsAdmin /></Espace>} />
         <Route path="/supervision/sos" element={<Espace roles={['superadmin']}><SOSAdmin /></Espace>} />
         <Route path="/supervision/carte" element={<Espace roles={['superadmin']}><CartePage /></Espace>} />
+        <Route path="/supervision/demo" element={<Espace roles={['superadmin']}><Demonstration /></Espace>} />
         <Route path="/supervision/alertes-zone" element={<Espace roles={['superadmin']}><AlertesZone /></Espace>} />
         <Route path="/supervision/communaute" element={<Espace roles={['superadmin']}><Communaute /></Espace>} />
         <Route path="/supervision/risques" element={<Espace roles={['superadmin']}><Risques /></Espace>} />

@@ -31,12 +31,12 @@ class _Cadre extends StatelessWidget {
                 ]),
                 const SizedBox(height: 28),
                 Text(titreEcran, style: titre(26)),
-                if (sousTitre != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(sousTitre!, style: const TextStyle(color: AppColors.textGrey))),
+                if (sousTitre != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(sousTitre!, style: TextStyle(color: AppColors.textGrey))),
                 const SizedBox(height: 24),
                 ...enfants,
                 const SizedBox(height: 28),
                 if (config.numeros.isNotEmpty) ...[
-                  const Text('Urgence vitale ? Appelez directement :', style: TextStyle(color: AppColors.textGrey, fontSize: 13)),
+                  Text('Urgence vitale ? Appelez directement :', style: TextStyle(color: AppColors.textGrey, fontSize: 13)),
                   const SizedBox(height: 8),
                   NumerosUrgence(config.numeros),
                 ],
@@ -61,7 +61,7 @@ class _BoutonGoogleState extends State<_BoutonGoogle> {
   @override
   Widget build(BuildContext context) {
     if (!Session.googleConfigure) {
-      return const Text('Connexion Google non configurée dans cette version (voir la documentation).',
+      return Text('Connexion Google non configurée dans cette version (voir la documentation).',
           textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted, fontSize: 12.5));
     }
     return OutlinedButton.icon(
@@ -89,7 +89,7 @@ class _Separateur extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 18),
         child: Row(children: [
           const Expanded(child: Divider()),
-          Padding(padding: const EdgeInsets.symmetric(horizontal: 10), child: Text(texte, style: const TextStyle(color: AppColors.textMuted, fontSize: 12))),
+          Padding(padding: const EdgeInsets.symmetric(horizontal: 10), child: Text(texte, style: TextStyle(color: AppColors.textMuted, fontSize: 12))),
           const Expanded(child: Divider()),
         ]),
       );
@@ -195,7 +195,7 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
         ),
       ),
       _champ('password', 'Mot de passe', secret: true, aide: '8 caractères minimum, pas uniquement des chiffres.'),
-      const Text('Vos données servent uniquement au traitement de vos signalements (loi n° 2008-12). Votre position n’est envoyée que lors d’un SOS ou d’un signalement.',
+      Text('Vos données servent uniquement au traitement de vos signalements (loi n° 2008-12). Votre position n’est envoyée que lors d’un SOS ou d’un signalement.',
           style: TextStyle(fontSize: 12, color: AppColors.textGrey)),
       const SizedBox(height: 14),
       if (_erreur != null) Padding(padding: const EdgeInsets.only(bottom: 12), child: Bandeau.erreur(_erreur!.message)),

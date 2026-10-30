@@ -19,7 +19,7 @@ const AXE = { fontSize: 12, fill: '#5B6680' };
 function Infobulle({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-xl border border-surface-bord bg-white px-3 py-2 text-xs shadow-flottant">
+    <div className="rounded-xl border border-surface-bord bg-surface px-3 py-2 text-xs shadow-flottant">
       <p className="mb-1 font-semibold text-texte">{label}</p>
       {payload.map((p) => (
         <p key={p.dataKey} className="flex items-center gap-2 text-texte-doux">
@@ -69,7 +69,7 @@ export default function Supervision() {
             <h1 className="font-titre text-3xl font-extrabold">Centre de supervision</h1>
             <p className="mt-1 text-white/80">Indicateurs calculés en direct depuis la base SenAlert.</p>
           </div>
-          <div className="rounded-xl bg-white/90 text-texte"><IndicateurSynchro date={derniereSynchro} chargement={chargement} onRafraichir={recharger} /></div>
+          <div className="rounded-xl bg-surface/90 text-texte"><IndicateurSynchro date={derniereSynchro} chargement={chargement} onRafraichir={recharger} /></div>
         </div>
       </div>
 
@@ -128,7 +128,7 @@ export default function Supervision() {
                       <XAxis type="number" hide allowDecimals={false} />
                       <YAxis type="category" dataKey="libelle" width={130} tick={AXE} tickLine={false} axisLine={false} />
                       <Tooltip content={<Infobulle />} cursor={{ fill: '#F3F6FC' }} />
-                      <Bar dataKey="total" name="Incidents" fill={COULEUR_INCIDENTS} radius={[0, 4, 4, 0]} barSize={16} label={{ position: 'right', fontSize: 12, fill: '#0B1630' }} />
+                      <Bar dataKey="total" name="Incidents" fill={COULEUR_INCIDENTS} radius={[0, 4, 4, 0]} barSize={16} label={{ position: 'right', fontSize: 12, fill: 'rgb(var(--c-texte))' }} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>

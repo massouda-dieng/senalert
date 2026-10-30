@@ -135,6 +135,12 @@ function SOS() {
               {config.numeros_urgence.map((n) => <a key={n.numero} href={`tel:${n.numero}`} className="rounded-xl bg-sos px-3 py-3 text-center font-bold text-white">{n.service} · {n.numero}</a>)}
             </div>
             <Bouton variante="secondaire" className="w-full" icone={RotateCcw} onClick={() => envoyer(position?.enCours ? null : position)}>Réessayer l’envoi</Bouton>
+            {config.sms_secours && (
+              <a className="flex w-full items-center justify-center gap-2 rounded-xl border border-surface-bord px-4 py-2.5 text-sm font-semibold hover:bg-surface-douce"
+                href={`sms:${config.sms_secours}?&body=${encodeURIComponent(`SOS SenAlert${position?.lat != null ? ` - position ${position.lat.toFixed(5)},${position.lng.toFixed(5)} (±${Math.round(position.precision)} m) https://maps.google.com/?q=${position.lat},${position.lng}` : ' - position inconnue'}`)}`}>
+                Envoyer le SOS par SMS (sans internet)
+              </a>
+            )}
           </div>
         )}
       </Fenetre>

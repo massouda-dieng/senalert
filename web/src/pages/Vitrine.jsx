@@ -8,6 +8,7 @@ import { ESPACE_PAR_ROLE, useAuth } from '../auth/AuthContext';
 import { BandeDrapeau, Logo } from '../components/Logo';
 import Photo from '../components/Photo';
 import { useConfig } from '../lib/config';
+import { useInstallation } from '../lib/installation';
 import { nombre } from '../lib/format';
 
 const FONCTIONS = [
@@ -33,6 +34,7 @@ export default function Vitrine() {
   const { donnees: s } = useRessource('/statistiques-publiques/');
   const { donnees: alertes } = useRessource('/alertes/zones/', { en_cours: 1 });
   const espace = utilisateur ? ESPACE_PAR_ROLE[utilisateur.role] : null;
+  const installation = useInstallation();
 
   return (
     <div className="bg-surface-douce">
@@ -46,11 +48,11 @@ export default function Vitrine() {
             <a href="#comment" className="hidden rounded-full px-4 py-2 text-sm font-semibold text-white/90 hover:bg-white/10 md:block">Comment ça marche</a>
             <Link to="/simulateur" className="hidden rounded-full px-4 py-2 text-sm font-semibold text-white/90 hover:bg-white/10 md:block">Essayer l’app mobile</Link>
             {espace ? (
-              <Link to={espace} className="rounded-full bg-white px-5 py-2 text-sm font-bold text-marque-800 hover:bg-marque-50">Mon espace</Link>
+              <Link to={espace} className="rounded-full bg-surface px-5 py-2 text-sm font-bold text-marque-800 hover:bg-marque-50">Mon espace</Link>
             ) : (
               <>
                 <Link to="/connexion" className="rounded-full px-4 py-2 text-sm font-semibold text-white hover:bg-white/10">Connexion</Link>
-                <Link to="/inscription" className="rounded-full bg-white px-5 py-2 text-sm font-bold text-marque-800 hover:bg-marque-50">S’inscrire</Link>
+                <Link to="/inscription" className="rounded-full bg-surface px-5 py-2 text-sm font-bold text-marque-800 hover:bg-marque-50">S’inscrire</Link>
               </>
             )}
           </nav>
@@ -97,7 +99,7 @@ export default function Vitrine() {
               </div>
               <div className="space-y-2 p-4">
                 {[['Inondation', 'En cours', 'bg-amber-100 text-amber-800'], ['Accident', 'Résolu', 'bg-emerald-100 text-emerald-800']].map(([t, st, c]) => (
-                  <div key={t} className="flex items-center justify-between rounded-2xl bg-white p-3 text-xs shadow-sm"><span className="font-semibold">{t}</span><span className={`rounded-full px-2 py-0.5 font-bold ${c}`}>{st}</span></div>
+                  <div key={t} className="flex items-center justify-between rounded-2xl bg-surface p-3 text-xs shadow-sm"><span className="font-semibold">{t}</span><span className={`rounded-full px-2 py-0.5 font-bold ${c}`}>{st}</span></div>
                 ))}
                 <p className="pt-1 text-center text-[10px] text-texte-pale">Aperçu de l’interface</p>
               </div>
@@ -112,7 +114,7 @@ export default function Vitrine() {
           {[
             ['Signalements', s?.signalements], ['Dossiers résolus', s?.resolus], ['Citoyens inscrits', s?.citoyens], ['Services mobilisables', s?.services],
           ].map(([l, v]) => (
-            <div key={l} className="bg-white p-6 text-center">
+            <div key={l} className="bg-surface p-6 text-center">
               <p className="font-titre text-3xl font-extrabold text-marque-700 sm:text-4xl">{v == null ? '…' : nombre(v)}</p>
               <p className="mt-1 text-sm text-texte-doux">{l}</p>
             </div>
@@ -152,7 +154,7 @@ export default function Vitrine() {
       </section>
 
       {/* Comment ça marche */}
-      <section id="comment" className="bg-white py-20">
+      <section id="comment" className="bg-surface py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-8">
           <h2 className="text-center font-titre text-3xl font-extrabold sm:text-4xl">Comment ça marche</h2>
           <p className="mt-2 text-center text-sm text-texte-pale">Scénario d’usage illustré par des photos libres de droits (aucun incident réel représenté).</p>
@@ -196,9 +198,17 @@ export default function Vitrine() {
         <Smartphone className="mx-auto h-12 w-12 text-marque-600" />
         <h2 className="mt-4 font-titre text-3xl font-extrabold">Rejoignez SenAlert</h2>
         <p className="mx-auto mt-3 max-w-xl text-texte-doux">Disponible dès maintenant dans votre navigateur, sur ordinateur comme sur téléphone. Les applications Android et iOS sont en préparation : essayez-les dès maintenant dans le <Link to="/simulateur" className="lien">simulateur mobile</Link>.</p>
-        <Link to={espace || '/inscription'} className="mt-8 inline-flex items-center gap-2 rounded-full bg-marque-600 px-7 py-3.5 font-bold text-white shadow-lg hover:bg-marque-700">
+<div className="mt-8 flex flex-wrap justify-center gap-3">
+        <Link to={espace || '/inscription'} className="inline-flex items-center gap-2 rounded-full bg-marque-600 px-7 py-3.5 font-bold text-white shadow-lg hover:bg-marque-700">
           {espace ? 'Ouvrir mon espace' : 'Créer mon compte'} <ArrowRight className="h-5 w-5" />
         </Link>
+        {installation.possible && !installation.ios && (
+          <button type="button" onClick={installation.installer} className="inline-flex items-center gap-2 rounded-full border border-marque-600 px-7 py-3.5 font-bold text-marque-700 hover:bg-marque-50">
+            <Smartphone className="h-5 w-5" /> Installer l’application
+          </button>
+        )}
+        </div>
+        {installation.ios && <p className="mt-4 text-sm text-texte-doux">Sur iPhone : touchez « Partager » puis « Sur l’écran d’accueil » pour installer SenAlert.</p>}
       </section>
 
       <footer className="bg-marque-950 text-white/70">

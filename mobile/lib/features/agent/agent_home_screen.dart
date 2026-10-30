@@ -65,11 +65,11 @@ class _AccueilAgentState extends State<AccueilAgent> {
     final config = context.watch<Configuration>();
     final zones = u.zones.map((z) => config.region(z)?.libelle ?? z).join(', ');
     Widget kpi(String l, String v, IconData i, Color c) => Expanded(child: Carte(padding: const EdgeInsets.all(12), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Icon(i, color: c), const SizedBox(height: 6), Text(v, style: titre(22)), Text(l, style: const TextStyle(fontSize: 12, color: AppColors.textGrey)),
+          Icon(i, color: c), const SizedBox(height: 6), Text(v, style: titre(22)), Text(l, style: TextStyle(fontSize: 12, color: AppColors.textGrey)),
         ])));
     Widget section(String t, List<Dossier> l, String vide) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Padding(padding: const EdgeInsets.only(top: 20, bottom: 8), child: Text(t, style: titre(17))),
-          if (l.isEmpty) Text(vide, style: const TextStyle(color: AppColors.textGrey)),
+          if (l.isEmpty) Text(vide, style: TextStyle(color: AppColors.textGrey)),
           for (final d in l) Padding(padding: const EdgeInsets.only(bottom: 10),
               child: TuileDossier(d, onTap: () => context.push('/dossier/${d.estSos ? 'sos' : 'incident'}/${d.id}').then((_) => _charger()))),
         ]);
@@ -107,7 +107,7 @@ class _AccueilAgentState extends State<AccueilAgent> {
                 section('Mes interventions en cours', _miens, 'Aucune intervention active.'),
                 section('Nouvelles alertes de ma zone', _nouveaux, 'Aucune nouvelle alerte dans vos zones.'),
                 if (_synchro != null) Padding(padding: const EdgeInsets.only(top: 12),
-                    child: Text('Actualisé ${ilYa(_synchro)} · tirez pour rafraîchir', textAlign: TextAlign.center, style: const TextStyle(fontSize: 12, color: AppColors.textMuted))),
+                    child: Text('Actualisé ${ilYa(_synchro)} · tirez pour rafraîchir', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppColors.textMuted))),
                 ])),
               ]),
       ),

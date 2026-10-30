@@ -5,6 +5,7 @@ import { api } from '../../api/client';
 import { useAuth } from '../../auth/AuthContext';
 import { Bandeau, Bouton, Carte, Champ, EnTetePage, Fenetre, Selecteur, useToast } from '../../components/ui';
 import { useConfig } from '../../lib/config';
+import { choisirTheme, themeChoisi } from '../../lib/theme';
 
 const PREFS = [
   ['notifications_push', 'Notifications push sur mobile'],
@@ -44,6 +45,11 @@ export default function Profil() {
 
       <Carte titre="Préférences">
         <div className="space-y-3">
+          <label className="flex items-center justify-between gap-4 text-sm">Apparence
+            <select className="champ w-auto py-1.5" defaultValue={themeChoisi()} onChange={(e) => { choisirTheme(e.target.value); window.location.reload(); }}>
+              <option value="systeme">Selon le système</option><option value="clair">Clair</option><option value="sombre">Sombre</option>
+            </select>
+          </label>
           {PREFS.map(([k, l]) => (
             <label key={k} className="flex items-center justify-between gap-4 text-sm">{l}
               <input type="checkbox" className="h-5 w-5" checked={Boolean(utilisateur.preferences?.[k])} onChange={(e) => enregistrer({ preferences: { [k]: e.target.checked } }, k)} />

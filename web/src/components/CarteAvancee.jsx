@@ -85,7 +85,7 @@ function RechercheAdresse({ onChoix }) {
   };
   return (
     <div className="relative">
-      <form onSubmit={chercher} className="flex items-center gap-1 rounded-2xl bg-white p-1 shadow-flottant" role="search">
+      <form onSubmit={chercher} className="flex items-center gap-1 rounded-2xl bg-surface p-1 shadow-flottant" role="search">
         <Search className="ml-2 h-4 w-4 text-texte-pale" aria-hidden />
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher un lieu au Sénégal…" aria-label="Rechercher un lieu"
           className="w-full min-w-0 bg-transparent px-1 py-1.5 text-sm outline-none" />
@@ -93,7 +93,7 @@ function RechercheAdresse({ onChoix }) {
         <button type="submit" className="rounded-xl bg-marque-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-marque-700">{etat === 'chargement' ? '…' : 'OK'}</button>
       </form>
       {(resultats.length > 0 || (etat && etat !== 'chargement')) && (
-        <ul className="absolute left-0 right-0 top-full mt-1 max-h-64 overflow-y-auto rounded-2xl bg-white p-1 text-sm shadow-flottant">
+        <ul className="absolute left-0 right-0 top-full mt-1 max-h-64 overflow-y-auto rounded-2xl bg-surface p-1 text-sm shadow-flottant">
           {etat === 'vide' && <li className="px-3 py-2 text-texte-doux">Aucun lieu trouvé.</li>}
           {etat && !['vide', 'chargement'].includes(etat) && <li className="px-3 py-2 text-red-700">{etat}</li>}
           {resultats.map((r) => (
@@ -215,13 +215,13 @@ export default function CarteAvancee({ role = 'citoyen', hauteur = 'calc(100vh -
 
       {/* Boutons flottants */}
       <div className="absolute bottom-6 right-3 z-[500] flex flex-col gap-2">
-        <button type="button" onClick={localiser} className="grid h-11 w-11 place-items-center rounded-2xl bg-white shadow-flottant hover:bg-surface-douce" title="Me localiser" aria-label="Me localiser"><LocateFixed className="h-5 w-5 text-marque-700" /></button>
-        <button type="button" onClick={() => setPanneau((p) => !p)} className="grid h-11 w-11 place-items-center rounded-2xl bg-white shadow-flottant hover:bg-surface-douce" title="Couches" aria-label="Afficher les couches" aria-expanded={panneau}><Layers className="h-5 w-5 text-marque-700" /></button>
+        <button type="button" onClick={localiser} className="grid h-11 w-11 place-items-center rounded-2xl bg-surface shadow-flottant hover:bg-surface-douce" title="Me localiser" aria-label="Me localiser"><LocateFixed className="h-5 w-5 text-marque-700" /></button>
+        <button type="button" onClick={() => setPanneau((p) => !p)} className="grid h-11 w-11 place-items-center rounded-2xl bg-surface shadow-flottant hover:bg-surface-douce" title="Couches" aria-label="Afficher les couches" aria-expanded={panneau}><Layers className="h-5 w-5 text-marque-700" /></button>
       </div>
 
       {/* Panneau des couches */}
       {panneau && (
-        <div className="absolute right-3 top-16 z-[500] max-h-[calc(100%-9rem)] w-72 overflow-y-auto rounded-2xl bg-white/95 p-3 shadow-flottant backdrop-blur sm:top-3">
+        <div className="absolute right-3 top-16 z-[500] max-h-[calc(100%-9rem)] w-72 overflow-y-auto rounded-2xl bg-surface/95 p-3 shadow-flottant backdrop-blur sm:top-3">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-sm font-bold">Couches</p>
             <IndicateurSynchro date={carte.derniereSynchro} chargement={carte.chargement} onRafraichir={carte.recharger} />
@@ -229,7 +229,7 @@ export default function CarteAvancee({ role = 'citoyen', hauteur = 'calc(100vh -
           <div className="mb-3 grid grid-cols-3 gap-1 rounded-xl bg-surface-douce p-1" role="radiogroup" aria-label="Fond de carte">
             {Object.entries(FONDS).map(([k, f]) => (
               <button key={k} type="button" role="radio" aria-checked={fond === k} onClick={() => setFond(k)}
-                className={clsx('rounded-lg py-1.5 text-xs font-semibold', fond === k ? 'bg-white text-marque-700 shadow-sm' : 'text-texte-doux')}>{f.libelle}</button>
+                className={clsx('rounded-lg py-1.5 text-xs font-semibold', fond === k ? 'bg-surface text-marque-700 shadow-sm' : 'text-texte-doux')}>{f.libelle}</button>
             ))}
           </div>
           <Interrupteur cle="incidents" libelle={`Incidents récents (${carte.donnees?.resultats?.length ?? '…'})`} couleur="#006E33" />

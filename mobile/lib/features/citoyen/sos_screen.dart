@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api.dart';
 import '../../core/constants/app_colors.dart';
@@ -73,6 +74,17 @@ class _SosScreenState extends State<SosScreen> {
     }
   }
 
+  /// Repli sans internet : ouvre l'application SMS avec un message prérempli (position GPS incluse).
+  Future<void> _envoyerSms() async {
+    final numero = context.read<Configuration>().smsSecours;
+    if (numero == null) return;
+    final p = _position;
+    final texte = p?.ok == true
+        ? 'SOS SenAlert - position ${p!.lat!.toStringAsFixed(5)},${p.lng!.toStringAsFixed(5)} (±${p.precision?.round()} m) https://maps.google.com/?q=${p.lat},${p.lng}'
+        : 'SOS SenAlert - position inconnue';
+    await launchUrl(Uri(scheme: 'sms', path: numero, queryParameters: {'body': texte}));
+  }
+
   Future<void> _actualiser() async {
     if (_dossier == null) return;
     try {
@@ -121,7 +133,7 @@ class _SosScreenState extends State<SosScreen> {
                 Text(_dejaRecue ? 'Cette alerte avait déjà été reçue : voici son suivi.'
                     : 'Votre alerte est enregistrée et transmise aux agents SenAlert de votre zone.'),
                 const SizedBox(height: 8),
-                const Text('Tant qu’un agent ne l’a pas prise en charge, aucune intervention n’est garantie.',
+                Text('Tant qu’un agent ne l’a pas prise en charge, aucune intervention n’est garantie.',
                     style: TextStyle(color: AppColors.textGrey, fontSize: 13)),
               ])),
               if (_dossier!.lat == null) const Padding(padding: EdgeInsets.only(top: 12),
@@ -149,6 +161,12 @@ class _SosScreenState extends State<SosScreen> {
               ),
               OutlinedButton.icon(style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38)),
                   onPressed: _envoyer, icon: const Icon(Icons.refresh), label: const Text('Réessayer l’envoi')),
+              if (context.read<Configuration>().smsSecours != null) Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38)),
+                  onPressed: _envoyerSms, icon: const Icon(Icons.sms_outlined), label: const Text('Envoyer le SOS par SMS (sans internet)')),
+              ),
             ],
           ]),
         ),

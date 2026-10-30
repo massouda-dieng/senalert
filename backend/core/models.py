@@ -82,6 +82,11 @@ class Parametre(models.Model):
             'description': "Durée de conservation (jours) avant anonymisation des dossiers clos.",
             'valeur': {'jours_avant_anonymisation': 730},
         },
+        'sms_secours': {
+            'description': ("Numéro qui reçoit les SOS par SMS quand internet est coupé (passerelle SMS ou centre "
+                            "d'appel). Laisser inactif tant qu'aucun numéro réel n'est en service."),
+            'valeur': {'actif': False, 'numero': ''},
+        },
         'fonctionnalites': {
             'description': "Activation des fonctionnalités optionnelles.",
             'valeur': {'assistant_ia': True, 'connexion_google': True, 'carte_publique': True},

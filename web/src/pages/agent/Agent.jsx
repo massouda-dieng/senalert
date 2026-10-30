@@ -57,7 +57,7 @@ export function TableauAgent() {
             <h1 className="font-titre text-3xl font-extrabold">Bonjour {utilisateur.first_name || ''}</h1>
             <p className="mt-1 text-white/80">{profil ? `${profil.service_nom || 'Service non défini'} · zones : ${(profil.zones || []).join(', ') || 'aucune'}` : ''}</p>
           </div>
-          <div className="rounded-xl bg-white/90 text-texte"><IndicateurSynchro date={nouveauxInc.derniereSynchro} chargement={nouveauxInc.chargement} onRafraichir={() => { nouveauxInc.recharger(); nouveauxSos.recharger(); miensInc.recharger(); miensSos.recharger(); activite.recharger(); }} /></div>
+          <div className="rounded-xl bg-surface/90 text-texte"><IndicateurSynchro date={nouveauxInc.derniereSynchro} chargement={nouveauxInc.chargement} onRafraichir={() => { nouveauxInc.recharger(); nouveauxSos.recharger(); miensInc.recharger(); miensSos.recharger(); activite.recharger(); }} /></div>
         </div>
       </div>
       {(!profil?.service_nom || !profil?.zones?.length) && <Bandeau type="alerte" className="mb-5">Votre compte n’est rattaché à aucun service ou zone : vous ne recevrez que les dossiers qui vous sont affectés. Contactez votre superviseur.</Bandeau>}

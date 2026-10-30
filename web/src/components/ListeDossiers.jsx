@@ -160,7 +160,7 @@ export default function ListeDossiers({ type = 'incident', filtresVisibles = FIL
       </div>
 
       {selection && (
-        <aside className="fixed inset-0 z-[950] overflow-y-auto bg-white p-5 xl:sticky xl:inset-auto xl:top-20 xl:z-auto xl:max-h-[calc(100vh-6rem)] xl:rounded-2xl xl:border xl:border-surface-bord xl:shadow-carte" aria-label="Détail du dossier">
+        <aside className="fixed inset-0 z-[950] overflow-y-auto bg-surface p-5 xl:sticky xl:inset-auto xl:top-20 xl:z-auto xl:max-h-[calc(100vh-6rem)] xl:rounded-2xl xl:border xl:border-surface-bord xl:shadow-carte" aria-label="Détail du dossier">
           <DossierDetail key={selection} type={type} id={selection} onFermer={fermer} onModifie={() => recharger(true)} compact />
         </aside>
       )}

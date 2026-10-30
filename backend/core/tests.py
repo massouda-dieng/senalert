@@ -94,3 +94,12 @@ class JournalisationTests(SenAlertTestCase):
             logging.disable(logging.NOTSET)
         self.assertEqual(r.status_code, 500)
         self.assertNotIn('secret', str(r.data))
+
+
+class SmsSecoursTests(SenAlertTestCase):
+    def test_numero_expose_seulement_si_actif(self):
+        self.assertIsNone(self.client.get('/api/configuration/').data['sms_secours'])
+        Parametre.objects.update_or_create(cle='sms_secours', defaults={'valeur': {'actif': True, 'numero': '+221770000000'}})
+        from django.core.cache import cache
+        cache.clear()
+        self.assertEqual(self.client.get('/api/configuration/').data['sms_secours'], '+221770000000')

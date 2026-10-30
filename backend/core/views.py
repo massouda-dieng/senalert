@@ -34,7 +34,9 @@ class ConfigurationPubliqueView(APIView):
     @extend_schema(responses=OpenApiTypes.OBJECT)
     def get(self, request):
         fonctions = Parametre.get('fonctionnalites') or {}
+        sms = Parametre.get('sms_secours') or {}
         return Response({
+            'sms_secours': sms.get('numero') if sms.get('actif') and sms.get('numero') else None,
             'google_client_id_web': settings.GOOGLE_CLIENT_ID_WEB or None,
             'google_actif': bool(settings.GOOGLE_CLIENT_IDS) and fonctions.get('connexion_google', True),
             'numeros_urgence': numeros_verifies(),
