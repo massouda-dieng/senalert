@@ -108,9 +108,27 @@ class ConnexionSerializer(TokenObtainPairSerializer):
         identifiant = (attrs.get('username') or '').strip()
         user = User.objects.filter(email__iexact=identifiant).first() if '@' in identifiant else None
         attrs['username'] = user.username if user else identifiant
+        if user is None and '@' in identifiant:
+            self._signaler_demande_en_cours(identifiant, attrs.get('password') or '')
         data = super().validate(attrs)
         data['utilisateur'] = UtilisateurSerializer(self.user).data
         return data
+
+    @staticmethod
+    def _signaler_demande_en_cours(email, mot_de_passe):
+        """Demande d'accès agent pas encore validée : message explicite, seulement si le mot de passe correspond."""
+        from django.contrib.auth.hashers import check_password
+        from rest_framework.exceptions import AuthenticationFailed
+
+        from .models import DemandeCompteAgent
+        d = DemandeCompteAgent.objects.filter(email__iexact=email).exclude(statut='validee').first()
+        if d is None:
+            return
+        if d.statut == 'en_attente' and check_password(mot_de_passe, d.mot_de_passe_hash):
+            raise AuthenticationFailed('Votre demande de compte agent est en attente de validation par un superviseur. '
+                                       'Vous pourrez vous connecter dès qu’elle sera acceptée.', code='demande_en_attente')
+        if d.statut == 'refusee':
+            raise AuthenticationFailed('Votre demande de compte agent a été refusée. Contactez votre superviseur.', code='demande_refusee')
 
     @classmethod
     def get_token(cls, user):

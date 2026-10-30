@@ -25,8 +25,12 @@ class DemandeCompteAgentTests(SenAlertTestCase):
         self.assertFalse(User.objects.filter(email='cheikh@police.sn').exists())
         self.assertTrue(Notification.objects.filter(destinataire=chef, titre__icontains='demande').exists())
 
-        # Avant validation : connexion impossible
-        self.assertEqual(self.client.post('/api/auth/connexion/', {'username': 'cheikh@police.sn', 'password': MDP_AGENT}, format='json').status_code, 401)
+        # Avant validation : connexion impossible, avec un message explicite (seulement si le mot de passe correspond)
+        r = self.client.post('/api/auth/connexion/', {'username': 'cheikh@police.sn', 'password': MDP_AGENT}, format='json')
+        self.assertEqual(r.status_code, 401)
+        self.assertIn('attente de validation', r.data['detail'])
+        r = self.client.post('/api/auth/connexion/', {'username': 'cheikh@police.sn', 'password': 'mauvais-mdp-123'}, format='json')
+        self.assertNotIn('attente', r.data['detail'])
 
         self.en_tant_que(chef)
         self.assertEqual(self.client.get(GESTION, {'statut': 'en_attente'}).data['count'], 1)
