@@ -1,32 +1,47 @@
 #!/bin/bash
-# =============================================================
-# SenAlert — Script de lancement Flutter avec IA Groq activée
-# Usage: bash run.sh            → lance sur Chrome
-#        bash run.sh android    → lance sur Android
-#        bash run.sh ios        → lance sur iOS Simulator
-# =============================================================
+# =============================================================================
+# SenAlert — lancement local (macOS)
+#   ./run.sh backend          API + application web compilée  → http://127.0.0.1:8000/app/
+#   ./run.sh web              serveur de développement React  → http://localhost:5173/app/
+#   ./run.sh mobile [cible]   application Flutter (chrome par défaut, ou un id d'appareil)
+#   ./run.sh tests            tous les tests (backend, web, mobile)
+# Aucune clé secrète n'est transmise à l'application mobile : l'IA passe par le backend.
+# =============================================================================
+set -e
+RACINE="$(cd "$(dirname "$0")" && pwd)"
+FLUTTER="${FLUTTER:-$(command -v flutter || echo /Users/hannadiop/Documents/flutter/bin/flutter)}"
 
-FLUTTER=/Users/hannadiop/Documents/flutter/bin/flutter
-ENV_FILE="$(dirname "$0")/backend/.env"
-MOBILE_DIR="$(dirname "$0")/mobile"
-
-# Lire la clé Groq depuis backend/.env
-GROQ_KEY=""
-if [ -f "$ENV_FILE" ]; then
-  GROQ_KEY=$(grep -E "^GROQ_API_KEY=" "$ENV_FILE" | cut -d= -f2 | tr -d ' \r\n')
-fi
-
-if [ -z "$GROQ_KEY" ]; then
-  echo "⚠️  Clé GROQ_API_KEY introuvable dans backend/.env — l'IA tournera en mode hors-ligne"
-else
-  echo "✅  Clé Groq chargée (${#GROQ_KEY} caractères)"
-fi
-
-DEVICE="${1:-chrome}"
-
-echo "🚀  Lancement Flutter sur: $DEVICE"
-cd "$MOBILE_DIR" || exit 1
-
-exec $FLUTTER run \
-  --dart-define=GROQ_API_KEY="$GROQ_KEY" \
-  -d "$DEVICE"
+case "${1:-backend}" in
+  backend)
+    cd "$RACINE/backend"
+    [ -d env ] || python3 -m venv env
+    source env/bin/activate
+    pip install -q -r requirements.txt
+    python manage.py migrate
+    if [ ! -f "$RACINE/web/dist/index.html" ] && command -v npm >/dev/null; then
+      (cd "$RACINE/web" && npm install --no-audit --no-fund && npm run build)
+    fi
+    echo "→ http://127.0.0.1:8000/app/   (API : http://127.0.0.1:8000/api/docs/)"
+    python manage.py runserver 0.0.0.0:8000
+    ;;
+  web)
+    cd "$RACINE/web" && npm install --no-audit --no-fund && npm run dev
+    ;;
+  mobile)
+    cd "$RACINE/mobile"
+    CIBLE="${2:-chrome}"
+    API="${API_BASE_URL:-http://127.0.0.1:8000/api}"
+    "$FLUTTER" pub get
+    exec "$FLUTTER" run -d "$CIBLE" \
+      --dart-define=API_BASE_URL="$API" \
+      --dart-define=GOOGLE_SERVER_CLIENT_ID="${GOOGLE_SERVER_CLIENT_ID:-}" \
+      --dart-define=GOOGLE_IOS_CLIENT_ID="${GOOGLE_IOS_CLIENT_ID:-}"
+    ;;
+  tests)
+    (cd "$RACINE/backend" && source env/bin/activate && python manage.py test)
+    (cd "$RACINE/web" && npx vitest run)
+    (cd "$RACINE/mobile" && "$FLUTTER" analyze && "$FLUTTER" test)
+    ;;
+  *)
+    echo "Usage : ./run.sh [backend|web|mobile [cible]|tests]"; exit 1 ;;
+esac

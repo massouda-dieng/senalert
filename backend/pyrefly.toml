@@ -1,0 +1,12 @@
+# Analyse statique dans l'IDE. Django n'a pas de stubs installés : les erreurs
+# d'attributs dynamiques (objects, status_code…) sont des faux positifs.
+python-interpreter-path = "env/bin/python"
+project-excludes = ["env/**", "**/migrations/**"]
+
+[errors]
+missing-attribute = false
+untyped-import = false
+bad-override-mutable-attribute = false
+no-matching-overload = false
+unsupported-operation = false
+bad-argument-type = false

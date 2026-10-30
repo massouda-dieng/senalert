@@ -66,5 +66,16 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>SenAlert utilise votre position uniquement lorsque vous envoyez un SOS, signalez un incident ou cherchez les services proches.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Prendre une photo de l’incident à joindre à votre signalement.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Joindre une photo existante à votre signalement.</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>tel</string>
+		<string>https</string>
+	</array>
 </dict>
 </plist>

@@ -1,93 +1,83 @@
-import logging
-from rest_framework.views import APIView
+from django.db import IntegrityError, transaction
+from django.utils import timezone
+from drf_spectacular.utils import extend_schema
+from rest_framework import mixins, status, viewsets
 from rest_framework.response import Response
-from rest_framework import status, permissions
-from accounts.models import User, DeviceToken
+from rest_framework.throttling import ScopedRateThrottle
+
+from core.constants import STATUTS_ACTIFS
+from incidents import workflow
+from incidents.dossier_views import ActionsDossierMixin, FiltreDossier
+
 from .models import AlerteSOS
-from .serializers import AlerteSOSSerializer
+from .serializers import AlerteSOSCreationSerializer, AlerteSOSSerializer
 
-logger = logging.getLogger(__name__)
+FENETRE_ANTI_REPETITION = timezone.timedelta(minutes=2)
 
-def _send_sos_push_notifications(user, latitude, longitude):
-    try:
-        user_region = getattr(user, 'region', '') or ''
-        autorites = User.objects.filter(role='autorite')
-        if user_region:
-            region_autorites = autorites.filter(region__iexact=user_region)
-            if region_autorites.exists():
-                autorites = region_autorites
 
-        tokens = list(DeviceToken.objects.filter(user__in=autorites).values_list('token', flat=True))
-        if not tokens:
-            logger.info("Aucun token FCM trouvé pour les autorités.")
-            return
+class FiltreSOS(FiltreDossier):
+    class Meta:
+        model = AlerteSOS
+        fields = []
 
-        import firebase_admin
-        from firebase_admin import messaging
 
-        if not firebase_admin._apps:
-            logger.warning("Firebase Admin SDK non initialisé, notification ignorée.")
-            return
+class AlerteSOSViewSet(ActionsDossierMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                       mixins.CreateModelMixin, viewsets.GenericViewSet):
+    """
+    Alertes SOS.
 
-        title = "Alerte SOS"
-        body = f"Région: {user_region or 'Sénégal'} | Coordonnées GPS: ({latitude}, {longitude})"
+    La création répond 201 avec la référence du dossier, ou 200 si la même
+    alerte a déjà été reçue (même clé d'idempotence ou SOS actif de moins de
+    2 minutes) : le client affiche alors le dossier existant.
+    """
 
-        message = messaging.MulticastMessage(
-            notification=messaging.Notification(
-                title=title,
-                body=body,
-            ),
-            data={
-                'type': 'sos_alert',
-                'latitude': str(latitude),
-                'longitude': str(longitude),
-                'region': str(user_region),
-            },
-            tokens=tokens,
-        )
-        response = messaging.send_each_for_multicast(message)
-        logger.info(f"Notification SOS envoyée : {response.success_count} réussis / {response.failure_count} échecs")
-    except Exception as e:
-        logger.error(f"Échec envoi notification push SOS: {e}")
+    est_sos = True
+    filterset_class = FiltreSOS
+    ordering_fields = ['date_creation', 'statut', 'region']
+    throttle_scope = 'sos'
 
-class CreateSOSAlertView(APIView):
-    permission_classes = [permissions.AllowAny]
+    def get_throttles(self):
+        return [ScopedRateThrottle()] if self.action == 'create' else super().get_throttles()
 
-    def post(self, request):
-        latitude = request.data.get('latitude', 14.6928)
-        longitude = request.data.get('longitude', -17.4467)
+    def get_queryset(self):
+        base = AlerteSOS.objects.select_related('citoyen', 'service', 'intervention__agent', 'intervention__service')
+        return self.queryset_visible(base)
 
+    def get_serializer_class(self):
+        return AlerteSOSCreationSerializer if self.action == 'create' else AlerteSOSSerializer
+
+    def _existant(self, alerte, request):
+        data = AlerteSOSSerializer(alerte, context={'request': request}).data
+        return Response({**data, 'deja_enregistree': True}, status=status.HTTP_200_OK)
+
+    @extend_schema(request=AlerteSOSCreationSerializer, responses=AlerteSOSSerializer)
+    def create(self, request, *args, **kwargs):
+        user = request.user
+        s = AlerteSOSCreationSerializer(data=request.data)
+        s.is_valid(raise_exception=True)
+        cle = s.validated_data.get('client_request_id')
+        if cle:
+            existant = AlerteSOS.objects.filter(citoyen=user, client_request_id=cle).first()
+            if existant:
+                return self._existant(existant, request)
+        recent = AlerteSOS.objects.filter(
+            citoyen=user, statut__in=STATUTS_ACTIFS, date_creation__gte=timezone.now() - FENETRE_ANTI_REPETITION,
+        ).first()
+        if recent:
+            return self._existant(recent, request)
+
+        donnees = s.validated_data
+        if not donnees.get('region') and user.region:
+            donnees['region'] = user.region
         try:
-            latitude = float(latitude)
-            longitude = float(longitude)
-        except (ValueError, TypeError):
-            latitude = 14.6928
-            longitude = -17.4467
-
-        current_user = request.user if request.user and request.user.is_authenticated else None
-
-        alerte = AlerteSOS.objects.create(
-            user=current_user,
-            latitude=latitude,
-            longitude=longitude,
-            statut='nouveau'
-        )
-
-        _send_sos_push_notifications(current_user, latitude, longitude)
-
-        serializer = AlerteSOSSerializer(alerte)
-        return Response(
-            {
-                'message': 'Alerte SOS enregistrée avec succès.',
-                'alerte': serializer.data
-            },
-            status=status.HTTP_201_CREATED
-        )
-
-class ListSOSAlertView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request):
-        alertes = AlerteSOS.objects.all()
-        serializer = AlerteSOSSerializer(alertes, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+            with transaction.atomic():
+                alerte = AlerteSOS.objects.create(citoyen=user, gravite='critique', **donnees)
+                workflow.apres_creation(alerte, user)
+        except IntegrityError:
+            existant = AlerteSOS.objects.filter(citoyen=user, client_request_id=cle).first()
+            if existant is None:
+                raise
+            return self._existant(existant, request)
+        alerte.refresh_from_db()
+        data = AlerteSOSSerializer(alerte, context={'request': request}).data
+        return Response({**data, 'deja_enregistree': False}, status=status.HTTP_201_CREATED)

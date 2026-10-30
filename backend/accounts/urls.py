@@ -1,12 +1,18 @@
 from django.urls import path
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .views import RegisterView, ProfileView, MesIncidentsAutoriteView, DeviceTokenView
+from rest_framework_simplejwt.views import TokenRefreshView
+
+from . import views
 
 urlpatterns = [
-    path('register/', RegisterView.as_view(), name='register'),
-    path('login/', TokenObtainPairView.as_view(), name='login'),
-    path('token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
-    path('profile/', ProfileView.as_view(), name='profile'),
-    path('mes-incidents/', MesIncidentsAutoriteView.as_view(), name='mes-incidents-autorite'),
-    path('device-token/', DeviceTokenView.as_view(), name='device-token'),
+    path('inscription/', views.InscriptionView.as_view(), name='inscription'),
+    path('connexion/', views.ConnexionView.as_view(), name='connexion'),
+    path('jeton/rafraichir/', TokenRefreshView.as_view(), name='jeton-rafraichir'),
+    path('deconnexion/', views.DeconnexionView.as_view(), name='deconnexion'),
+    path('profil/', views.ProfilView.as_view(), name='profil'),
+    path('mot-de-passe/', views.ChangementMotDePasseView.as_view(), name='mot-de-passe'),
+    path('mot-de-passe/oubli/', views.DemandeReinitialisationView.as_view(), name='mot-de-passe-oubli'),
+    path('mot-de-passe/reinitialiser/', views.ConfirmationReinitialisationView.as_view(), name='mot-de-passe-reinitialiser'),
+    path('google/', views.GoogleConnexionView.as_view(), name='google'),
+    path('google/lier/', views.GoogleLiaisonView.as_view(), name='google-lier'),
+    path('appareils/', views.DeviceTokenView.as_view(), name='appareils'),
 ]

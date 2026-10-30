@@ -1,3 +1,9 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import ZoneRisque
+
+
+@admin.register(ZoneRisque)
+class ZoneRisqueAdmin(admin.ModelAdmin):
+    list_display = ['region', 'score', 'niveau', 'total_incidents', 'methode', 'date_calcul']
+    list_filter = ['region', 'niveau', 'methode']

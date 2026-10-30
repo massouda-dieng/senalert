@@ -1,6 +1,10 @@
 from django.urls import path
-from .views import DashboardStatsView
+
+from . import views
 
 urlpatterns = [
-    path('stats/', DashboardStatsView.as_view(), name='dashboard-stats'),
+    path('statistiques/', views.StatistiquesView.as_view(), name='statistiques'),
+    path('activite-agent/', views.ActiviteAgentView.as_view(), name='activite-agent'),
+    path('export/csv/', views.ExportCSVView.as_view(), name='export-csv'),
+    path('export/pdf/', views.ExportPDFView.as_view(), name='export-pdf'),
 ]

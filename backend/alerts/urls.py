@@ -1,7 +1,7 @@
-from django.urls import path
-from .views import CreateSOSAlertView, ListSOSAlertView
+from rest_framework.routers import DefaultRouter
 
-urlpatterns = [
-    path('sos/', CreateSOSAlertView.as_view(), name='sos-create'),
-    path('sos/list/', ListSOSAlertView.as_view(), name='sos-list'),
-]
+from .views import AlerteSOSViewSet
+
+router = DefaultRouter()
+router.register('sos', AlerteSOSViewSet, basename='sos')
+urlpatterns = router.urls

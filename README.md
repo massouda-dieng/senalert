@@ -1,90 +1,48 @@
-# 🔔 SenAlert — Plateforme Nationale de Signalement et de Gestion des Urgences au Sénégal
+# SenAlert
 
-> **Projet de Soutenance & Commandement National des Urgences**  
-> SenAlert est une solution technologique complète (Web Dashboard, Backend REST API et Application Mobile Flutter) permettant le signalement en temps réel, la géolocalisation, l'analyse prédictive par IA des zones de risque, et le déploiement coordonné des services de secours au Sénégal (**Sapeurs-Pompiers, Police/Gendarmerie, SAMU, SENELEC, ONAS**).
+Plateforme de prévention, de signalement et de suivi des urgences au Sénégal — projet de fin de formation, ISEP Amadou Traoré de Diamniadio, Analyse de Performance Digitale (promotion 6).
 
----
+> SenAlert ne remplace pas les services officiels de secours. En cas de danger immédiat : **Police 17 · Sapeurs-pompiers 18**.
 
-## 🌟 Architecture Globale de la Solution
+| Composant | Technologies | Utilisateurs |
+|---|---|---|
+| `backend/` | Python 3.13, Django 6, Django REST Framework, JWT, PostgreSQL / SQLite | API commune |
+| `web/` | React 18, Vite, Tailwind CSS, Leaflet, Recharts | citoyens, agents, **superadministrateurs** |
+| `mobile/` | Flutter 3.24 | **citoyens** et **agents de secours** |
 
-```
-                            +-----------------------------------+
-                            |    Application Mobile (Flutter)   |
-                            |   Signalement Citoyen & Cartes    |
-                            +-----------------+-----------------+
-                                              |
-                                              v  (REST API / JWT)
-+----------------------------------+  +-------+-------------------------+
-|   Dashboard Commandement Web     |  |     Backend Django REST API     |
-|   (Leaflet, Chart.js, Dispatch)  |<===> (Incidents, Auth, Risk Engine)|
-+----------------------------------+  +---------------------------------+
-```
+## Démarrage rapide (macOS)
 
----
-
-## 🚀 Composants de la Plateforme
-
-### 1. 📊 **Dashboard Web de Commandement (`dashboard/index.html`)**
-- **Cartographie Interactive Leaflet** : Géolocalisation dynamique avec marqueurs d'urgence et popups régionaux.
-- **Tableau de Bord KPI** : Suivi en direct du total d'urgences, urgences en attente, interventions en cours et incidents résolus.
-- **Gestion des Incidents & Alertes** : Filtres avancés (14 régions du Sénégal, types d'incidents, statuts), recherche textuelle, modification du statut à la volée.
-- **Centre de Mobilisation & Dispatch** : Modale d'affectation des unités de secours (**SP-18, POL-17, SAMU-1515, SENELEC, ONAS**) avec calcul d'ETA en minutes.
-- **Moteur d'Analyse des Risques IA** : Détection des zones critiques par algorithme de pondération temporel.
-- **Rapports & Expatriation** : Exportation instantanée de rapports au format **CSV** et impression de synthèses **PDF**.
-- **Alertes Sonores & Météorologiques** : Alarme synthétisée Web Audio API et bandeau d'alerte ANACIM.
-
-### 2. 🐍 **Backend Django REST API (`backend/`)**
-- **Authentification Sécurisée JWT** : Inscription & Connexion avec jetons de rafraîchissement (`rest_framework_simplejwt`).
-- **Endpoints REST (`/api/incidents/`)** : Gestion CRUD complète des alertes nationales.
-- **Module d'Analyse IA (`/api/analyse/zones-risque/`)** : Algorithme d'évaluation des menaces régionales (`POIDS_GRAVITE` * facteur de récence).
-- **Administration Django (`/admin/`)** : Console de gestion des utilisateurs, rôles (Citoyen, Administrateur, Autorité) et autorités régionales.
-
-### 3. 📱 **Application Mobile (`mobile/`)**
-- Développée avec **Flutter & Dart**.
-- Écrans d'inscription/connexion, formulaire de signalement géolocalisé avec photo, carte des alertes et suivi d'interventions.
-
----
-
-## 🎓 Guide de Démonstration pour la Soutenance (Présentation au Jury)
-
-### 1️⃣ **Présentation Générale (2 min)**
-> *"Monsieur le Président, Membres du Jury, nous vous présentons **SenAlert**, la plateforme nationale de réponse aux urgences du Sénégal. Face aux défis majeurs tels que les inondations, les incendies de marché et les accidents de la route, SenAlert interconnecte les citoyens, le centre de commandement et les unités de secours en temps réel."*
-
-### 2️⃣ **Démonstration du Dashboard de Commandement (5 min)**
-1. **Ouverture du Dashboard** : `http://127.0.0.1:8000/dashboard/` (Connexion administrateur `Papa` / `Papa`).
-2. **Consultation de la Carte du Sénégal** : Montrer la répartition géolocalisée des 20 incidents de démonstration.
-3. **Signalement d'un Incident** : Cliquer sur **`+ Signaler Incident`** (ex: *Incendie au Marché de Thiès*), vérifier la création instantanée.
-4. **Mobilisation des Secours** : Dans l'onglet **`🛠️ Interventions`**, cliquer sur **`📢 Mobiliser l'équipe`** sur Sapeurs-Pompiers Dakar, attribuer l'incident avec un ETA de 10 min.
-5. **Démonstration du Moteur IA** : Dans l'onglet **`📈 Statistiques & IA`**, montrer la détection automatique de la zone **Dakar (Score 36 pts - CRITIQUE)** avec les consignes de déploiement préconisées.
-6. **Exportation des Rapports** : Cliquer sur **`📥 Exporter Rapport CSV`** pour démontrer l'extraction de données officielles.
-
-### 3️⃣ **Démonstration de l'Administration & API (3 min)**
-1. Accéder à l'Administration Django via le bouton **`🔑 Admin Django ↗`** (`http://127.0.0.1:8000/admin/`).
-2. Montrer la gestion des utilisateurs, la table des autorités et la structure REST API JSON.
-
----
-
-## ⚙️ Installation & Démarrage Rapide
-
-### Prérequis
-- Python 3.10+ & Virtualenv
-- Flutter SDK (optionnel pour le mobile)
-
-### Démarrer le Backend Django
 ```bash
-cd backend
-venv\Scripts\activate
-python manage.py migrate
-python fixtures_demo.py
-python manage.py runserver 8000
+cd ~/Documents/PFF/senalert
+./run.sh backend                 # installe, migre, compile le web si besoin, lance http://127.0.0.1:8000/app/
 ```
+Dans un autre terminal (une seule fois) :
+```bash
+cd backend && source env/bin/activate
+python manage.py creer_comptes_test      # comptes de test des 3 rôles → backups/comptes_test.txt
+python manage.py donnees_demo            # optionnel : incidents de démonstration « [DÉMO] »
+```
+Application mobile dans Chrome : `./run.sh mobile` · tests : `./run.sh tests`.
 
-### Ouvrir le Dashboard Web
-- Directement dans le navigateur : `dashboard/index.html`
-- Via le serveur Django : `http://127.0.0.1:8000/dashboard/`
+Détails : [docs/EXPLOITATION.md](docs/EXPLOITATION.md).
 
----
+## Fonctionnalités
 
-## 👤 Auteur & Crédits
-- **Projet SenAlert** — Sénégal Urgences & Commandement
-- **Dépôt GitHub** : [https://github.com/massouda-dieng/senalert](https://github.com/massouda-dieng/senalert)
+* **Citoyen** : SOS géolocalisé (5 s pour annuler, précision GPS, confirmation réelle), signalement en 4 étapes avec photos et brouillon, suivi des dossiers et historique, carte des incidents, services de proximité (OpenStreetMap), fiches de premiers secours hors ligne, assistant IA avec mode secours, notifications, profil et confidentialité, connexion Google.
+* **Agent de secours** : tableau de bord, interventions de sa zone et de son service, prise en charge / acceptation / refus / démarrage / clôture avec compte rendu, itinéraire, notes, carte opérationnelle.
+* **Superadministrateur** : centre de supervision (indicateurs définis, évolution, catégories, régions, carte, qualité des données), gestion des incidents et SOS (affectation, réaffectation, rejet, doublons), exports CSV/PDF, score de risque par région (méthode du mémoire), utilisateurs et agents, services et catégories, paramètres, journal d'audit.
+
+## Documentation
+
+| Document | Contenu |
+|---|---|
+| [docs/AUDIT_INITIAL.md](docs/AUDIT_INITIAL.md) | État du projet avant la refonte |
+| [docs/TRACABILITE.md](docs/TRACABILITE.md) | Exigences du mémoire ↔ écrans, modèles, endpoints, permissions, tests |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Architecture, modèle de données, cycle de vie, score de risque, design |
+| [docs/API.md](docs/API.md) | Endpoints (+ Swagger sur `/api/docs/`) |
+| [docs/SECURITE.md](docs/SECURITE.md) | Rapport de sécurité et confidentialité — **actions à faire** |
+| [docs/CONFIGURATION_EXTERNE.md](docs/CONFIGURATION_EXTERNE.md) | Google, Firebase, Groq, PostgreSQL, SMTP |
+| [docs/GUIDE_UTILISATEUR.md](docs/GUIDE_UTILISATEUR.md) | Guide par rôle |
+| [docs/EXPLOITATION.md](docs/EXPLOITATION.md) | Démarrage, tests et résultats, sauvegarde/restauration |
+| [docs/BILAN.md](docs/BILAN.md) | Conservé / ajouté / corrigé / fusionné / supprimé, limites, suites |
+| [docs/DEMO_SOUTENANCE.md](docs/DEMO_SOUTENANCE.md) | Script de démonstration |

@@ -1,7 +1,7 @@
-from django.urls import path
-from .views import IncidentListCreateView, IncidentDetailView
+from rest_framework.routers import DefaultRouter
 
-urlpatterns = [
-    path('', IncidentListCreateView.as_view(), name='incident-list'),
-    path('<int:pk>/', IncidentDetailView.as_view(), name='incident-detail'),
-]
+from .views import IncidentViewSet
+
+router = DefaultRouter()
+router.register('', IncidentViewSet, basename='incident')
+urlpatterns = router.urls

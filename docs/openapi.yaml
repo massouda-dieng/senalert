@@ -1,0 +1,4362 @@
+openapi: 3.0.3
+info:
+  title: API SenAlert
+  version: 3.0.0
+  description: API REST de la plateforme SenAlert (signalement et suivi des urgences
+    au Sénégal).
+paths:
+  /api/alertes/sos/:
+    get:
+      operationId: alertes_sos_list
+      description: |-
+        Alertes SOS.
+
+        La création répond 201 avec la référence du dossier, ou 200 si la même
+        alerte a déjà été reçue (même clé d'idempotence ou SOS actif de moins de
+        2 minutes) : le client affiche alors le dossier existant.
+      parameters:
+      - in: query
+        name: actifs
+        schema:
+          type: boolean
+      - in: query
+        name: affecte_a_moi
+        schema:
+          type: boolean
+      - in: query
+        name: agent
+        schema:
+          type: number
+      - in: query
+        name: date_debut
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: date_fin
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: gravite
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - critique
+            - elevee
+            - faible
+            - moyenne
+        description: |-
+          * `faible` - Faible
+          * `moyenne` - Moyenne
+          * `elevee` - Élevée
+          * `critique` - Critique
+        explode: true
+        style: form
+      - name: ordering
+        required: false
+        in: query
+        description: Quel champ utiliser pour classer les résultats.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: region
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - dakar
+            - diourbel
+            - fatick
+            - kaffrine
+            - kaolack
+            - kedougou
+            - kolda
+            - louga
+            - matam
+            - saint_louis
+            - sedhiou
+            - tambacounda
+            - thies
+            - ziguinchor
+        description: |-
+          * `dakar` - Dakar
+          * `thies` - Thiès
+          * `saint_louis` - Saint-Louis
+          * `diourbel` - Diourbel
+          * `louga` - Louga
+          * `fatick` - Fatick
+          * `kaolack` - Kaolack
+          * `kaffrine` - Kaffrine
+          * `matam` - Matam
+          * `tambacounda` - Tambacounda
+          * `kedougou` - Kédougou
+          * `kolda` - Kolda
+          * `sedhiou` - Sédhiou
+          * `ziguinchor` - Ziguinchor
+        explode: true
+        style: form
+      - in: query
+        name: service
+        schema:
+          type: number
+      - in: query
+        name: statut
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - accepte
+            - affecte
+            - annule
+            - en_cours
+            - nouveau
+            - refuse
+            - resolu
+        description: |-
+          * `nouveau` - Nouveau
+          * `affecte` - Affecté
+          * `accepte` - Accepté
+          * `en_cours` - En cours
+          * `resolu` - Résolu
+          * `refuse` - Rejeté
+          * `annule` - Annulé
+        explode: true
+        style: form
+      - name: taille
+        required: false
+        in: query
+        description: Nombre de résultats à retourner par page.
+        schema:
+          type: integer
+      tags:
+      - alertes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAlerteSOSList'
+          description: ''
+    post:
+      operationId: alertes_sos_create
+      description: |-
+        Alertes SOS.
+
+        La création répond 201 avec la référence du dossier, ou 200 si la même
+        alerte a déjà été reçue (même clé d'idempotence ou SOS actif de moins de
+        2 minutes) : le client affiche alors le dossier existant.
+      tags:
+      - alertes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlerteSOSCreationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlerteSOSCreationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlerteSOSCreationRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlerteSOS'
+          description: ''
+  /api/alertes/sos/{id}/:
+    get:
+      operationId: alertes_sos_retrieve
+      description: |-
+        Alertes SOS.
+
+        La création répond 201 avec la référence du dossier, ou 200 si la même
+        alerte a déjà été reçue (même clé d'idempotence ou SOS actif de moins de
+        2 minutes) : le client affiche alors le dossier existant.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Alerte SOS.
+        required: true
+      tags:
+      - alertes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlerteSOS'
+          description: ''
+  /api/alertes/sos/{id}/accepter/:
+    post:
+      operationId: alertes_sos_accepter_create
+      description: |-
+        Alertes SOS.
+
+        La création répond 201 avec la référence du dossier, ou 200 si la même
+        alerte a déjà été reçue (même clé d'idempotence ou SOS actif de moins de
+        2 minutes) : le client affiche alors le dossier existant.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Alerte SOS.
+        required: true
+      tags:
+      - alertes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlerteSOSRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlerteSOSRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlerteSOSRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlerteSOS'
+          description: ''
+  /api/alertes/sos/{id}/affecter/:
+    post:
+      operationId: alertes_sos_affecter_create
+      description: |-
+        Alertes SOS.
+
+        La création répond 201 avec la référence du dossier, ou 200 si la même
+        alerte a déjà été reçue (même clé d'idempotence ou SOS actif de moins de
+        2 minutes) : le client affiche alors le dossier existant.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Alerte SOS.
+        required: true
+      tags:
+      - alertes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AffectationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AffectationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AffectationRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlerteSOS'
+          description: ''
+  /api/alertes/sos/{id}/annuler/:
+    post:
+      operationId: alertes_sos_annuler_create
+      description: |-
+        Alertes SOS.
+
+        La création répond 201 avec la référence du dossier, ou 200 si la même
+        alerte a déjà été reçue (même clé d'idempotence ou SOS actif de moins de
+        2 minutes) : le client affiche alors le dossier existant.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Alerte SOS.
+        required: true
+      tags:
+      - alertes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MotifRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MotifRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MotifRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlerteSOS'
+          description: ''
+  /api/alertes/sos/{id}/decliner/:
+    post:
+      operationId: alertes_sos_decliner_create
+      description: |-
+        Alertes SOS.
+
+        La création répond 201 avec la référence du dossier, ou 200 si la même
+        alerte a déjà été reçue (même clé d'idempotence ou SOS actif de moins de
+        2 minutes) : le client affiche alors le dossier existant.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Alerte SOS.
+        required: true
+      tags:
+      - alertes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MotifRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MotifRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MotifRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlerteSOS'
+          description: ''
+  /api/alertes/sos/{id}/demarrer/:
+    post:
+      operationId: alertes_sos_demarrer_create
+      description: |-
+        Alertes SOS.
+
+        La création répond 201 avec la référence du dossier, ou 200 si la même
+        alerte a déjà été reçue (même clé d'idempotence ou SOS actif de moins de
+        2 minutes) : le client affiche alors le dossier existant.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Alerte SOS.
+        required: true
+      tags:
+      - alertes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlerteSOSRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlerteSOSRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlerteSOSRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlerteSOS'
+          description: ''
+  /api/alertes/sos/{id}/evenements/:
+    get:
+      operationId: alertes_sos_evenements_retrieve
+      description: |-
+        Alertes SOS.
+
+        La création répond 201 avec la référence du dossier, ou 200 si la même
+        alerte a déjà été reçue (même clé d'idempotence ou SOS actif de moins de
+        2 minutes) : le client affiche alors le dossier existant.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Alerte SOS.
+        required: true
+      tags:
+      - alertes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlerteSOS'
+          description: ''
+  /api/alertes/sos/{id}/gravite/:
+    post:
+      operationId: alertes_sos_gravite_create
+      description: |-
+        Alertes SOS.
+
+        La création répond 201 avec la référence du dossier, ou 200 si la même
+        alerte a déjà été reçue (même clé d'idempotence ou SOS actif de moins de
+        2 minutes) : le client affiche alors le dossier existant.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Alerte SOS.
+        required: true
+      tags:
+      - alertes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraviteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GraviteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GraviteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlerteSOS'
+          description: ''
+  /api/alertes/sos/{id}/note/:
+    post:
+      operationId: alertes_sos_note_create
+      description: |-
+        Alertes SOS.
+
+        La création répond 201 avec la référence du dossier, ou 200 si la même
+        alerte a déjà été reçue (même clé d'idempotence ou SOS actif de moins de
+        2 minutes) : le client affiche alors le dossier existant.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Alerte SOS.
+        required: true
+      tags:
+      - alertes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NoteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NoteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NoteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlerteSOS'
+          description: ''
+  /api/alertes/sos/{id}/prendre-en-charge/:
+    post:
+      operationId: alertes_sos_prendre_en_charge_create
+      description: |-
+        Alertes SOS.
+
+        La création répond 201 avec la référence du dossier, ou 200 si la même
+        alerte a déjà été reçue (même clé d'idempotence ou SOS actif de moins de
+        2 minutes) : le client affiche alors le dossier existant.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Alerte SOS.
+        required: true
+      tags:
+      - alertes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlerteSOSRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlerteSOSRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlerteSOSRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlerteSOS'
+          description: ''
+  /api/alertes/sos/{id}/rejeter/:
+    post:
+      operationId: alertes_sos_rejeter_create
+      description: |-
+        Alertes SOS.
+
+        La création répond 201 avec la référence du dossier, ou 200 si la même
+        alerte a déjà été reçue (même clé d'idempotence ou SOS actif de moins de
+        2 minutes) : le client affiche alors le dossier existant.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Alerte SOS.
+        required: true
+      tags:
+      - alertes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MotifRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MotifRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MotifRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlerteSOS'
+          description: ''
+  /api/alertes/sos/{id}/resoudre/:
+    post:
+      operationId: alertes_sos_resoudre_create
+      description: |-
+        Alertes SOS.
+
+        La création répond 201 avec la référence du dossier, ou 200 si la même
+        alerte a déjà été reçue (même clé d'idempotence ou SOS actif de moins de
+        2 minutes) : le client affiche alors le dossier existant.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Alerte SOS.
+        required: true
+      tags:
+      - alertes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClotureRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClotureRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClotureRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlerteSOS'
+          description: ''
+  /api/analyse/assistant/:
+    post:
+      operationId: analyse_assistant_create
+      description: Assistant IA (Groq côté serveur) avec repli local. N'est jamais
+        requis pour un SOS.
+      tags:
+      - analyse
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssistantRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssistantRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssistantRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assistant'
+          description: ''
+  /api/analyse/zones-risque/:
+    get:
+      operationId: analyse_zones_risque_retrieve
+      description: |-
+        Score de risque par région (méthode de référence du mémoire).
+
+        Paramètres : date_debut, date_fin (période des incidents retenus ; la date de
+        fin sert de référence pour le facteur temporel), type_incident (multiple),
+        niveau, region, comparer=1 (ajoute la période précédente de même durée).
+      parameters:
+      - in: query
+        name: comparer
+        schema:
+          type: boolean
+      - in: query
+        name: date_debut
+        schema:
+          type: string
+      - in: query
+        name: date_fin
+        schema:
+          type: string
+      tags:
+      - analyse
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/analyse/zones-risque/historique/:
+    get:
+      operationId: analyse_zones_risque_historique_retrieve
+      description: 'GET : historique des scores ; POST (superadmin) : enregistre un
+        instantané reproductible.'
+      tags:
+      - analyse
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    post:
+      operationId: analyse_zones_risque_historique_create
+      description: 'GET : historique des scores ; POST (superadmin) : enregistre un
+        instantané reproductible.'
+      tags:
+      - analyse
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/audit/:
+    get:
+      operationId: audit_list
+      parameters:
+      - in: query
+        name: acteur
+        schema:
+          type: integer
+      - in: query
+        name: action
+        schema:
+          type: string
+      - in: query
+        name: date_debut
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: date_fin
+        schema:
+          type: string
+          format: date
+      - name: ordering
+        required: false
+        in: query
+        description: Quel champ utiliser pour classer les résultats.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      - name: taille
+        required: false
+        in: query
+        description: Nombre de résultats à retourner par page.
+        schema:
+          type: integer
+      tags:
+      - audit
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedJournalAuditList'
+          description: ''
+  /api/auth/appareils/:
+    post:
+      operationId: auth_appareils_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceTokenRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DeviceTokenRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DeviceTokenRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceToken'
+          description: ''
+    delete:
+      operationId: auth_appareils_destroy
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/auth/connexion/:
+    post:
+      operationId: auth_connexion_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnexionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConnexionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConnexionRequest'
+        required: true
+      responses:
+        '200':
+          description: No response body
+  /api/auth/deconnexion/:
+    post:
+      operationId: auth_deconnexion_create
+      description: Révoque le jeton de rafraîchissement fourni (ou toutes les sessions
+        avec tout=true).
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeconnexionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DeconnexionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DeconnexionRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deconnexion'
+          description: ''
+  /api/auth/google/:
+    post:
+      operationId: auth_google_create
+      description: Connexion / inscription avec un ID token Google vérifié côté serveur.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoogleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GoogleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GoogleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Google'
+          description: ''
+  /api/auth/google/lier/:
+    post:
+      operationId: auth_google_lier_create
+      description: Lie (POST) ou délie (DELETE) un compte Google au compte connecté.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoogleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GoogleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GoogleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Google'
+          description: ''
+    delete:
+      operationId: auth_google_lier_destroy
+      description: Lie (POST) ou délie (DELETE) un compte Google au compte connecté.
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/auth/inscription/:
+    post:
+      operationId: auth_inscription_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InscriptionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InscriptionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InscriptionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Inscription'
+          description: ''
+  /api/auth/jeton/rafraichir/:
+    post:
+      operationId: auth_jeton_rafraichir_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/auth/mot-de-passe/:
+    post:
+      operationId: auth_mot_de_passe_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangementMotDePasseRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChangementMotDePasseRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChangementMotDePasseRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChangementMotDePasse'
+          description: ''
+  /api/auth/mot-de-passe/oubli/:
+    post:
+      operationId: auth_mot_de_passe_oubli_create
+      description: Envoie un lien de réinitialisation. Répond toujours pareil (pas
+        de divulgation d'existence de compte).
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DemandeReinitialisationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DemandeReinitialisationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DemandeReinitialisationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DemandeReinitialisation'
+          description: ''
+  /api/auth/mot-de-passe/reinitialiser/:
+    post:
+      operationId: auth_mot_de_passe_reinitialiser_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmationReinitialisationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConfirmationReinitialisationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConfirmationReinitialisationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfirmationReinitialisation'
+          description: ''
+  /api/auth/profil/:
+    get:
+      operationId: auth_profil_retrieve
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Utilisateur'
+          description: ''
+    put:
+      operationId: auth_profil_update
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UtilisateurRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UtilisateurRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UtilisateurRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Utilisateur'
+          description: ''
+    patch:
+      operationId: auth_profil_partial_update
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUtilisateurRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUtilisateurRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUtilisateurRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Utilisateur'
+          description: ''
+    delete:
+      operationId: auth_profil_destroy
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/categories/:
+    get:
+      operationId: categories_list
+      description: 'Lecture pour tout compte connecté, écriture superadmin (journalisée).
+        Pas de suppression : on désactive.'
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Quel champ utiliser pour classer les résultats.
+        schema:
+          type: string
+      tags:
+      - categories
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Categorie'
+          description: ''
+    post:
+      operationId: categories_create
+      description: 'Lecture pour tout compte connecté, écriture superadmin (journalisée).
+        Pas de suppression : on désactive.'
+      tags:
+      - categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategorieRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CategorieRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CategorieRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Categorie'
+          description: ''
+  /api/categories/{id}/:
+    get:
+      operationId: categories_retrieve
+      description: 'Lecture pour tout compte connecté, écriture superadmin (journalisée).
+        Pas de suppression : on désactive.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Catégorie.
+        required: true
+      tags:
+      - categories
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Categorie'
+          description: ''
+    put:
+      operationId: categories_update
+      description: 'Lecture pour tout compte connecté, écriture superadmin (journalisée).
+        Pas de suppression : on désactive.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Catégorie.
+        required: true
+      tags:
+      - categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategorieRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CategorieRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CategorieRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Categorie'
+          description: ''
+    patch:
+      operationId: categories_partial_update
+      description: 'Lecture pour tout compte connecté, écriture superadmin (journalisée).
+        Pas de suppression : on désactive.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Catégorie.
+        required: true
+      tags:
+      - categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCategorieRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCategorieRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCategorieRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Categorie'
+          description: ''
+  /api/configuration/:
+    get:
+      operationId: configuration_retrieve
+      description: Configuration non sensible nécessaire aux clients avant connexion.
+      tags:
+      - configuration
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/fiches-secours/:
+    get:
+      operationId: fiches_secours_list
+      description: Fiches de premiers secours (lecture publique, aussi embarquées
+        dans l'app mobile pour le hors ligne).
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Quel champ utiliser pour classer les résultats.
+        schema:
+          type: string
+      tags:
+      - fiches-secours
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FicheSecours'
+          description: ''
+  /api/fiches-secours/{slug}/:
+    get:
+      operationId: fiches_secours_retrieve
+      description: Fiches de premiers secours (lecture publique, aussi embarquées
+        dans l'app mobile pour le hors ligne).
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - fiches-secours
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FicheSecours'
+          description: ''
+  /api/gestion/utilisateurs/:
+    get:
+      operationId: gestion_utilisateurs_list
+      description: Gestion des comptes par le superadministrateur (toutes les opérations
+        sont journalisées).
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Quel champ utiliser pour classer les résultats.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: role
+        schema:
+          type: string
+      - in: query
+        name: service
+        schema:
+          type: number
+      - name: taille
+        required: false
+        in: query
+        description: Nombre de résultats à retourner par page.
+        schema:
+          type: integer
+      - in: query
+        name: zone
+        schema:
+          type: string
+      tags:
+      - gestion
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUtilisateurAdminList'
+          description: ''
+  /api/gestion/utilisateurs/{id}/:
+    get:
+      operationId: gestion_utilisateurs_retrieve
+      description: Gestion des comptes par le superadministrateur (toutes les opérations
+        sont journalisées).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) user.
+        required: true
+      tags:
+      - gestion
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UtilisateurAdmin'
+          description: ''
+    patch:
+      operationId: gestion_utilisateurs_partial_update
+      description: Gestion des comptes par le superadministrateur (toutes les opérations
+        sont journalisées).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) user.
+        required: true
+      tags:
+      - gestion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedModificationUtilisateurRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedModificationUtilisateurRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedModificationUtilisateurRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UtilisateurAdmin'
+          description: ''
+  /api/gestion/utilisateurs/agents/:
+    post:
+      operationId: gestion_utilisateurs_agents_create
+      description: Gestion des comptes par le superadministrateur (toutes les opérations
+        sont journalisées).
+      tags:
+      - gestion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreationAgentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreationAgentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreationAgentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UtilisateurAdmin'
+          description: ''
+  /api/gestion/utilisateurs/statistiques/:
+    get:
+      operationId: gestion_utilisateurs_statistiques_retrieve
+      description: Gestion des comptes par le superadministrateur (toutes les opérations
+        sont journalisées).
+      tags:
+      - gestion
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UtilisateurAdmin'
+          description: ''
+  /api/incidents/:
+    get:
+      operationId: incidents_list
+      description: |-
+        Incidents signalés.
+
+        * Citoyen : crée et consulte uniquement ses propres signalements.
+        * Agent : voit les dossiers qui lui sont affectés et les nouveaux dossiers de son service dans ses zones.
+        * Superadministrateur : voit et gère tout.
+      parameters:
+      - in: query
+        name: actifs
+        schema:
+          type: boolean
+      - in: query
+        name: affecte_a_moi
+        schema:
+          type: boolean
+      - in: query
+        name: agent
+        schema:
+          type: number
+      - in: query
+        name: date_debut
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: date_fin
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: doublons
+        schema:
+          type: boolean
+      - in: query
+        name: gravite
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - critique
+            - elevee
+            - faible
+            - moyenne
+        description: |-
+          * `faible` - Faible
+          * `moyenne` - Moyenne
+          * `elevee` - Élevée
+          * `critique` - Critique
+        explode: true
+        style: form
+      - name: ordering
+        required: false
+        in: query
+        description: Quel champ utiliser pour classer les résultats.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: region
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - dakar
+            - diourbel
+            - fatick
+            - kaffrine
+            - kaolack
+            - kedougou
+            - kolda
+            - louga
+            - matam
+            - saint_louis
+            - sedhiou
+            - tambacounda
+            - thies
+            - ziguinchor
+        description: |-
+          * `dakar` - Dakar
+          * `thies` - Thiès
+          * `saint_louis` - Saint-Louis
+          * `diourbel` - Diourbel
+          * `louga` - Louga
+          * `fatick` - Fatick
+          * `kaolack` - Kaolack
+          * `kaffrine` - Kaffrine
+          * `matam` - Matam
+          * `tambacounda` - Tambacounda
+          * `kedougou` - Kédougou
+          * `kolda` - Kolda
+          * `sedhiou` - Sédhiou
+          * `ziguinchor` - Ziguinchor
+        explode: true
+        style: form
+      - in: query
+        name: service
+        schema:
+          type: number
+      - in: query
+        name: statut
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - accepte
+            - affecte
+            - annule
+            - en_cours
+            - nouveau
+            - refuse
+            - resolu
+        description: |-
+          * `nouveau` - Nouveau
+          * `affecte` - Affecté
+          * `accepte` - Accepté
+          * `en_cours` - En cours
+          * `resolu` - Résolu
+          * `refuse` - Rejeté
+          * `annule` - Annulé
+        explode: true
+        style: form
+      - name: taille
+        required: false
+        in: query
+        description: Nombre de résultats à retourner par page.
+        schema:
+          type: integer
+      - in: query
+        name: type_incident
+        schema:
+          type: array
+          items:
+            type: string
+        explode: true
+        style: form
+      tags:
+      - incidents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedIncidentList'
+          description: ''
+    post:
+      operationId: incidents_create
+      description: |-
+        Incidents signalés.
+
+        * Citoyen : crée et consulte uniquement ses propres signalements.
+        * Agent : voit les dossiers qui lui sont affectés et les nouveaux dossiers de son service dans ses zones.
+        * Superadministrateur : voit et gère tout.
+      tags:
+      - incidents
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IncidentCreationRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentCreationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/{id}/:
+    get:
+      operationId: incidents_retrieve
+      description: |-
+        Incidents signalés.
+
+        * Citoyen : crée et consulte uniquement ses propres signalements.
+        * Agent : voit les dossiers qui lui sont affectés et les nouveaux dossiers de son service dans ses zones.
+        * Superadministrateur : voit et gère tout.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) incident.
+        required: true
+      tags:
+      - incidents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/{id}/accepter/:
+    post:
+      operationId: incidents_accepter_create
+      description: |-
+        Incidents signalés.
+
+        * Citoyen : crée et consulte uniquement ses propres signalements.
+        * Agent : voit les dossiers qui lui sont affectés et les nouveaux dossiers de son service dans ses zones.
+        * Superadministrateur : voit et gère tout.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/IncidentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IncidentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/{id}/affecter/:
+    post:
+      operationId: incidents_affecter_create
+      description: |-
+        Incidents signalés.
+
+        * Citoyen : crée et consulte uniquement ses propres signalements.
+        * Agent : voit les dossiers qui lui sont affectés et les nouveaux dossiers de son service dans ses zones.
+        * Superadministrateur : voit et gère tout.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AffectationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AffectationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AffectationRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/{id}/annuler/:
+    post:
+      operationId: incidents_annuler_create
+      description: |-
+        Incidents signalés.
+
+        * Citoyen : crée et consulte uniquement ses propres signalements.
+        * Agent : voit les dossiers qui lui sont affectés et les nouveaux dossiers de son service dans ses zones.
+        * Superadministrateur : voit et gère tout.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MotifRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MotifRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MotifRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/{id}/completer/:
+    post:
+      operationId: incidents_completer_create
+      description: Le citoyen ajoute une information ou des photos à son dossier ouvert.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/IncidentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IncidentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/{id}/decliner/:
+    post:
+      operationId: incidents_decliner_create
+      description: |-
+        Incidents signalés.
+
+        * Citoyen : crée et consulte uniquement ses propres signalements.
+        * Agent : voit les dossiers qui lui sont affectés et les nouveaux dossiers de son service dans ses zones.
+        * Superadministrateur : voit et gère tout.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MotifRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MotifRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MotifRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/{id}/demarrer/:
+    post:
+      operationId: incidents_demarrer_create
+      description: |-
+        Incidents signalés.
+
+        * Citoyen : crée et consulte uniquement ses propres signalements.
+        * Agent : voit les dossiers qui lui sont affectés et les nouveaux dossiers de son service dans ses zones.
+        * Superadministrateur : voit et gère tout.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/IncidentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IncidentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/{id}/evenements/:
+    get:
+      operationId: incidents_evenements_retrieve
+      description: |-
+        Incidents signalés.
+
+        * Citoyen : crée et consulte uniquement ses propres signalements.
+        * Agent : voit les dossiers qui lui sont affectés et les nouveaux dossiers de son service dans ses zones.
+        * Superadministrateur : voit et gère tout.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) incident.
+        required: true
+      tags:
+      - incidents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/{id}/gravite/:
+    post:
+      operationId: incidents_gravite_create
+      description: |-
+        Incidents signalés.
+
+        * Citoyen : crée et consulte uniquement ses propres signalements.
+        * Agent : voit les dossiers qui lui sont affectés et les nouveaux dossiers de son service dans ses zones.
+        * Superadministrateur : voit et gère tout.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraviteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GraviteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GraviteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/{id}/note/:
+    post:
+      operationId: incidents_note_create
+      description: |-
+        Incidents signalés.
+
+        * Citoyen : crée et consulte uniquement ses propres signalements.
+        * Agent : voit les dossiers qui lui sont affectés et les nouveaux dossiers de son service dans ses zones.
+        * Superadministrateur : voit et gère tout.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NoteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NoteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NoteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/{id}/photos/{photo_id}/:
+    get:
+      operationId: incidents_photos_retrieve
+      description: Sert une photo après contrôle d'accès (les fichiers ne sont jamais
+        publics).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) incident.
+        required: true
+      - in: path
+        name: photo_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - incidents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/{id}/prendre-en-charge/:
+    post:
+      operationId: incidents_prendre_en_charge_create
+      description: |-
+        Incidents signalés.
+
+        * Citoyen : crée et consulte uniquement ses propres signalements.
+        * Agent : voit les dossiers qui lui sont affectés et les nouveaux dossiers de son service dans ses zones.
+        * Superadministrateur : voit et gère tout.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/IncidentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IncidentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/{id}/rejeter/:
+    post:
+      operationId: incidents_rejeter_create
+      description: |-
+        Incidents signalés.
+
+        * Citoyen : crée et consulte uniquement ses propres signalements.
+        * Agent : voit les dossiers qui lui sont affectés et les nouveaux dossiers de son service dans ses zones.
+        * Superadministrateur : voit et gère tout.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MotifRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MotifRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MotifRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/{id}/resoudre/:
+    post:
+      operationId: incidents_resoudre_create
+      description: |-
+        Incidents signalés.
+
+        * Citoyen : crée et consulte uniquement ses propres signalements.
+        * Agent : voit les dossiers qui lui sont affectés et les nouveaux dossiers de son service dans ses zones.
+        * Superadministrateur : voit et gère tout.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClotureRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClotureRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClotureRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/carte/:
+    get:
+      operationId: incidents_carte_retrieve
+      description: 'Incidents récents pour la carte citoyenne : données minimales,
+        position arrondie.'
+      tags:
+      - incidents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/resume/:
+    get:
+      operationId: incidents_resume_retrieve
+      description: Compteurs pour l'accueil de l'utilisateur courant (selon sa visibilité).
+      tags:
+      - incidents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/notifications/:
+    get:
+      operationId: notifications_list
+      description: Notifications de l'utilisateur connecté uniquement.
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Quel champ utiliser pour classer les résultats.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      - name: taille
+        required: false
+        in: query
+        description: Nombre de résultats à retourner par page.
+        schema:
+          type: integer
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNotificationList'
+          description: ''
+  /api/notifications/{id}/lire/:
+    post:
+      operationId: notifications_lire_create
+      description: Notifications de l'utilisateur connecté uniquement.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) notification.
+        required: true
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/notifications/compteur/:
+    get:
+      operationId: notifications_compteur_retrieve
+      description: Notifications de l'utilisateur connecté uniquement.
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/notifications/tout-lire/:
+    post:
+      operationId: notifications_tout_lire_create
+      description: Notifications de l'utilisateur connecté uniquement.
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/parametres/:
+    get:
+      operationId: parametres_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Quel champ utiliser pour classer les résultats.
+        schema:
+          type: string
+      tags:
+      - parametres
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Parametre'
+          description: ''
+  /api/parametres/{cle}/:
+    get:
+      operationId: parametres_retrieve
+      parameters:
+      - in: path
+        name: cle
+        schema:
+          type: string
+        required: true
+      tags:
+      - parametres
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Parametre'
+          description: ''
+    patch:
+      operationId: parametres_partial_update
+      parameters:
+      - in: path
+        name: cle
+        schema:
+          type: string
+        required: true
+      tags:
+      - parametres
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedParametreRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedParametreRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedParametreRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Parametre'
+          description: ''
+  /api/services/:
+    get:
+      operationId: services_list
+      description: 'Lecture pour tout compte connecté, écriture superadmin (journalisée).
+        Pas de suppression : on désactive.'
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Quel champ utiliser pour classer les résultats.
+        schema:
+          type: string
+      tags:
+      - services
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Service'
+          description: ''
+    post:
+      operationId: services_create
+      description: 'Lecture pour tout compte connecté, écriture superadmin (journalisée).
+        Pas de suppression : on désactive.'
+      tags:
+      - services
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ServiceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ServiceRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+          description: ''
+  /api/services-proximite/:
+    get:
+      operationId: services_proximite_retrieve
+      description: |-
+        Établissements réels issus d'OpenStreetMap autour d'une position.
+
+        Aucune donnée n'est inventée : nom, position et, s'ils sont renseignés
+        dans OSM, téléphone et horaires. La disponibilité opérationnelle n'est
+        jamais connue et n'est pas affichée.
+      tags:
+      - services-proximite
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/services/{id}/:
+    get:
+      operationId: services_retrieve
+      description: 'Lecture pour tout compte connecté, écriture superadmin (journalisée).
+        Pas de suppression : on désactive.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) service.
+        required: true
+      tags:
+      - services
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+          description: ''
+    put:
+      operationId: services_update
+      description: 'Lecture pour tout compte connecté, écriture superadmin (journalisée).
+        Pas de suppression : on désactive.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) service.
+        required: true
+      tags:
+      - services
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ServiceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ServiceRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+          description: ''
+    patch:
+      operationId: services_partial_update
+      description: 'Lecture pour tout compte connecté, écriture superadmin (journalisée).
+        Pas de suppression : on désactive.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) service.
+        required: true
+      tags:
+      - services
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedServiceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedServiceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedServiceRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+          description: ''
+  /api/tableau-de-bord/activite-agent/:
+    get:
+      operationId: tableau_de_bord_activite_agent_retrieve
+      tags:
+      - tableau-de-bord
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/tableau-de-bord/export/csv/:
+    get:
+      operationId: tableau_de_bord_export_csv_retrieve
+      description: Export CSV des incidents filtrés (mêmes filtres que la liste).
+        Journalisé.
+      tags:
+      - tableau-de-bord
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/tableau-de-bord/export/pdf/:
+    get:
+      operationId: tableau_de_bord_export_pdf_retrieve
+      description: Rapport PDF de synthèse (indicateurs, régions, catégories, zones
+        de risque) pour la période choisie.
+      tags:
+      - tableau-de-bord
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/tableau-de-bord/statistiques/:
+    get:
+      operationId: tableau_de_bord_statistiques_retrieve
+      description: 'Indicateurs de supervision (superadmin). Filtres : date_debut,
+        date_fin, region, type_incident, service, granularite.'
+      tags:
+      - tableau-de-bord
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+components:
+  schemas:
+    AffectationRequest:
+      type: object
+      properties:
+        agent:
+          type: integer
+          nullable: true
+        service:
+          type: integer
+          nullable: true
+        message:
+          type: string
+          maxLength: 500
+    AgentProfil:
+      type: object
+      properties:
+        service:
+          type: integer
+          nullable: true
+        service_nom:
+          type: string
+          readOnly: true
+        zones:
+          description: Codes des régions couvertes.
+        matricule:
+          type: string
+          maxLength: 40
+        fonction:
+          type: string
+          maxLength: 80
+      required:
+      - service_nom
+    AgentProfilRequest:
+      type: object
+      properties:
+        service:
+          type: integer
+          nullable: true
+        zones:
+          description: Codes des régions couvertes.
+        matricule:
+          type: string
+          maxLength: 40
+        fonction:
+          type: string
+          maxLength: 80
+    AlerteSOS:
+      type: object
+      description: Champs calculés communs aux incidents et SOS.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        uuid:
+          type: string
+          format: uuid
+          readOnly: true
+        reference:
+          type: string
+          readOnly: true
+          nullable: true
+        message:
+          type: string
+          maxLength: 280
+        latitude:
+          type: number
+          format: double
+          nullable: true
+        longitude:
+          type: number
+          format: double
+          nullable: true
+        precision_gps:
+          type: number
+          format: double
+          nullable: true
+          description: Précision horizontale en mètres.
+        source_position:
+          oneOf:
+          - $ref: '#/components/schemas/SourcePositionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        region:
+          oneOf:
+          - $ref: '#/components/schemas/RegionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        region_libelle:
+          type: string
+          readOnly: true
+        adresse:
+          type: string
+          description: Lieu-dit ou repère donné par le citoyen.
+          maxLength: 255
+        statut:
+          $ref: '#/components/schemas/StatutEnum'
+        statut_libelle:
+          type: string
+          readOnly: true
+        gravite:
+          $ref: '#/components/schemas/GraviteEnum'
+        service:
+          type: integer
+          nullable: true
+        service_nom:
+          type: string
+          readOnly: true
+        date_creation:
+          type: string
+          format: date-time
+        date_modification:
+          type: string
+          format: date-time
+          readOnly: true
+        date_prise_en_charge:
+          type: string
+          format: date-time
+          nullable: true
+        date_cloture:
+          type: string
+          format: date-time
+          nullable: true
+        motif_cloture:
+          type: string
+          maxLength: 255
+        en_retard:
+          type: boolean
+          readOnly: true
+        intervention:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          readOnly: true
+        citoyen_contact:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          description: Coordonnées du déclarant, visibles seulement par l'agent affecté
+            et le superadmin.
+          readOnly: true
+        est_proprietaire:
+          type: boolean
+          readOnly: true
+      required:
+      - citoyen_contact
+      - date_modification
+      - en_retard
+      - est_proprietaire
+      - id
+      - intervention
+      - reference
+      - region_libelle
+      - service_nom
+      - statut_libelle
+      - uuid
+    AlerteSOSCreationRequest:
+      type: object
+      properties:
+        latitude:
+          type: number
+          format: double
+          nullable: true
+        longitude:
+          type: number
+          format: double
+          nullable: true
+        precision_gps:
+          type: number
+          format: double
+          minimum: 0
+          nullable: true
+        region:
+          type: string
+        message:
+          type: string
+          maxLength: 280
+        adresse:
+          type: string
+          maxLength: 255
+        client_request_id:
+          type: string
+          format: uuid
+          nullable: true
+    AlerteSOSRequest:
+      type: object
+      description: Champs calculés communs aux incidents et SOS.
+      properties:
+        message:
+          type: string
+          maxLength: 280
+        latitude:
+          type: number
+          format: double
+          nullable: true
+        longitude:
+          type: number
+          format: double
+          nullable: true
+        precision_gps:
+          type: number
+          format: double
+          nullable: true
+          description: Précision horizontale en mètres.
+        source_position:
+          oneOf:
+          - $ref: '#/components/schemas/SourcePositionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        region:
+          oneOf:
+          - $ref: '#/components/schemas/RegionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        adresse:
+          type: string
+          description: Lieu-dit ou repère donné par le citoyen.
+          maxLength: 255
+        statut:
+          $ref: '#/components/schemas/StatutEnum'
+        gravite:
+          $ref: '#/components/schemas/GraviteEnum'
+        service:
+          type: integer
+          nullable: true
+        date_creation:
+          type: string
+          format: date-time
+        date_prise_en_charge:
+          type: string
+          format: date-time
+          nullable: true
+        date_cloture:
+          type: string
+          format: date-time
+          nullable: true
+        motif_cloture:
+          type: string
+          maxLength: 255
+    Assistant:
+      type: object
+      properties:
+        message:
+          type: string
+          maxLength: 1000
+        historique:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          maxItems: 20
+      required:
+      - message
+    AssistantRequest:
+      type: object
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        historique:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          maxItems: 20
+      required:
+      - message
+    BlankEnum:
+      enum:
+      - ''
+    Categorie:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          maxLength: 30
+          pattern: ^[-a-zA-Z0-9_]+$
+        libelle:
+          type: string
+          maxLength: 80
+        description:
+          type: string
+          maxLength: 255
+        service_defaut:
+          type: integer
+          nullable: true
+          description: Service qui reçoit par défaut les incidents de cette catégorie.
+        service_defaut_nom:
+          type: string
+          readOnly: true
+        gravite_defaut:
+          $ref: '#/components/schemas/GraviteEnum'
+        icone:
+          type: string
+          description: Nom d'icône (Material / Lucide).
+          maxLength: 40
+        couleur:
+          type: string
+          maxLength: 9
+        ordre:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        actif:
+          type: boolean
+      required:
+      - code
+      - id
+      - libelle
+      - service_defaut_nom
+    CategorieRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 30
+          pattern: ^[-a-zA-Z0-9_]+$
+        libelle:
+          type: string
+          minLength: 1
+          maxLength: 80
+        description:
+          type: string
+          maxLength: 255
+        service_defaut:
+          type: integer
+          nullable: true
+          description: Service qui reçoit par défaut les incidents de cette catégorie.
+        gravite_defaut:
+          $ref: '#/components/schemas/GraviteEnum'
+        icone:
+          type: string
+          description: Nom d'icône (Material / Lucide).
+          maxLength: 40
+        couleur:
+          type: string
+          minLength: 1
+          maxLength: 9
+        ordre:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        actif:
+          type: boolean
+      required:
+      - code
+      - libelle
+    ChangementMotDePasse:
+      type: object
+      properties:
+        ancien:
+          type: string
+        nouveau:
+          type: string
+      required:
+      - nouveau
+    ChangementMotDePasseRequest:
+      type: object
+      properties:
+        ancien:
+          type: string
+        nouveau:
+          type: string
+          minLength: 1
+      required:
+      - nouveau
+    ClotureRequest:
+      type: object
+      properties:
+        compte_rendu:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        difficultes:
+          type: string
+          maxLength: 2000
+      required:
+      - compte_rendu
+    ConfirmationReinitialisation:
+      type: object
+      properties:
+        uid:
+          type: string
+        token:
+          type: string
+        nouveau:
+          type: string
+      required:
+      - nouveau
+      - token
+      - uid
+    ConfirmationReinitialisationRequest:
+      type: object
+      properties:
+        uid:
+          type: string
+          minLength: 1
+        token:
+          type: string
+          minLength: 1
+        nouveau:
+          type: string
+          minLength: 1
+      required:
+      - nouveau
+      - token
+      - uid
+    ConnexionRequest:
+      type: object
+      description: Connexion par identifiant OU adresse e-mail. Renvoie aussi le profil
+        (dont le rôle serveur).
+      properties:
+        username:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+      - username
+    CreationAgentRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        telephone:
+          type: string
+          maxLength: 20
+        mot_de_passe_initial:
+          type: string
+          writeOnly: true
+          minLength: 1
+        service:
+          type: integer
+        zones:
+          type: array
+          items:
+            $ref: '#/components/schemas/ZonesEnum'
+        matricule:
+          type: string
+          maxLength: 40
+        fonction:
+          type: string
+          maxLength: 80
+      required:
+      - email
+      - first_name
+      - last_name
+      - mot_de_passe_initial
+      - service
+      - zones
+    Deconnexion:
+      type: object
+      properties:
+        refresh:
+          type: string
+        tout:
+          type: boolean
+          default: false
+    DeconnexionRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+        tout:
+          type: boolean
+          default: false
+    DemandeReinitialisation:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+      - email
+    DemandeReinitialisationRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+      required:
+      - email
+    DeviceToken:
+      type: object
+      properties:
+        token:
+          type: string
+          maxLength: 255
+        plateforme:
+          allOf:
+          - $ref: '#/components/schemas/PlateformeEnum'
+          default: inconnu
+      required:
+      - token
+    DeviceTokenRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 1
+          maxLength: 255
+        plateforme:
+          allOf:
+          - $ref: '#/components/schemas/PlateformeEnum'
+          default: inconnu
+      required:
+      - token
+    FicheSecours:
+      type: object
+      properties:
+        slug:
+          type: string
+          maxLength: 60
+          pattern: ^[-a-zA-Z0-9_]+$
+        titre:
+          type: string
+          maxLength: 120
+        categorie:
+          type: string
+          maxLength: 60
+        resume:
+          type: string
+          maxLength: 255
+        etapes:
+          description: Liste ordonnée d’instructions courtes.
+        a_eviter: {}
+        appeler_si:
+          type: string
+          maxLength: 255
+        sources: {}
+        valide_par:
+          type: string
+          description: Nom et qualité du professionnel de santé ayant validé la fiche
+            (vide = non validée).
+          maxLength: 120
+        validee:
+          type: boolean
+          readOnly: true
+        date_mise_a_jour:
+          type: string
+          format: date
+        ordre:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+      required:
+      - categorie
+      - date_mise_a_jour
+      - etapes
+      - resume
+      - slug
+      - titre
+      - validee
+    Google:
+      type: object
+      properties:
+        id_token:
+          type: string
+          maxLength: 4096
+      required:
+      - id_token
+    GoogleRequest:
+      type: object
+      properties:
+        id_token:
+          type: string
+          minLength: 1
+          maxLength: 4096
+      required:
+      - id_token
+    GraviteEnum:
+      enum:
+      - faible
+      - moyenne
+      - elevee
+      - critique
+      type: string
+      description: |-
+        * `faible` - Faible
+        * `moyenne` - Moyenne
+        * `elevee` - Élevée
+        * `critique` - Critique
+    GraviteRequest:
+      type: object
+      properties:
+        gravite:
+          $ref: '#/components/schemas/GraviteEnum'
+      required:
+      - gravite
+    Incident:
+      type: object
+      description: Champs calculés communs aux incidents et SOS.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        uuid:
+          type: string
+          format: uuid
+          readOnly: true
+        reference:
+          type: string
+          readOnly: true
+          nullable: true
+        type_incident:
+          type: string
+          maxLength: 30
+        categorie_libelle:
+          type: string
+          readOnly: true
+        description:
+          type: string
+        infos_complementaires:
+          type: string
+        latitude:
+          type: number
+          format: double
+          nullable: true
+        longitude:
+          type: number
+          format: double
+          nullable: true
+        precision_gps:
+          type: number
+          format: double
+          nullable: true
+          description: Précision horizontale en mètres.
+        region:
+          oneOf:
+          - $ref: '#/components/schemas/RegionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        region_libelle:
+          type: string
+          readOnly: true
+        adresse:
+          type: string
+          description: Lieu-dit ou repère donné par le citoyen.
+          maxLength: 255
+        date_incident:
+          type: string
+          format: date-time
+          nullable: true
+          description: Date/heure de l'incident si différente du signalement.
+        statut:
+          $ref: '#/components/schemas/StatutEnum'
+        statut_libelle:
+          type: string
+          readOnly: true
+        gravite:
+          $ref: '#/components/schemas/GraviteEnum'
+        service:
+          type: integer
+          nullable: true
+        service_nom:
+          type: string
+          readOnly: true
+        date_creation:
+          type: string
+          format: date-time
+        date_modification:
+          type: string
+          format: date-time
+          readOnly: true
+        date_prise_en_charge:
+          type: string
+          format: date-time
+          nullable: true
+        date_cloture:
+          type: string
+          format: date-time
+          nullable: true
+        motif_cloture:
+          type: string
+          maxLength: 255
+        en_retard:
+          type: boolean
+          readOnly: true
+        intervention:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          readOnly: true
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/PieceJointe'
+          readOnly: true
+        citoyen_contact:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          description: Coordonnées du déclarant, visibles seulement par l'agent affecté
+            et le superadmin.
+          readOnly: true
+        est_proprietaire:
+          type: boolean
+          readOnly: true
+        doublon_potentiel_de:
+          type: integer
+          nullable: true
+        doublon_potentiel_reference:
+          type: string
+          readOnly: true
+      required:
+      - categorie_libelle
+      - citoyen_contact
+      - date_modification
+      - doublon_potentiel_reference
+      - en_retard
+      - est_proprietaire
+      - id
+      - intervention
+      - photos
+      - reference
+      - region_libelle
+      - service_nom
+      - statut_libelle
+      - type_incident
+      - uuid
+    IncidentCreationRequest:
+      type: object
+      properties:
+        type_incident:
+          type: string
+          minLength: 1
+          maxLength: 30
+        description:
+          type: string
+          maxLength: 2000
+        latitude:
+          type: number
+          format: double
+          nullable: true
+        longitude:
+          type: number
+          format: double
+          nullable: true
+        precision_gps:
+          type: number
+          format: double
+          minimum: 0
+          nullable: true
+        region:
+          oneOf:
+          - $ref: '#/components/schemas/RegionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        adresse:
+          type: string
+          maxLength: 255
+        date_incident:
+          type: string
+          format: date-time
+          nullable: true
+          description: Date/heure de l'incident si différente du signalement.
+        infos_complementaires:
+          type: string
+          maxLength: 1000
+        client_request_id:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - type_incident
+    IncidentRequest:
+      type: object
+      description: Champs calculés communs aux incidents et SOS.
+      properties:
+        type_incident:
+          type: string
+          minLength: 1
+          maxLength: 30
+        description:
+          type: string
+        infos_complementaires:
+          type: string
+        latitude:
+          type: number
+          format: double
+          nullable: true
+        longitude:
+          type: number
+          format: double
+          nullable: true
+        precision_gps:
+          type: number
+          format: double
+          nullable: true
+          description: Précision horizontale en mètres.
+        region:
+          oneOf:
+          - $ref: '#/components/schemas/RegionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        adresse:
+          type: string
+          description: Lieu-dit ou repère donné par le citoyen.
+          maxLength: 255
+        date_incident:
+          type: string
+          format: date-time
+          nullable: true
+          description: Date/heure de l'incident si différente du signalement.
+        statut:
+          $ref: '#/components/schemas/StatutEnum'
+        gravite:
+          $ref: '#/components/schemas/GraviteEnum'
+        service:
+          type: integer
+          nullable: true
+        date_creation:
+          type: string
+          format: date-time
+        date_prise_en_charge:
+          type: string
+          format: date-time
+          nullable: true
+        date_cloture:
+          type: string
+          format: date-time
+          nullable: true
+        motif_cloture:
+          type: string
+          maxLength: 255
+        doublon_potentiel_de:
+          type: integer
+          nullable: true
+      required:
+      - type_incident
+    Inscription:
+      type: object
+      description: 'Inscription publique : le rôle est TOUJOURS « citoyen », quel
+        que soit le contenu envoyé.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+          title: Prénom
+          maxLength: 150
+        last_name:
+          type: string
+          title: Nom
+          maxLength: 150
+        telephone:
+          type: string
+          maxLength: 20
+        region:
+          oneOf:
+          - $ref: '#/components/schemas/RegionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+      required:
+      - email
+      - id
+    InscriptionRequest:
+      type: object
+      description: 'Inscription publique : le rôle est TOUJOURS « citoyen », quel
+        que soit le contenu envoyé.'
+      properties:
+        username:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        first_name:
+          type: string
+          title: Prénom
+          maxLength: 150
+        last_name:
+          type: string
+          title: Nom
+          maxLength: 150
+        telephone:
+          type: string
+          maxLength: 20
+        region:
+          oneOf:
+          - $ref: '#/components/schemas/RegionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+      required:
+      - email
+      - password
+    JournalAudit:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        date:
+          type: string
+          format: date-time
+          readOnly: true
+        acteur:
+          type: integer
+          nullable: true
+        acteur_nom:
+          type: string
+          readOnly: true
+        action:
+          type: string
+          maxLength: 60
+        cible_type:
+          type: string
+          maxLength: 40
+        cible_id:
+          type: string
+          maxLength: 60
+        details: {}
+        adresse_ip:
+          type: string
+          nullable: true
+      required:
+      - acteur_nom
+      - action
+      - date
+      - id
+    ModificationUtilisateurRoleEnum:
+      enum:
+      - citoyen
+      - agent
+      type: string
+      description: |-
+        * `citoyen` - citoyen
+        * `agent` - agent
+    MotifRequest:
+      type: object
+      properties:
+        motif:
+          type: string
+          minLength: 1
+          maxLength: 255
+      required:
+      - motif
+    NoteRequest:
+      type: object
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        visible_citoyen:
+          type: boolean
+          default: false
+      required:
+      - message
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        titre:
+          type: string
+          maxLength: 120
+        message:
+          type: string
+          maxLength: 500
+        lue:
+          type: boolean
+        date_lecture:
+          type: string
+          format: date-time
+          nullable: true
+        statut_push:
+          $ref: '#/components/schemas/StatutPushEnum'
+        date_creation:
+          type: string
+          format: date-time
+          readOnly: true
+        dossier:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          readOnly: true
+      required:
+      - date_creation
+      - dossier
+      - id
+      - message
+      - titre
+      - type
+    NotificationRequest:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        titre:
+          type: string
+          minLength: 1
+          maxLength: 120
+        message:
+          type: string
+          minLength: 1
+          maxLength: 500
+        lue:
+          type: boolean
+        date_lecture:
+          type: string
+          format: date-time
+          nullable: true
+        statut_push:
+          $ref: '#/components/schemas/StatutPushEnum'
+      required:
+      - message
+      - titre
+      - type
+    PaginatedAlerteSOSList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlerteSOS'
+    PaginatedIncidentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Incident'
+    PaginatedJournalAuditList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/JournalAudit'
+    PaginatedNotificationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+    PaginatedUtilisateurAdminList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/UtilisateurAdmin'
+    Parametre:
+      type: object
+      properties:
+        cle:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        valeur: {}
+        description:
+          type: string
+          readOnly: true
+        modifie_par_nom:
+          type: string
+          readOnly: true
+        date_modification:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - cle
+      - date_modification
+      - description
+      - modifie_par_nom
+      - valeur
+    PatchedCategorieRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 30
+          pattern: ^[-a-zA-Z0-9_]+$
+        libelle:
+          type: string
+          minLength: 1
+          maxLength: 80
+        description:
+          type: string
+          maxLength: 255
+        service_defaut:
+          type: integer
+          nullable: true
+          description: Service qui reçoit par défaut les incidents de cette catégorie.
+        gravite_defaut:
+          $ref: '#/components/schemas/GraviteEnum'
+        icone:
+          type: string
+          description: Nom d'icône (Material / Lucide).
+          maxLength: 40
+        couleur:
+          type: string
+          minLength: 1
+          maxLength: 9
+        ordre:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        actif:
+          type: boolean
+    PatchedModificationUtilisateurRequest:
+      type: object
+      description: |-
+        Seuls les rôles citoyen ↔ agent sont attribuables par l'API.
+
+        Le rôle superadministrateur se provisionne exclusivement en ligne de
+        commande sur le serveur (python manage.py creer_superadmin).
+      properties:
+        role:
+          $ref: '#/components/schemas/ModificationUtilisateurRoleEnum'
+        is_active:
+          type: boolean
+        service:
+          type: integer
+          nullable: true
+        zones:
+          type: array
+          items:
+            $ref: '#/components/schemas/ZonesEnum'
+        matricule:
+          type: string
+          maxLength: 40
+        fonction:
+          type: string
+          maxLength: 80
+    PatchedParametreRequest:
+      type: object
+      properties:
+        valeur: {}
+    PatchedServiceRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 30
+          pattern: ^[-a-zA-Z0-9_]+$
+        nom:
+          type: string
+          minLength: 1
+          maxLength: 120
+        description:
+          type: string
+        actif:
+          type: boolean
+    PatchedUtilisateurRequest:
+      type: object
+      description: Profil de l'utilisateur connecté. Le rôle est en lecture seule.
+      properties:
+        email:
+          title: Adresse électronique
+          oneOf:
+          - type: string
+            format: email
+            maxLength: 254
+          - type: string
+            maxLength: 0
+        first_name:
+          type: string
+          title: Prénom
+          maxLength: 150
+        last_name:
+          type: string
+          title: Nom
+          maxLength: 150
+        telephone:
+          type: string
+          maxLength: 20
+        region:
+          oneOf:
+          - $ref: '#/components/schemas/RegionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        preferences: {}
+    PieceJointe:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        taille:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        largeur:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        hauteur:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        date_ajout:
+          type: string
+          format: date-time
+          readOnly: true
+        url:
+          type: string
+          readOnly: true
+      required:
+      - date_ajout
+      - id
+      - taille
+      - url
+    PieceJointeRequest:
+      type: object
+      properties:
+        taille:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        largeur:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        hauteur:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+      required:
+      - taille
+    PlateformeEnum:
+      enum:
+      - android
+      - ios
+      - web
+      - inconnu
+      type: string
+      description: |-
+        * `android` - android
+        * `ios` - ios
+        * `web` - web
+        * `inconnu` - inconnu
+    RegionEnum:
+      enum:
+      - dakar
+      - thies
+      - saint_louis
+      - diourbel
+      - louga
+      - fatick
+      - kaolack
+      - kaffrine
+      - matam
+      - tambacounda
+      - kedougou
+      - kolda
+      - sedhiou
+      - ziguinchor
+      type: string
+      description: |-
+        * `dakar` - Dakar
+        * `thies` - Thiès
+        * `saint_louis` - Saint-Louis
+        * `diourbel` - Diourbel
+        * `louga` - Louga
+        * `fatick` - Fatick
+        * `kaolack` - Kaolack
+        * `kaffrine` - Kaffrine
+        * `matam` - Matam
+        * `tambacounda` - Tambacounda
+        * `kedougou` - Kédougou
+        * `kolda` - Kolda
+        * `sedhiou` - Sédhiou
+        * `ziguinchor` - Ziguinchor
+    RoleEnum:
+      enum:
+      - citoyen
+      - agent
+      - superadmin
+      type: string
+      description: |-
+        * `citoyen` - Citoyen
+        * `agent` - Agent de secours
+        * `superadmin` - Superadministrateur
+    Service:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          maxLength: 30
+          pattern: ^[-a-zA-Z0-9_]+$
+        nom:
+          type: string
+          maxLength: 120
+        description:
+          type: string
+        actif:
+          type: boolean
+      required:
+      - code
+      - id
+      - nom
+    ServiceRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 30
+          pattern: ^[-a-zA-Z0-9_]+$
+        nom:
+          type: string
+          minLength: 1
+          maxLength: 120
+        description:
+          type: string
+        actif:
+          type: boolean
+      required:
+      - code
+      - nom
+    SourcePositionEnum:
+      enum:
+      - gps
+      - reseau
+      - indisponible
+      type: string
+      description: |-
+        * `gps` - GPS
+        * `reseau` - Réseau
+        * `indisponible` - Indisponible
+    StatutEnum:
+      enum:
+      - nouveau
+      - affecte
+      - accepte
+      - en_cours
+      - resolu
+      - refuse
+      - annule
+      type: string
+      description: |-
+        * `nouveau` - Nouveau
+        * `affecte` - Affecté
+        * `accepte` - Accepté
+        * `en_cours` - En cours
+        * `resolu` - Résolu
+        * `refuse` - Rejeté
+        * `annule` - Annulé
+    StatutPushEnum:
+      enum:
+      - en_attente
+      - envoyee
+      - echec
+      - non_configure
+      - aucun_appareil
+      - desactivee
+      type: string
+      description: |-
+        * `en_attente` - En attente
+        * `envoyee` - Acceptée par FCM
+        * `echec` - Échec
+        * `non_configure` - Push non configuré
+        * `aucun_appareil` - Aucun appareil enregistré
+        * `desactivee` - Désactivée par l’utilisateur
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    TypeEnum:
+      enum:
+      - nouvelle_alerte
+      - affectation
+      - statut
+      - resolution
+      - complement
+      - systeme
+      type: string
+      description: |-
+        * `nouvelle_alerte` - Nouvelle alerte
+        * `affectation` - Affectation
+        * `statut` - Changement de statut
+        * `resolution` - Résolution
+        * `complement` - Complément
+        * `systeme` - Système
+    Utilisateur:
+      type: object
+      description: Profil de l'utilisateur connecté. Le rôle est en lecture seule.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+          title: Nom d’utilisateur
+          description: Requis. 150 caractères maximum. Uniquement des lettres, nombres
+            et les caractères « @ », « . », « + », « - » et « _ ».
+        email:
+          title: Adresse électronique
+          oneOf:
+          - type: string
+            format: email
+            maxLength: 254
+          - type: string
+            maxLength: 0
+        first_name:
+          type: string
+          title: Prénom
+          maxLength: 150
+        last_name:
+          type: string
+          title: Nom
+          maxLength: 150
+        telephone:
+          type: string
+          maxLength: 20
+        region:
+          oneOf:
+          - $ref: '#/components/schemas/RegionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          readOnly: true
+        role_libelle:
+          type: string
+          readOnly: true
+        preferences: {}
+        doit_changer_mot_de_passe:
+          type: boolean
+          readOnly: true
+        profil_agent:
+          allOf:
+          - $ref: '#/components/schemas/AgentProfil'
+          readOnly: true
+        google_lie:
+          type: boolean
+          readOnly: true
+        a_mot_de_passe:
+          type: boolean
+          readOnly: true
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Date d’inscription
+      required:
+      - a_mot_de_passe
+      - date_joined
+      - doit_changer_mot_de_passe
+      - google_lie
+      - id
+      - profil_agent
+      - role
+      - role_libelle
+      - username
+    UtilisateurAdmin:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+          title: Nom d’utilisateur
+          description: Requis. 150 caractères maximum. Uniquement des lettres, nombres
+            et les caractères « @ », « . », « + », « - » et « _ ».
+        email:
+          type: string
+          format: email
+          readOnly: true
+          title: Adresse électronique
+        first_name:
+          type: string
+          readOnly: true
+          title: Prénom
+        last_name:
+          type: string
+          readOnly: true
+          title: Nom
+        telephone:
+          type: string
+          readOnly: true
+        region:
+          allOf:
+          - $ref: '#/components/schemas/RegionEnum'
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          readOnly: true
+        role_libelle:
+          type: string
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+          title: Actif
+          description: Précise si l’utilisateur doit être considéré comme actif. Décochez
+            ceci plutôt que de supprimer le compte.
+        last_login:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Dernière connexion
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Date d’inscription
+        profil_agent:
+          allOf:
+          - $ref: '#/components/schemas/AgentProfil'
+          readOnly: true
+        nb_interventions:
+          type: integer
+          readOnly: true
+      required:
+      - date_joined
+      - email
+      - first_name
+      - id
+      - is_active
+      - last_login
+      - last_name
+      - nb_interventions
+      - profil_agent
+      - region
+      - role
+      - role_libelle
+      - telephone
+      - username
+    UtilisateurRequest:
+      type: object
+      description: Profil de l'utilisateur connecté. Le rôle est en lecture seule.
+      properties:
+        email:
+          title: Adresse électronique
+          oneOf:
+          - type: string
+            format: email
+            maxLength: 254
+          - type: string
+            maxLength: 0
+        first_name:
+          type: string
+          title: Prénom
+          maxLength: 150
+        last_name:
+          type: string
+          title: Nom
+          maxLength: 150
+        telephone:
+          type: string
+          maxLength: 20
+        region:
+          oneOf:
+          - $ref: '#/components/schemas/RegionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        preferences: {}
+    ZonesEnum:
+      enum:
+      - dakar
+      - thies
+      - saint_louis
+      - diourbel
+      - louga
+      - fatick
+      - kaolack
+      - kaffrine
+      - matam
+      - tambacounda
+      - kedougou
+      - kolda
+      - sedhiou
+      - ziguinchor
+      type: string
+      description: |-
+        * `dakar` - dakar
+        * `thies` - thies
+        * `saint_louis` - saint_louis
+        * `diourbel` - diourbel
+        * `louga` - louga
+        * `fatick` - fatick
+        * `kaolack` - kaolack
+        * `kaffrine` - kaffrine
+        * `matam` - matam
+        * `tambacounda` - tambacounda
+        * `kedougou` - kedougou
+        * `kolda` - kolda
+        * `sedhiou` - sedhiou
+        * `ziguinchor` - ziguinchor
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

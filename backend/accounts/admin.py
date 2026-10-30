@@ -1,18 +1,33 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, Autorite
+
+from .models import AgentProfil, CompteExterne, DeviceToken, User
+
+
+class AgentProfilInline(admin.StackedInline):
+    model = AgentProfil
+    can_delete = False
+    extra = 0
+
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    list_display = ['username', 'email', 'role', 'telephone', 'region', 'is_active']
+    list_display = ['username', 'email', 'role', 'region', 'is_active', 'last_login']
     list_filter = ['role', 'is_active', 'region']
+    search_fields = ['username', 'email', 'first_name', 'last_name', 'telephone']
+    inlines = [AgentProfilInline]
     fieldsets = UserAdmin.fieldsets + (
-        ('Infos SenAlert', {
-            'fields': ('role', 'telephone', 'region')
-        }),
+        ('SenAlert', {'fields': ('role', 'telephone', 'region', 'preferences', 'doit_changer_mot_de_passe')}),
     )
 
-@admin.register(Autorite)
-class AutoriteAdmin(admin.ModelAdmin):
-    list_display = ['nom_service', 'type_autorite', 'region', 'user']
-    list_filter = ['type_autorite', 'region']
+
+@admin.register(CompteExterne)
+class CompteExterneAdmin(admin.ModelAdmin):
+    list_display = ['user', 'fournisseur', 'email', 'date_liaison', 'derniere_connexion']
+    readonly_fields = ['identifiant']
+
+
+@admin.register(DeviceToken)
+class DeviceTokenAdmin(admin.ModelAdmin):
+    list_display = ['user', 'plateforme', 'actif', 'derniere_utilisation']
+    list_filter = ['plateforme', 'actif']

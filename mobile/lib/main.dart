@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
-import 'package:senalert_mobile/app.dart';
-import 'package:senalert_mobile/features/auth/providers/auth_provider.dart';
-import 'package:senalert_mobile/features/incidents/providers/incident_provider.dart';
-import 'services/auth_service.dart';
 
-void main() {
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider<AuthProvider>(create: (_) => AuthProvider()),
-        ChangeNotifierProvider<IncidentProvider>(create: (_) => IncidentProvider()),
-        Provider<AuthService>(create: (_) => AuthService()),
-      ],
-      child: const SenAlertApp(),
-    ),
-  );
+import 'app.dart';
+import 'core/push.dart';
+import 'state/configuration.dart';
+import 'state/session.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('fr_FR');
+  await Push.instance.initialiser();
+  final session = Session();
+  final configuration = Configuration();
+  runApp(MultiProvider(
+    providers: [
+      ChangeNotifierProvider.value(value: session),
+      ChangeNotifierProvider.value(value: configuration),
+    ],
+    child: SenAlertApp(session: session),
+  ));
+  configuration.charger();
+  session.restaurer();
 }

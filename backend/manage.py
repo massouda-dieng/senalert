@@ -7,6 +7,8 @@ import sys
 def main():
     """Run administrative tasks."""
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+    if len(sys.argv) > 1 and sys.argv[1] == 'test':
+        os.environ['SENALERT_TESTING'] = '1'  # désactive Firebase et les appels externes
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

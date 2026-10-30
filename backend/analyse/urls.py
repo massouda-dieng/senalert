@@ -1,7 +1,9 @@
 from django.urls import path
-from .views import ZonesRisqueView, AIAssistantView
+
+from .views import AssistantView, InstantaneView, ZonesRisqueView
 
 urlpatterns = [
     path('zones-risque/', ZonesRisqueView.as_view(), name='zones-risque'),
-    path('ai-assistant/', AIAssistantView.as_view(), name='ai-assistant'),
+    path('zones-risque/historique/', InstantaneView.as_view(), name='zones-risque-historique'),
+    path('assistant/', AssistantView.as_view(), name='assistant'),
 ]
