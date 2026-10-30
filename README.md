@@ -12,6 +12,20 @@ Plateforme de prévention, de signalement et de suivi des urgences au Sénégal 
 
 ## Démarrage rapide (macOS)
 
+**Serveur** (terminal 1) — aucune activation d'environnement nécessaire :
+```bash
+cd ~/Documents/PFF/senalert/backend
+python manage.py runserver          # → http://127.0.0.1:8000/app/
+```
+**Application mobile** (terminal 2) :
+```bash
+cd ~/Documents/PFF/senalert/mobile
+flutter run                         # s'ouvre dans Chrome
+```
+`manage.py` utilise automatiquement l'environnement Python du projet (`backend/env`), même si un autre Python (conda) est actif.
+
+Autre méthode, tout-en-un :
+
 ```bash
 cd ~/Documents/PFF/senalert
 ./run.sh backend                 # installe, migre, compile le web si besoin, lance http://127.0.0.1:8000/app/
