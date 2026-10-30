@@ -27,6 +27,9 @@ ALLOWED_HOSTS = config(
     default='127.0.0.1,localhost,10.0.2.2',
     cast=Csv(),
 )
+if DEBUG and '0.0.0.0' not in ALLOWED_HOSTS:
+    # `runserver 0.0.0.0:8000` affiche cette adresse : on l'accepte en développement uniquement.
+    ALLOWED_HOSTS.append('0.0.0.0')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
