@@ -158,4 +158,7 @@ def application_web(request, chemin=''):
             "ou utilisez le serveur de développement : <code>npm run dev</code> puis http://localhost:5173/app/</p>",
             status=503,
         )
-    return HttpResponse(index.read_bytes(), content_type='text/html; charset=utf-8')
+    reponse = HttpResponse(index.read_bytes(), content_type='text/html; charset=utf-8')
+    # Jamais en cache : après chaque `npm run build`, le navigateur charge la nouvelle version.
+    reponse['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    return reponse
