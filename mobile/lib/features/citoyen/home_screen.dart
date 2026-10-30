@@ -10,6 +10,7 @@ import '../../state/session.dart';
 import '../../ui/alertes_zone.dart';
 import '../../ui/kit.dart';
 import '../../ui/photo.dart';
+import '../../state/langue.dart';
 
 class AccueilCitoyen extends StatefulWidget {
   const AccueilCitoyen({super.key});
@@ -48,11 +49,11 @@ class _AccueilCitoyenState extends State<AccueilCitoyen> {
     final u = context.watch<Session>().utilisateur!;
     final config = context.watch<Configuration>();
     final actions = [
-      ('Signaler', 'Accident, incendie…', Icons.report_rounded, AppColors.jauneFonce, '/signaler'),
-      ('Autour de moi', 'Incidents proches', Icons.groups_rounded, const Color(0xFF1D4ED8), '/communaute'),
-      ('Premiers secours', 'Fiches hors ligne', Icons.healing_rounded, AppColors.crimson, '/secours'),
-      ('Services proches', 'Hôpitaux, pharmacies…', Icons.local_hospital_rounded, const Color(0xFF047857), '/services'),
-      ('Assistant', 'Questions, prévention', Icons.smart_toy_rounded, const Color(0xFF6D28D9), '/assistant'),
+      (tr('Signaler'), tr('Accident, incendie…'), Icons.report_rounded, AppColors.jauneFonce, '/signaler'),
+      (tr('Autour de moi'), tr('Incidents proches'), Icons.groups_rounded, const Color(0xFF1D4ED8), '/communaute'),
+      (tr('Premiers secours'), tr('Fiches hors ligne'), Icons.healing_rounded, AppColors.crimson, '/secours'),
+      (tr('Services proches'), tr('Hôpitaux, pharmacies…'), Icons.local_hospital_rounded, const Color(0xFF047857), '/services'),
+      (tr('Assistant'), tr('Questions, prévention'), Icons.smart_toy_rounded, const Color(0xFF6D28D9), '/assistant'),
     ];
     return Scaffold(
       body: RefreshIndicator(
@@ -68,13 +69,13 @@ class _AccueilCitoyenState extends State<AccueilCitoyen> {
                 Padding(
                   padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 16, 20, 28),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('Bonjour ${u.prenom}'.trim(), style: titre(24, couleur: Colors.white)),
-                    const Text('Besoin d’aide immédiate ?', style: TextStyle(color: AppColors.jaune, fontWeight: FontWeight.w600)),
+                    Text(tr('Bonjour {nom}', {'nom': u.prenom}).trim(), style: titre(24, couleur: Colors.white)),
+                    Text(tr('Besoin d’aide immédiate ?'), style: const TextStyle(color: AppColors.jaune, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 22),
                     Center(
                       child: Semantics(
                         button: true,
-                        label: 'Déclencher une alerte SOS',
+                        label: tr('Déclencher une alerte SOS'),
                         child: GestureDetector(
                           onTap: () => context.push('/sos'),
                           child: Container(
@@ -93,7 +94,7 @@ class _AccueilCitoyenState extends State<AccueilCitoyen> {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    const Center(child: Text('5 secondes pour annuler · position jointe si autorisée', style: TextStyle(color: Colors.white70, fontSize: 12.5))),
+                    Center(child: Text(tr('5 secondes pour annuler · position jointe si autorisée'), style: const TextStyle(color: Colors.white70, fontSize: 12.5))),
                     const SizedBox(height: 18),
                     NumerosUrgence(config.numeros, sombre: true),
                   ]),
@@ -121,14 +122,14 @@ class _AccueilCitoyenState extends State<AccueilCitoyen> {
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             sliver: SliverToBoxAdapter(child: Row(children: [
-              Expanded(child: Text('Mes derniers dossiers', style: titre(17))),
-              TextButton(onPressed: () => context.go('/dossiers'), child: const Text('Tout voir')),
+              Expanded(child: Text(tr('Mes derniers dossiers'), style: titre(17))),
+              TextButton(onPressed: () => context.go('/dossiers'), child: Text(tr('Tout voir'))),
             ])),
           ),
           if (_erreur != null) SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.all(16),
-              child: Bandeau.erreur(_erreur!.message, action: TextButton(onPressed: _charger, child: const Text('Réessayer')))))
+              child: Bandeau.erreur(_erreur!.message, action: TextButton(onPressed: _charger, child: Text(tr('Réessayer'))))))
           else if (_recents == null) const SliverToBoxAdapter(child: Chargement())
-          else if (_recents!.isEmpty) SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.all(16), child: Text('Aucun signalement pour l’instant.', style: TextStyle(color: AppColors.textGrey))))
+          else if (_recents!.isEmpty) SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.all(16), child: Text(tr('Aucun signalement pour l’instant.'), style: TextStyle(color: AppColors.textGrey))))
           else SliverList.separated(
             itemCount: _recents!.length,
             separatorBuilder: (_, __) => const SizedBox(height: 10),

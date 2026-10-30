@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Info, Loader2, RefreshCw, X, XCircle } from 'lucide-react';
 import { createContext, useCallback, useContext, useEffect, useId, useRef, useState } from 'react';
 import { GRAVITES, STATUTS, ilYa } from '../lib/format';
+import { useLangue } from '../lib/langue';
 
 /* ---------------------------------------------------------------- Boutons */
 
@@ -35,11 +36,12 @@ export function Bouton({ variante = 'primaire', taille = 'md', chargement, icone
 /* ---------------------------------------------------------------- Badges */
 
 export function BadgeStatut({ statut }) {
+  const { t } = useLangue();
   const s = STATUTS[statut] || { libelle: statut, classe: 'bg-slate-100 text-slate-600' };
   return (
     <span className={clsx('inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset', s.classe)}>
       <span className="h-1.5 w-1.5 rounded-full" style={{ background: s.point }} aria-hidden />
-      {s.libelle}
+      {t(s.libelle)}
     </span>
   );
 }

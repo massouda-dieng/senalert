@@ -6,6 +6,7 @@ import '../core/api.dart';
 import '../core/constants/app_colors.dart';
 import '../core/format.dart';
 import '../core/models.dart';
+import '../state/langue.dart';
 
 /// Système de design SenAlert (mêmes jetons que le web : bleu nuit, rouge réservé au SOS,
 /// orange avertissement, vert résolution).
@@ -91,7 +92,7 @@ class BadgeStatut extends StatelessWidget {
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(s.icone, size: 13, color: s.couleur),
         const SizedBox(width: 4),
-        Text(s.libelle, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: s.couleur)),
+        Text(tr(s.libelle), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: s.couleur)),
       ]),
     );
   }

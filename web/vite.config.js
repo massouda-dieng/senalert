@@ -9,6 +9,7 @@ export default defineConfig(({ command }) => ({
   plugins: [react()],
   server: {
     port: 5173,
+    fs: { allow: ['..'] }, // traductions/wolof.json, partagé avec le mobile
     proxy: { '/api': 'http://127.0.0.1:8000' },
   },
   build: {

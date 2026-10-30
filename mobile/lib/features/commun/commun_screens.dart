@@ -12,6 +12,7 @@ import '../../state/apparence.dart';
 import '../../state/configuration.dart';
 import '../../state/session.dart';
 import '../../ui/kit.dart';
+import '../../state/langue.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -174,6 +175,19 @@ class _ProfilScreenState extends State<ProfilScreen> {
           selected: {context.watch<Apparence>().mode},
           onSelectionChanged: (s) => context.read<Apparence>().choisir(s.first),
         ),
+        if (u.estCitoyen) ...[
+          const SizedBox(height: 16),
+          Text(tr('Langue de l’espace citoyen'), style: titre(16)),
+          const SizedBox(height: 8),
+          SegmentedButton<String>(
+            segments: const [
+              ButtonSegment(value: 'fr', label: Text('Français')),
+              ButtonSegment(value: 'wo', label: Text('Wolof')),
+            ],
+            selected: {context.watch<Langue>().choix},
+            onSelectionChanged: (s) => context.read<Langue>().choisir(s.first),
+          ),
+        ],
         const SizedBox(height: 16),
         Text('Notifications', style: titre(16)),
         SwitchListTile(value: u.preferences['notifications_push'] != false, onChanged: (v) => _preference('notifications_push', v),

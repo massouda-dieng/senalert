@@ -8,6 +8,12 @@ L'écran de connexion propose trois onglets : **Citoyen**, **Agent**, **Supervis
 
 ## Citoyen (web : `/app/citoyen`, mobile)
 
+**Langue** — boutons **FR / WO** en haut de l'écran (web) ou *Profil → Langue* (mobile) : l'espace citoyen (menu, SOS, statuts, catégories, suivi, évaluation) passe en wolof. Les traductions sont dans `traductions/wolof.json` (à faire relire par un locuteur natif ; après modification : `./run.sh traductions`).
+
+**Suivi des secours** — quand l'agent partage sa position, la fiche du dossier affiche « Les secours sont en route » avec la distance et la position de l'agent sur la carte (mise à jour toutes les 15 s, masquée au bout de 10 min sans nouvelle position, effacée à la clôture).
+
+**Évaluation** — après la résolution, notez l'intervention de 1 à 5 étoiles (une seule fois), avec un commentaire facultatif transmis au service.
+
 **Créer un compte** — « Créer un compte citoyen » (e-mail + mot de passe) ou « Continuer avec Google » si le service est configuré. Le téléphone est facultatif ; il n'est visible que de l'agent chargé de votre dossier.
 
 **Déclencher un SOS**
@@ -44,7 +50,7 @@ Le compte est rattaché à un **service** (Police, Pompiers, Santé, SENELEC, ON
 | **Pris en charge** | **Démarrer l'intervention** (équipe en route / sur place) |
 | **En cours** | **Clôturer** avec un compte rendu (visible du citoyen) et les difficultés éventuelles (internes) |
 
-Le détail donne la position et sa précision, l'**itinéraire** (Google Maps), les photos, le contact du déclarant (une fois le dossier pris en charge) et l'historique. Vous pouvez ajouter des **notes** (internes ou visibles du citoyen) et ajuster la **gravité**. Si un autre agent a agi entre-temps, un message « dossier modifié entre-temps » s'affiche et la fiche se recharge.
+**Partager ma position** (dossier accepté ou en cours) : le déclarant voit votre progression ; arrêt à tout moment, position effacée à la clôture. Le détail donne aussi la position et sa précision, l'**itinéraire** (Google Maps), les photos, le contact du déclarant (une fois le dossier pris en charge) et l'historique. Vous pouvez ajouter des **notes** (internes ou visibles du citoyen) et ajuster la **gravité**. Si un autre agent a agi entre-temps, un message « dossier modifié entre-temps » s'affiche et la fiche se recharge.
 
 ## Superadministrateur (web uniquement : `/app/supervision`)
 
@@ -57,6 +63,8 @@ Le détail donne la position et sa précision, l'**itinéraire** (Google Maps), 
 **Incidents / Alertes SOS** — tableau paginé, filtres combinables (référence, statut, catégorie, région, gravité, dates, doublons potentiels), panneau de détail. Actions : **Affecter / Réaffecter** (agents actifs couvrant la région, filtrables par service), **Rejeter** (signalement non fondé), **Annuler**, gravité, notes. Exports **CSV** (tableur, sans données personnelles) et **Rapport PDF**.
 
 **Carte & risques** — score par région selon la méthode du mémoire, classement, carte, comparaison avec la période précédente, « Enregistrer un instantané » (historique). Un contour pointillé signale des données insuffisantes.
+
+**Satisfaction** — sur la page Supervision : note moyenne des citoyens, taux de réponse et moyenne par service.
 
 **Demandes d'accès** — demandes de compte agent (badge = nombre en attente). Vérifiez matricule et structure auprès du service, puis **Valider** (crée un compte agent limité au service et aux zones demandés ; le mot de passe reste celui choisi par l'agent) ou **Refuser** avec un motif. Tout est tracé dans le journal d'audit.
 

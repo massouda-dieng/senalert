@@ -137,7 +137,8 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
     return _Cadre(titreEcran: 'Connexion', sousTitre: e.$3, enfants: [
       SegmentedButton<String>(
         showSelectedIcon: false,
-        segments: [for (final x in _espaces.entries) ButtonSegment(value: x.key, icon: Icon(x.value.$2, size: 18), label: Text(x.value.$1))],
+        style: const ButtonStyle(visualDensity: VisualDensity.compact, padding: WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 6))),
+        segments: [for (final x in _espaces.entries) ButtonSegment(value: x.key, label: Text(x.value.$1, maxLines: 1, softWrap: false))],
         selected: {_espace},
         onSelectionChanged: (s) => setState(() { _espace = s.first; _erreur = null; }),
       ),

@@ -12,6 +12,7 @@ import '../../core/location.dart';
 import '../../core/models.dart';
 import '../../state/configuration.dart';
 import '../../ui/kit.dart';
+import '../../state/langue.dart';
 
 enum _Etape { decompte, envoi, succes, echec }
 
@@ -100,59 +101,59 @@ class _SosScreenState extends State<SosScreen> {
       canPop: _etape != _Etape.envoi,
       child: Scaffold(
         backgroundColor: AppColors.vert900,
-        appBar: AppBar(backgroundColor: Colors.transparent, foregroundColor: Colors.white, title: Text('Alerte SOS', style: titre(19, couleur: Colors.white))),
+        appBar: AppBar(backgroundColor: Colors.transparent, foregroundColor: Colors.white, title: Text(tr('Alerte SOS'), style: titre(19, couleur: Colors.white))),
         body: SafeArea(
           child: ListView(padding: const EdgeInsets.all(24), children: [
             if (_etape == _Etape.decompte) ...[
               const SizedBox(height: 12),
-              const Text('Envoi automatique dans', textAlign: TextAlign.center, style: TextStyle(color: Colors.white70)),
+              Text(tr('Envoi automatique dans'), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
               Semantics(liveRegion: true, child: Text('$_reste', textAlign: TextAlign.center, style: titre(96, couleur: const Color(0xFFFB7185)))),
               _infoPosition(),
               const SizedBox(height: 32),
               FilledButton(style: FilledButton.styleFrom(backgroundColor: AppColors.crimson, minimumSize: const Size.fromHeight(60)),
-                  onPressed: _envoyer, child: const Text('Envoyer maintenant')),
+                  onPressed: _envoyer, child: Text(tr('Envoyer maintenant'))),
               const SizedBox(height: 12),
               OutlinedButton(style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38), minimumSize: const Size.fromHeight(56)),
-                  onPressed: () => context.pop(), child: const Text('Annuler')),
+                  onPressed: () => context.pop(), child: Text(tr('Annuler'))),
             ],
-            if (_etape == _Etape.envoi) const Padding(padding: EdgeInsets.only(top: 80), child: Column(children: [
-              CircularProgressIndicator(color: Colors.white),
-              SizedBox(height: 16),
-              Text('Transmission au serveur SenAlert…', style: TextStyle(color: Colors.white70)),
+            if (_etape == _Etape.envoi) Padding(padding: const EdgeInsets.only(top: 80), child: Column(children: [
+              const CircularProgressIndicator(color: Colors.white),
+              const SizedBox(height: 16),
+              Text(tr('Transmission au serveur SenAlert…'), style: const TextStyle(color: Colors.white70)),
             ])),
             if (_etape == _Etape.succes && _dossier != null) ...[
               const Icon(Icons.check_circle_rounded, color: Color(0xFF34D399), size: 72),
               const SizedBox(height: 12),
-              Text('Alerte enregistrée', textAlign: TextAlign.center, style: titre(24, couleur: Colors.white)),
+              Text(tr('Alerte enregistrée'), textAlign: TextAlign.center, style: titre(24, couleur: Colors.white)),
               const SizedBox(height: 6),
               SelectableText(_dossier!.reference, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 20, fontFamily: 'monospace', fontWeight: FontWeight.w700)),
               const SizedBox(height: 18),
               Carte(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [const Expanded(child: Text('Statut actuel')), BadgeStatut(_dossier!.statut)]),
+                Row(children: [Expanded(child: Text(tr('Statut actuel'))), BadgeStatut(_dossier!.statut)]),
                 const SizedBox(height: 10),
                 Text(_dejaRecue ? 'Cette alerte avait déjà été reçue : voici son suivi.'
-                    : 'Votre alerte est enregistrée et transmise aux agents SenAlert de votre zone.'),
+                    : tr('Votre alerte est enregistrée et transmise aux agents SenAlert de votre zone.')),
                 const SizedBox(height: 8),
-                Text('Tant qu’un agent ne l’a pas prise en charge, aucune intervention n’est garantie.',
+                Text(tr('Tant qu’un agent ne l’a pas prise en charge, aucune intervention n’est garantie.'),
                     style: TextStyle(color: AppColors.textGrey, fontSize: 13)),
               ])),
               if (_dossier!.lat == null) const Padding(padding: EdgeInsets.only(top: 12),
                   child: Bandeau.alerte('Votre position n’a pas pu être jointe. Indiquez votre lieu exact aux secours par téléphone.')),
               const SizedBox(height: 18),
-              const Text('Danger immédiat : appelez aussi les secours.', style: TextStyle(color: Colors.white70)),
+              Text(tr('Danger immédiat : appelez aussi les secours.'), style: const TextStyle(color: Colors.white70)),
               const SizedBox(height: 8),
               NumerosUrgence(numeros, sombre: true),
               const SizedBox(height: 18),
-              FilledButton(onPressed: () => context.go('/dossier/sos/${_dossier!.id}'), child: const Text('Suivre le dossier')),
+              FilledButton(onPressed: () => context.go('/dossier/sos/${_dossier!.id}'), child: Text(tr('Suivre le dossier'))),
             ],
             if (_etape == _Etape.echec) ...[
               const Icon(Icons.error_rounded, color: Color(0xFFFB7185), size: 72),
               const SizedBox(height: 12),
-              Text('L’alerte n’a PAS été transmise', textAlign: TextAlign.center, style: titre(22, couleur: Colors.white)),
+              Text(tr('L’alerte n’a PAS été transmise'), textAlign: TextAlign.center, style: titre(22, couleur: Colors.white)),
               const SizedBox(height: 8),
               Text(_erreur?.message ?? '', textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
               const SizedBox(height: 20),
-              const Text('Appelez immédiatement les secours :', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+              Text(tr('Appelez immédiatement les secours :'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
               const SizedBox(height: 10),
               for (final n in numeros) Padding(
                 padding: const EdgeInsets.only(bottom: 10),
@@ -160,12 +161,12 @@ class _SosScreenState extends State<SosScreen> {
                     onPressed: () => appeler(n.numero), icon: const Icon(Icons.call), label: Text('${n.service} · ${n.numero}')),
               ),
               OutlinedButton.icon(style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38)),
-                  onPressed: _envoyer, icon: const Icon(Icons.refresh), label: const Text('Réessayer l’envoi')),
+                  onPressed: _envoyer, icon: const Icon(Icons.refresh), label: Text(tr('Réessayer l’envoi'))),
               if (context.read<Configuration>().smsSecours != null) Padding(
                 padding: const EdgeInsets.only(top: 10),
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38)),
-                  onPressed: _envoyerSms, icon: const Icon(Icons.sms_outlined), label: const Text('Envoyer le SOS par SMS (sans internet)')),
+                  onPressed: _envoyerSms, icon: const Icon(Icons.sms_outlined), label: Text(tr('Envoyer le SOS par SMS (sans internet)'))),
               ),
             ],
           ]),
@@ -176,14 +177,14 @@ class _SosScreenState extends State<SosScreen> {
 
   Widget _infoPosition() {
     if (_positionEnCours) {
-      return const Text('Recherche de votre position…', textAlign: TextAlign.center, style: TextStyle(color: Colors.white70));
+      return Text(tr('Recherche de votre position…'), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70));
     }
     if (_position?.ok != true) {
-      return Text('${_position?.erreur ?? 'Position indisponible.'} L’alerte sera envoyée sans position.',
+      return Text('${tr(_position?.erreur ?? 'Position indisponible.')} ${tr('L’alerte sera envoyée sans position.')}',
           textAlign: TextAlign.center, style: const TextStyle(color: Color(0xFFFCD34D)));
     }
     final p = _position!.precision ?? 0;
-    return Text('Position obtenue · précision ± ${p.round()} m${p > 100 ? ' (approximative)' : ''}',
+    return Text('${tr('Position obtenue · précision ± {m} m', {'m': p.round()})}${p > 100 ? ' (approximative)' : ''}',
         textAlign: TextAlign.center, style: TextStyle(color: p > 100 ? const Color(0xFFFCD34D) : const Color(0xFF6EE7B7)));
   }
 }

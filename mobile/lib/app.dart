@@ -19,6 +19,7 @@ import 'features/secours/premiers_secours_screen.dart';
 import 'state/apparence.dart';
 import 'state/session.dart';
 import 'ui/kit.dart';
+import 'state/langue.dart';
 
 const _publiques = {'/bienvenue', '/connexion', '/inscription', '/demande-agent', '/mot-de-passe-oublie', '/secours'};
 const _citoyen = {'/accueil', '/signaler', '/sos', '/services', '/assistant', '/carte', '/dossiers'};
@@ -82,11 +83,12 @@ class _Coquille extends StatelessWidget {
   Widget build(BuildContext context) {
     final u = context.watch<Session>().utilisateur;
     if (u == null) return child; // fiches de premiers secours consultables sans compte
+    Langue.instance.role = u.role;
     final onglets = u.estAgent
         ? const [('/agent', Icons.space_dashboard_outlined, 'Tableau'), ('/interventions', Icons.assignment_outlined, 'Interventions'),
             ('/carte-agent', Icons.map_outlined, 'Carte'), ('/communaute', Icons.groups_outlined, 'Autour'), ('/profil', Icons.person_outline, 'Profil')]
-        : const [('/accueil', Icons.home_outlined, 'Accueil'), ('/dossiers', Icons.folder_open_outlined, 'Dossiers'),
-            ('/communaute', Icons.groups_outlined, 'Autour'), ('/carte', Icons.map_outlined, 'Carte'), ('/profil', Icons.person_outline, 'Profil')];
+        : [('/accueil', Icons.home_outlined, tr('Accueil')), ('/dossiers', Icons.folder_open_outlined, tr('Dossiers')),
+            ('/communaute', Icons.groups_outlined, tr('Autour')), ('/carte', Icons.map_outlined, tr('Carte')), ('/profil', Icons.person_outline, tr('Profil'))];
     final index = onglets.indexWhere((o) => o.$1 == lieu);
     return Scaffold(
       body: child,
@@ -126,6 +128,7 @@ class _SenAlertAppState extends State<SenAlertApp> {
   @override
   Widget build(BuildContext context) {
     context.watch<Apparence>();
+    context.watch<Langue>();
     return MaterialApp.router(
         title: 'SenAlert',
         debugShowCheckedModeBanner: false,

@@ -10,6 +10,7 @@ import { useRessource } from '../api/hooks';
 import { useAuth } from '../auth/AuthContext';
 import { useConfig } from '../lib/config';
 import { useInstallation } from '../lib/installation';
+import { useLangue } from '../lib/langue';
 import { appliquerTheme, choisirTheme, themeChoisi } from '../lib/theme';
 import AlertesTempsReel from './AlertesTempsReel';
 import { BandeDrapeau, Logo } from './Logo';
@@ -103,6 +104,8 @@ export default function Layout() {
   const [recherche, setRecherche] = useState('');
   const [sombre, setSombre] = useState(() => appliquerTheme(themeChoisi()));
   const { donnees: compteur } = useRessource('/notifications/compteur/', null, { intervalle: 30000 });
+  const { langue, setLangue, t } = useLangue();
+  const traduit = utilisateur.role === 'citoyen'; // seul l'espace citoyen est traduit en wolof
   const { donnees: demandes, recharger: rechargerDemandes } = useRessource(utilisateur.role === 'superadmin' ? '/gestion/demandes-agent/compteur/' : null, null, { intervalle: 60000 });
   const compteurs = { demandes: demandes?.en_attente || 0 };
   const liens = NAVIGATION[utilisateur.role] || [];
@@ -152,7 +155,7 @@ export default function Layout() {
               className={({ isActive }) => clsx('group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition',
                 isActive ? 'bg-marque-600 text-white shadow-[0_8px_24px_rgba(0,133,63,.35)]' : 'text-white/70 hover:bg-white/[.06] hover:text-white')}>
               <l.icone className="h-[18px] w-[18px] shrink-0" aria-hidden />
-              <span className={clsx('truncate', replie && 'lg:sr-only')}>{l.libelle}</span>
+              <span className={clsx('truncate', replie && 'lg:sr-only')}>{traduit ? t(l.libelle) : l.libelle}</span>
               {compteurs[l.compteur] > 0 && <span className={clsx('ml-auto rounded-full bg-or px-2 py-0.5 text-[11px] font-bold text-black', replie && 'lg:hidden')} aria-label={`${compteurs[l.compteur]} en attente`}>{compteurs[l.compteur]}</span>}
             </NavLink>
           )))}
@@ -180,6 +183,14 @@ export default function Layout() {
                 <NavLink to="/citoyen" className="mr-1 hidden items-center gap-1.5 rounded-full bg-sos px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-sos-fonce sm:inline-flex">
                   <Siren className="h-4 w-4" /> SOS
                 </NavLink>
+              )}
+              {traduit && (
+                <div className="mr-1 inline-flex rounded-full bg-surface-douce p-0.5 text-xs font-bold ring-1 ring-surface-bord" role="group" aria-label="Langue / Làkk">
+                  {[['fr', 'FR', 'Français'], ['wo', 'WO', 'Wolof']].map(([code, court, long]) => (
+                    <button key={code} type="button" onClick={() => setLangue(code)} aria-pressed={langue === code} title={long}
+                      className={clsx('rounded-full px-2.5 py-1 transition', langue === code ? 'bg-marque-800 text-white' : 'text-texte-doux hover:text-texte')}>{court}</button>
+                  ))}
+                </div>
               )}
               <button type="button" onClick={() => setSombre(choisirTheme(sombre ? 'clair' : 'sombre'))} className="rounded-xl p-2.5 text-texte-doux hover:bg-surface-douce"
                 aria-label={sombre ? 'Passer en mode clair' : 'Passer en mode sombre'} title={sombre ? 'Mode clair' : 'Mode sombre'}>

@@ -6,6 +6,7 @@
 #   ./run.sh mobile [cible]   application Flutter (chrome par défaut, ou un id d'appareil)
 #   ./run.sh simulateur       compile l'app mobile pour le simulateur → http://127.0.0.1:8000/app/simulateur
 #   ./run.sh tests            tous les tests (backend, web, mobile)
+#   ./run.sh traductions      recopie traductions/wolof.json dans l'application mobile
 # Aucune clé secrète n'est transmise à l'application mobile : l'IA passe par le backend.
 # =============================================================================
 set -e
@@ -28,7 +29,12 @@ case "${1:-backend}" in
   web)
     cd "$RACINE/web" && npm install --no-audit --no-fund && npm run dev
     ;;
+  traductions)
+    cp "$RACINE/traductions/wolof.json" "$RACINE/mobile/assets/traductions/wolof.json"
+    echo "→ Traductions recopiées (le web les lit directement ; relancez flutter run pour le mobile)."
+    ;;
   mobile)
+    cp "$RACINE/traductions/wolof.json" "$RACINE/mobile/assets/traductions/wolof.json"
     cd "$RACINE/mobile"
     CIBLE="${2:-chrome}"
     API="${API_BASE_URL:-http://127.0.0.1:8000/api}"
@@ -39,6 +45,7 @@ case "${1:-backend}" in
       --dart-define=GOOGLE_IOS_CLIENT_ID="${GOOGLE_IOS_CLIENT_ID:-}"
     ;;
   simulateur)
+    cp "$RACINE/traductions/wolof.json" "$RACINE/mobile/assets/traductions/wolof.json"
     cd "$RACINE/mobile"
     "$FLUTTER" pub get
     "$FLUTTER" build web --release --base-href /mobile/ --output "$RACINE/simulateur-mobile"
@@ -50,5 +57,5 @@ case "${1:-backend}" in
     (cd "$RACINE/mobile" && "$FLUTTER" analyze && "$FLUTTER" test)
     ;;
   *)
-    echo "Usage : ./run.sh [backend|web|mobile [cible]|simulateur|tests]"; exit 1 ;;
+    echo "Usage : ./run.sh [backend|web|mobile [cible]|simulateur|tests|traductions]"; exit 1 ;;
 esac

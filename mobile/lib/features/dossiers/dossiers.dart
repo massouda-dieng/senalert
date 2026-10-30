@@ -14,6 +14,7 @@ import '../../core/location.dart';
 import '../../core/models.dart';
 import '../../state/session.dart';
 import '../../ui/kit.dart';
+import '../../state/langue.dart';
 
 /// Liste paginée de dossiers (incidents ou SOS) avec recherche et filtre de statut.
 class ListeDossiersScreen extends StatefulWidget {
@@ -253,9 +254,9 @@ class _DossierScreenState extends State<DossierScreen> {
         ? FilledButton.icon(style: couleur == null ? null : FilledButton.styleFrom(backgroundColor: couleur), onPressed: _action ? null : f, icon: Icon(icone), label: Text(libelle))
         : OutlinedButton.icon(onPressed: _action ? null : f, icon: Icon(icone), label: Text(libelle));
     if (u.estCitoyen && d.estProprietaire) {
-      if (!d.estClos && !d.estSos) b.add(bouton('Compléter', Icons.add_comment_outlined, _completer, plein: false));
+      if (!d.estClos && !d.estSos) b.add(bouton(tr('Compléter'), Icons.add_comment_outlined, _completer, plein: false));
       if (const {'nouveau', 'affecte'}.contains(d.statut)) {
-        b.add(bouton('Annuler', Icons.cancel_outlined, () async {
+        b.add(bouton(tr('Annuler'), Icons.cancel_outlined, () async {
           final m = await confirmer(context, titre: 'Annuler le dossier', message: 'Le dossier sera clos avec le statut « Annulé ».',
               motif: 'Motif', action: 'Annuler le dossier', danger: true);
           if (m != null) await _agir('annuler', 'Dossier annulé.', {'motif': m});
@@ -285,13 +286,13 @@ class _DossierScreenState extends State<DossierScreen> {
       return Carte(couleur: AppColors.jaune.withOpacity(.18), child: Row(children: [
         _Etoiles(note),
         const SizedBox(width: 10),
-        Expanded(child: Text('${libellesNote[note]}${com.isEmpty ? '' : ' · « $com »'}', style: const TextStyle(fontWeight: FontWeight.w600))),
+        Expanded(child: Text('${tr(libellesNote[note]!)}${com.isEmpty ? '' : ' · « $com »'}', style: const TextStyle(fontWeight: FontWeight.w600))),
       ]));
     }
     return Carte(couleur: AppColors.jaune.withOpacity(.18), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('Comment s’est passée l’intervention ?', style: titre(16)),
+      Text(tr('Comment s’est passée l’intervention ?'), style: titre(16)),
       const SizedBox(height: 2),
-      Text('Votre avis aide à améliorer les services de secours.', style: TextStyle(color: AppColors.textGrey, fontSize: 13)),
+      Text(tr('Votre avis aide à améliorer les services de secours.'), style: TextStyle(color: AppColors.textGrey, fontSize: 13)),
       const SizedBox(height: 6),
       Row(children: [
         for (var n = 1; n <= 5; n++)
@@ -299,11 +300,11 @@ class _DossierScreenState extends State<DossierScreen> {
               icon: Icon(n <= _note ? Icons.star_rounded : Icons.star_border_rounded, size: 32, color: n <= _note ? const Color(0xFFF5B400) : AppColors.textGrey)),
       ]),
       if (_note > 0) ...[
-        Text(libellesNote[_note]!, style: const TextStyle(fontWeight: FontWeight.w600)),
+        Text(tr(libellesNote[_note]!), style: const TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
-        TextField(controller: _commentaire, maxLength: 500, maxLines: 2, decoration: const InputDecoration(labelText: 'Un commentaire ? (facultatif)')),
-        FilledButton.icon(onPressed: _action ? null : () => _agir('evaluer', 'Merci pour votre évaluation !', {'note': _note, 'commentaire': _commentaire.text.trim()}),
-            icon: const Icon(Icons.send_rounded), label: const Text('Envoyer mon avis')),
+        TextField(controller: _commentaire, maxLength: 500, maxLines: 2, decoration: InputDecoration(labelText: tr('Un commentaire ? (facultatif)'))),
+        FilledButton.icon(onPressed: _action ? null : () => _agir('evaluer', tr('Merci pour votre évaluation !'), {'note': _note, 'commentaire': _commentaire.text.trim()}),
+            icon: const Icon(Icons.send_rounded), label: Text(tr('Envoyer mon avis'))),
       ],
     ]));
   }
@@ -322,7 +323,7 @@ class _DossierScreenState extends State<DossierScreen> {
                   onRefresh: _charger,
                   child: ListView(padding: const EdgeInsets.all(16), children: [
                     Row(children: [
-                      Expanded(child: Text(d.titre, style: titre(22))),
+                      Expanded(child: Text(d.estSos ? tr('Alerte SOS') : Langue.instance.categorie(d.typeIncident, d.titre), style: titre(22))),
                       BadgeStatut(d.statut),
                     ]),
                     const SizedBox(height: 4),
@@ -445,8 +446,8 @@ class _AgentEnRoute extends StatelessWidget {
         const CircleAvatar(radius: 22, backgroundColor: Color(0xFF1E3A8A), child: Icon(Icons.local_shipping, color: Colors.white)),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Les secours sont en route', style: titre(16)),
-          Text('${dist != null ? 'À environ ${distanceLisible(dist)} du lieu' : 'Position de l’agent disponible'} · mis à jour ${ilYa(lireDate(position['date']))}',
+          Text(tr('Les secours sont en route'), style: titre(16)),
+          Text('${dist != null ? tr('L’agent est à environ {d} du lieu', {'d': distanceLisible(dist)}) : 'Position de l’agent disponible'} · ${ilYa(lireDate(position['date']))}',
               style: TextStyle(fontSize: 13, color: AppColors.textGrey)),
         ])),
       ]),

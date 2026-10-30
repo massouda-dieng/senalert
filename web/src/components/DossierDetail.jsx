@@ -9,6 +9,7 @@ import { useRessource } from '../api/hooks';
 import { useAuth } from '../auth/AuthContext';
 import { useConfig } from '../lib/config';
 import { GRAVITES, STATUTS, dateHeure, duree, ilYa } from '../lib/format';
+import { libelleCategorie, useLangue } from '../lib/langue';
 import CarteSenAlert from './Carte';
 import {
   BadgeGravite, BadgeStatut, Bandeau, Bouton, Champ, Chargement, Confirmation, EtatErreur, Fenetre, Selecteur, useToast,
@@ -19,6 +20,8 @@ const chemin = (type, id) => (type === 'sos' ? `/alertes/sos/${id}/` : `/inciden
 export default function DossierDetail({ type = 'incident', id, onFermer, onModifie, compact = false }) {
   const { utilisateur } = useAuth();
   const toast = useToast();
+  const lg = useLangue();
+  const t = utilisateur.role === 'citoyen' ? lg.t : (x, v) => (v ? x.replace(/\{(\w+)\}/g, (m, k) => v[k]) : x);
   // Rafraîchi régulièrement : le citoyen suit l'agent qui arrive, l'agent voit les compléments.
   const { donnees: d, chargement, erreur, recharger, setDonnees } = useRessource(id ? chemin(type, id) : null, null, { intervalle: 15000 });
   const evs = useRessource(id ? `${chemin(type, id)}evenements/` : null);
@@ -53,10 +56,10 @@ export default function DossierDetail({ type = 'incident', id, onFermer, onModif
 
   const actions = [];
   if (role === 'citoyen' && d.est_proprietaire && ['nouveau', 'affecte'].includes(s)) {
-    actions.push(<Bouton key="annuler" variante="secondaire" icone={XCircle} onClick={() => setDialogue('annuler')}>Annuler mon signalement</Bouton>);
+    actions.push(<Bouton key="annuler" variante="secondaire" icone={XCircle} onClick={() => setDialogue('annuler')}>{t('Annuler mon signalement')}</Bouton>);
   }
   if (role === 'citoyen' && d.est_proprietaire && !['resolu', 'refuse', 'annule'].includes(s)) {
-    actions.push(<Bouton key="completer" variante="secondaire" icone={MessageSquarePlus} onClick={() => setDialogue('completer')}>Compléter</Bouton>);
+    actions.push(<Bouton key="completer" variante="secondaire" icone={MessageSquarePlus} onClick={() => setDialogue('completer')}>{t('Compléter')}</Bouton>);
   }
   if (role === 'agent') {
     if (s === 'nouveau') actions.push(<Bouton key="pec" icone={CheckCircle2} onClick={() => agir('prendre-en-charge', undefined, 'Dossier pris en charge.').catch(() => {})}>Prendre en charge</Bouton>);
@@ -88,7 +91,7 @@ export default function DossierDetail({ type = 'incident', id, onFermer, onModif
             <BadgeGravite gravite={d.gravite} />
             {d.en_retard && <span className="inline-flex items-center gap-1 rounded-full bg-alerte-clair px-2 py-0.5 text-xs font-semibold text-amber-800"><Clock className="h-3 w-3" /> En retard</span>}
           </div>
-          <h2 className="mt-1.5 text-xl font-extrabold">{type === 'sos' ? 'Alerte SOS' : d.categorie_libelle}</h2>
+          <h2 className="mt-1.5 text-xl font-extrabold">{type === 'sos' ? t('Alerte SOS') : (role === 'citoyen' ? libelleCategorie(lg.langue, d.type_incident, d.categorie_libelle) : d.categorie_libelle)}</h2>
           <p className="text-sm text-texte-doux">{d.region_libelle || 'Région inconnue'} · créé {ilYa(d.date_creation)} ({dateHeure(d.date_creation)})</p>
         </div>
         {onFermer && <button type="button" onClick={onFermer} className="rounded-lg p-1.5 text-texte-doux hover:bg-surface-douce" aria-label="Fermer le détail"><X className="h-5 w-5" /></button>}
@@ -97,10 +100,10 @@ export default function DossierDetail({ type = 'incident', id, onFermer, onModif
       {actions.length > 0 && <div className="flex flex-wrap gap-2">{actions}</div>}
 
       {role === 'agent' && estMien && enIntervention && <PartagePosition partage={partage} />}
-      {role !== 'agent' && enIntervention && inter?.position_agent && <AgentEnRoute position={inter.position_agent} />}
+      {role !== 'agent' && enIntervention && inter?.position_agent && <AgentEnRoute position={inter.position_agent} t={t} />}
       {inter && s === 'resolu' && (inter.note_satisfaction != null || (role === 'citoyen' && d.est_proprietaire)) && (
-        <Evaluation intervention={inter} peutEvaluer={role === 'citoyen' && d.est_proprietaire}
-          onEvaluer={(corps) => agir('evaluer', corps, 'Merci pour votre évaluation !')} />
+        <Evaluation intervention={inter} peutEvaluer={role === 'citoyen' && d.est_proprietaire} t={t}
+          onEvaluer={(corps) => agir('evaluer', corps, t('Merci pour votre évaluation !'))} />
       )}
 
       {d.doublon_potentiel_reference && (
@@ -233,13 +236,13 @@ function PartagePosition({ partage }) {
   );
 }
 
-function AgentEnRoute({ position }) {
+function AgentEnRoute({ position, t }) {
   return (
     <div className="flex items-center gap-4 rounded-2xl bg-blue-50 p-4 text-blue-900 ring-1 ring-blue-200">
       <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-blue-600 text-white"><Truck className="h-6 w-6" /></span>
       <div>
-        <p className="font-bold">Les secours sont en route</p>
-        <p className="text-sm">{position.distance_m != null ? <>L’agent est à environ <b>{distanceLisible(position.distance_m)}</b> du lieu</> : 'Position de l’agent disponible'} · mis à jour {ilYa(position.date)}</p>
+        <p className="font-bold">{t('Les secours sont en route')}</p>
+        <p className="text-sm">{position.distance_m != null ? t('L’agent est à environ {d} du lieu', { d: distanceLisible(position.distance_m) }) : 'Position de l’agent disponible'} · {ilYa(position.date)}</p>
       </div>
     </div>
   );
@@ -262,7 +265,7 @@ function Etoiles({ valeur, onChange, taille = 'h-7 w-7' }) {
 
 const LIBELLES_NOTE = { 1: 'Très insatisfait', 2: 'Insatisfait', 3: 'Correct', 4: 'Satisfait', 5: 'Très satisfait' };
 
-function Evaluation({ intervention, peutEvaluer, onEvaluer }) {
+function Evaluation({ intervention, peutEvaluer, onEvaluer, t }) {
   const [note, setNote] = useState(0);
   const [commentaire, setCommentaire] = useState('');
   const [envoi, setEnvoi] = useState(false);
@@ -270,7 +273,7 @@ function Evaluation({ intervention, peutEvaluer, onEvaluer }) {
     return (
       <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-or-clair p-4 text-sm ring-1 ring-or/40">
         <Etoiles valeur={intervention.note_satisfaction} taille="h-5 w-5" />
-        <span className="font-semibold">{LIBELLES_NOTE[intervention.note_satisfaction]}</span>
+        <span className="font-semibold">{t(LIBELLES_NOTE[intervention.note_satisfaction])}</span>
         {intervention.commentaire_satisfaction && <span className="text-texte-doux">« {intervention.commentaire_satisfaction} »</span>}
       </div>
     );
@@ -278,13 +281,13 @@ function Evaluation({ intervention, peutEvaluer, onEvaluer }) {
   if (!peutEvaluer) return null;
   return (
     <div className="rounded-2xl bg-or-clair p-5 ring-1 ring-or/40">
-      <p className="font-bold">Comment s’est passée l’intervention ?</p>
-      <p className="text-sm text-texte-doux">Votre avis aide à améliorer les services de secours. Il est transmis au service concerné.</p>
-      <div className="mt-3 flex items-center gap-3"><Etoiles valeur={note} onChange={setNote} />{note > 0 && <span className="text-sm font-semibold">{LIBELLES_NOTE[note]}</span>}</div>
+      <p className="font-bold">{t('Comment s’est passée l’intervention ?')}</p>
+      <p className="text-sm text-texte-doux">{t('Votre avis aide à améliorer les services de secours.')}</p>
+      <div className="mt-3 flex items-center gap-3"><Etoiles valeur={note} onChange={setNote} />{note > 0 && <span className="text-sm font-semibold">{t(LIBELLES_NOTE[note])}</span>}</div>
       {note > 0 && (
         <div className="mt-3 space-y-3">
-          <textarea rows={2} maxLength={500} className="champ" placeholder="Un commentaire ? (facultatif)" value={commentaire} onChange={(e) => setCommentaire(e.target.value)} />
-          <Bouton icone={Send} chargement={envoi} onClick={async () => { setEnvoi(true); try { await onEvaluer({ note, commentaire }); } catch { /* message affiché */ } finally { setEnvoi(false); } }}>Envoyer mon avis</Bouton>
+          <textarea rows={2} maxLength={500} className="champ" placeholder={t('Un commentaire ? (facultatif)')} value={commentaire} onChange={(e) => setCommentaire(e.target.value)} />
+          <Bouton icone={Send} chargement={envoi} onClick={async () => { setEnvoi(true); try { await onEvaluer({ note, commentaire }); } catch { /* message affiché */ } finally { setEnvoi(false); } }}>{t('Envoyer mon avis')}</Bouton>
         </div>
       )}
     </div>

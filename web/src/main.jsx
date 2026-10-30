@@ -5,6 +5,7 @@ import App from './App';
 import { FournisseurAuth } from './auth/AuthContext';
 import { FournisseurToasts } from './components/ui';
 import { FournisseurConfig } from './lib/config';
+import { FournisseurLangue } from './lib/langue';
 import './index.css';
 import { appliquerTheme, suivreSysteme } from './lib/theme';
 
@@ -22,7 +23,9 @@ createRoot(document.getElementById('root')).render(
       <FournisseurToasts>
         <FournisseurConfig>
           <FournisseurAuth>
-            <App />
+            <FournisseurLangue>
+              <App />
+            </FournisseurLangue>
           </FournisseurAuth>
         </FournisseurConfig>
       </FournisseurToasts>
