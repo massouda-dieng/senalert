@@ -173,6 +173,35 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
   }
 }
 
+/// Choix du type de compte à créer : citoyen (libre), agent (sur demande), superviseur (jamais dans l'application).
+class _ChoixCompte extends StatelessWidget {
+  final String actif;
+  const _ChoixCompte(this.actif);
+  static const _chemins = {'citoyen': '/inscription', 'agent': '/demande-agent', 'superadmin': '/compte-superviseur'};
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 20),
+        child: SegmentedButton<String>(
+          showSelectedIcon: false,
+          style: const ButtonStyle(visualDensity: VisualDensity.compact, padding: WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 6))),
+          segments: [for (final x in _espaces.entries) ButtonSegment(value: x.key, label: Text(x.value.$1, maxLines: 1, softWrap: false))],
+          selected: {actif},
+          onSelectionChanged: (s) => context.pushReplacement(_chemins[s.first]!),
+        ),
+      );
+}
+
+class CompteSuperviseurScreen extends StatelessWidget {
+  const CompteSuperviseurScreen({super.key});
+  @override
+  Widget build(BuildContext context) => _Cadre(titreEcran: 'Compte superviseur', sousTitre: 'Accès réservé aux responsables de la plateforme.', enfants: [
+        const _ChoixCompte('superadmin'),
+        const Bandeau.alerte('Pour protéger les données des citoyens, un compte superviseur n’est jamais créé dans l’application : il est attribué par l’administrateur du serveur.'),
+        const SizedBox(height: 12),
+        TextButton(onPressed: () => context.go('/connexion'), child: const Text('J’ai déjà un compte')),
+      ]);
+}
+
 class InscriptionScreen extends StatefulWidget {
   const InscriptionScreen({super.key});
   @override
@@ -206,7 +235,8 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
   @override
   Widget build(BuildContext context) {
     final config = context.watch<Configuration>();
-    return _Cadre(titreEcran: 'Créer un compte', sousTitre: 'Compte citoyen. Agent d’un service de secours : utilisez « Demander un compte agent » depuis la connexion.', enfants: [
+    return _Cadre(titreEcran: 'Créer un compte', sousTitre: 'Compte citoyen : actif tout de suite.', enfants: [
+      const _ChoixCompte('citoyen'),
       _BoutonGoogle(onErreur: (e) => setState(() => _erreur = e)),
       const _Separateur('ou avec votre e-mail'),
       Row(children: [Expanded(child: _champ('first_name', 'Prénom')), const SizedBox(width: 10), Expanded(child: _champ('last_name', 'Nom'))]),
@@ -322,6 +352,7 @@ class _DemandeAgentScreenState extends State<DemandeAgentScreen> {
       titreEcran: 'Demander un compte agent',
       sousTitre: 'Réservé aux agents des services de secours et d’intervention. Chaque demande est vérifiée avant activation.',
       enfants: [
+        const _ChoixCompte('agent'),
         Row(children: [Expanded(child: _champ('prenom', 'Prénom')), const SizedBox(width: 10), Expanded(child: _champ('nom', 'Nom'))]),
         _champ('email', 'E-mail professionnel', clavier: TextInputType.emailAddress, aide: 'Servira d’identifiant de connexion.'),
         Padding(

@@ -152,7 +152,30 @@ export function Connexion() {
   );
 }
 
+/** Choix du type de compte à créer : citoyen (libre), agent (sur demande), superviseur (jamais en ligne). */
+function ChoixCompte({ actif }) {
+  const navigate = useNavigate();
+  const chemins = { citoyen: '/inscription', agent: '/demande-agent', superadmin: '/inscription?espace=superadmin' };
+  return (
+    <div className="mb-6"><Onglets onglets={Object.entries(ESPACES).map(([code, e]) => ({ code, libelle: e.libelle }))} actif={actif} onChange={(e) => navigate(chemins[e], { replace: true })} /></div>
+  );
+}
+
 export function Inscription() {
+  const [params] = useSearchParams();
+  if (params.get('espace') === 'superadmin') {
+    return (
+      <Cadre titre="Compte superviseur" sousTitre="Accès réservé aux responsables de la plateforme.">
+        <ChoixCompte actif="superadmin" />
+        <Bandeau type="info" titre="Pas de création en ligne">Pour protéger les données des citoyens, un compte superviseur n’est jamais créé depuis le site : il est attribué par l’administrateur du serveur.</Bandeau>
+        <p className="mt-6 text-center text-sm text-texte-doux">Vous avez déjà ce compte ? <Link to="/connexion?espace=superadmin" className="lien">Se connecter</Link></p>
+      </Cadre>
+    );
+  }
+  return <InscriptionCitoyen />;
+}
+
+function InscriptionCitoyen() {
   const { inscription, connexionGoogle } = useAuth();
   const config = useConfig();
   const apres = useApresConnexion();
@@ -163,7 +186,8 @@ export function Inscription() {
   const maj = (k) => (v) => setF((x) => ({ ...x, [k]: typeof v === 'string' ? v : v.target.value }));
 
   return (
-    <Cadre titre="Créer un compte citoyen" sousTitre={<>Agent d’un service de secours ? <Link to="/demande-agent" className="lien">Demandez un compte agent</Link>.</>}>
+    <Cadre titre="Créer un compte" sousTitre="Compte citoyen : actif tout de suite.">
+      <ChoixCompte actif="citoyen" />
       <BoutonGoogle onJeton={async (j) => { try { apres(await connexionGoogle(j)); } catch (e) { setErreur(e.detail); } }} />
       <div className="my-5 flex items-center gap-3 text-xs text-texte-pale"><span className="h-px flex-1 bg-surface-bord" />ou avec votre e-mail<span className="h-px flex-1 bg-surface-bord" /></div>
       <form className="space-y-4" onSubmit={async (e) => {
@@ -269,6 +293,7 @@ export function DemandeAgent() {
 
   return (
     <Cadre titre="Demander un compte agent" sousTitre="Réservé aux agents des services de secours et d’intervention. Chaque demande est vérifiée par un superviseur avant activation.">
+      <ChoixCompte actif="agent" />
       <form className="space-y-4" onSubmit={async (e) => {
         e.preventDefault();
         setEnvoi(true); setErreur(null); setErreurs({});

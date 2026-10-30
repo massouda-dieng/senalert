@@ -38,6 +38,13 @@ void main() {
     expect(find.textContaining('administrateur du serveur'), findsOneWidget);
   });
 
+  testWidgets('création de compte : choix Citoyen, Agent, Superviseur', (t) async {
+    await t.pumpWidget(envelopper(const InscriptionScreen()));
+    for (final libelle in ['Citoyen', 'Agent', 'Superviseur']) {
+      expect(find.text(libelle), findsOneWidget);
+    }
+  });
+
   testWidgets('badge de statut lisible', (t) async {
     await t.pumpWidget(const MaterialApp(home: Scaffold(body: BadgeStatut('en_cours'))));
     expect(find.text('En cours'), findsOneWidget);

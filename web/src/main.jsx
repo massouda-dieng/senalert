@@ -7,6 +7,7 @@ import { FournisseurToasts } from './components/ui';
 import { FournisseurConfig } from './lib/config';
 import { FournisseurLangue } from './lib/langue';
 import './index.css';
+import { surveillerMiseAJour } from './lib/miseAJour';
 import { appliquerTheme, suivreSysteme } from './lib/theme';
 
 appliquerTheme();
@@ -16,6 +17,8 @@ suivreSysteme();
 if (import.meta.env.PROD && 'serviceWorker' in navigator && window.top === window.self) {
   window.addEventListener('load', () => navigator.serviceWorker.register('/app/sw.js', { scope: '/app/' }).catch(() => {}));
 }
+
+if (import.meta.env.PROD) surveillerMiseAJour();
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
