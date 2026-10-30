@@ -25,7 +25,7 @@ class _Cadre extends StatelessWidget {
               constraints: const BoxConstraints(maxWidth: 440),
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 Row(children: [
-                  Image.asset('assets/images/senalert_logo.png', width: 40, height: 40, errorBuilder: (_, __, ___) => const Icon(Icons.shield, size: 40)),
+                  Image.asset('assets/images/senalert_icone.png', width: 40, height: 40, errorBuilder: (_, __, ___) => const Icon(Icons.shield, size: 40)),
                   const SizedBox(width: 10),
                   Text('SenAlert', style: titre(22)),
                 ]),

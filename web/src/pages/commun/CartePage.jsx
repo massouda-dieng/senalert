@@ -6,7 +6,7 @@ export default function CartePage() {
   const { utilisateur } = useAuth();
   const titre = { citoyen: 'Carte interactive', agent: 'Carte opérationnelle', superadmin: 'Carte de supervision' }[utilisateur.role];
   const sousTitre = utilisateur.role === 'citoyen'
-    ? 'Incidents récents, carte de chaleur, zones à risque, alertes officielles et services proches.'
+    ? 'Incidents récents, carte de chaleur, zones à risque et alertes officielles.'
     : 'Dossiers ouverts, SOS actifs, carte de chaleur, zones à risque et alertes de zone.';
   return (
     <>

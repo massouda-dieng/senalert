@@ -7,11 +7,12 @@ class PhotoIllustration extends StatelessWidget {
   final String nom;
   final bool credit;
   final Widget? superposition;
-  const PhotoIllustration(this.nom, {super.key, this.credit = true, this.superposition});
+  final Alignment alignement;
+  const PhotoIllustration(this.nom, {super.key, this.credit = true, this.superposition, this.alignement = Alignment.center});
 
   @override
   Widget build(BuildContext context) => Stack(fit: StackFit.expand, children: [
-        Image.asset('assets/images/photos/$nom.jpg', fit: BoxFit.cover, excludeFromSemantics: true,
+        Image.asset('assets/images/photos/$nom.jpg', fit: BoxFit.cover, alignment: alignement, excludeFromSemantics: true,
             errorBuilder: (_, __, ___) => const ColoredBox(color: Color(0xFF005527))),
         if (superposition != null) superposition!,
         if (credit && creditsPhotos[nom] != null)

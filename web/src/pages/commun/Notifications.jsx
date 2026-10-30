@@ -27,7 +27,7 @@ export default function Notifications() {
   };
   return (
     <div className="mx-auto max-w-3xl">
-      <EnTetePage titre="Notifications" sousTitre="Événements réels de vos dossiers. Une notification envoyée ne garantit pas sa lecture."
+      <EnTetePage titre="Notifications" sousTitre="Les événements de vos dossiers."
         actions={<Bouton variante="secondaire" icone={CheckCheck} onClick={async () => { await api('/notifications/tout-lire/', { methode: 'POST' }); recharger(true); }}>Tout marquer comme lu</Bouton>} />
       <EtatErreur erreur={erreur} onReessayer={recharger} />
       <div className="carte overflow-hidden">
@@ -40,7 +40,7 @@ export default function Notifications() {
                   <span className="min-w-0 flex-1">
                     <span className="block font-semibold">{n.titre}</span>
                     <span className="block text-sm text-texte-doux">{n.message}</span>
-                    <span className="mt-1 block text-xs text-texte-pale" title={dateHeure(n.date_creation)}>{ilYa(n.date_creation)} · {PUSH[n.statut_push] || n.statut_push}</span>
+                    <span className="mt-1 block text-xs text-texte-pale" title={dateHeure(n.date_creation)}>{ilYa(n.date_creation)}{utilisateur.role === 'superadmin' && ` · ${PUSH[n.statut_push] || n.statut_push}`}</span>
                   </span>
                 </button>
               </li>

@@ -8,9 +8,8 @@ import { useConfig } from '../../lib/config';
 import { choisirTheme, themeChoisi } from '../../lib/theme';
 
 const PREFS = [
-  ['notifications_push', 'Notifications push sur mobile'],
-  ['notifications_statut', 'Être notifié des changements de statut de mes dossiers'],
-  ['economie_donnees', 'Mode économie de données (cartes et images allégées sur mobile)'],
+  ['notifications_push', 'Notifications push sur mobile', ['citoyen', 'agent', 'superadmin']],
+  ['notifications_statut', 'Être notifié des changements de statut de mes dossiers', ['citoyen']],
 ];
 
 export default function Profil() {
@@ -50,7 +49,7 @@ export default function Profil() {
               <option value="systeme">Selon le système</option><option value="clair">Clair</option><option value="sombre">Sombre</option>
             </select>
           </label>
-          {PREFS.map(([k, l]) => (
+          {PREFS.filter(([, , roles]) => roles.includes(utilisateur.role)).map(([k, l]) => (
             <label key={k} className="flex items-center justify-between gap-4 text-sm">{l}
               <input type="checkbox" className="h-5 w-5" checked={Boolean(utilisateur.preferences?.[k])} onChange={(e) => enregistrer({ preferences: { [k]: e.target.checked } }, k)} />
             </label>

@@ -1,10 +1,9 @@
 import clsx from 'clsx';
 import { Crosshair, Eye, EyeOff, MessageCircle, Send, ThumbsUp, UsersRound } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { api } from '../../api/client';
 import { useRessource } from '../../api/hooks';
 import { useAuth } from '../../auth/AuthContext';
-import CarteSenAlert, { echapper } from '../../components/Carte';
 import Photo from '../../components/Photo';
 import { BadgeStatut, Bandeau, Bouton, Chargement, EnTetePage, EtatErreur, EtatVide, Fenetre, Pagination, Selecteur, useToast } from '../../components/ui';
 import { useConfig } from '../../lib/config';
@@ -63,6 +62,7 @@ export default function Communaute() {
   const { utilisateur } = useAuth();
   const config = useConfig();
   const toast = useToast();
+  const citoyen = utilisateur.role === 'citoyen';
   const [position, setPosition] = useState(null);
   const [rayon, setRayon] = useState('10');
   const [jours, setJours] = useState('7');
@@ -83,10 +83,6 @@ export default function Communaute() {
       setDonnees((d) => ({ ...d, results: d.results.map((x) => (x.id === inc.id ? { ...x, ...r } : x)) }));
     } catch (e) { toast(e.detail, 'erreur'); }
   };
-  const points = useMemo(() => liste.map((i) => ({
-    id: i.id, lat: i.latitude, lng: i.longitude, couleur: config.categorie(i.type_incident)?.couleur || '#475569',
-    popup: `<b>${echapper(i.categorie_libelle)}</b><br/>${i.nb_confirmations} confirmation(s)`,
-  })), [liste, config]);
 
   return (
     <>
@@ -94,10 +90,10 @@ export default function Communaute() {
         <Photo nom="croix-rouge-equipe" className="absolute inset-0 h-full w-full" alt="" credit={false} />
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-black/5" aria-hidden />
         <div className="relative px-6 py-8 text-white sm:px-8">
-          <h1 className="font-titre text-3xl font-extrabold">Autour de moi</h1>
-          <p className="mt-1 max-w-xl text-white/85">Les incidents signalés près de chez vous. Confirmez ceux que vous constatez : cela aide les secours à prioriser.</p>
+          <h1 className="font-titre text-3xl font-extrabold">{citoyen ? 'Autour de moi' : 'Communauté'}</h1>
+          <p className="mt-1 max-w-xl text-white/85">{citoyen ? 'Les incidents signalés près de chez vous. Confirmez ceux que vous constatez : cela aide les secours à prioriser.' : 'Confirmations et messages des citoyens. Masquez les messages qui ne respectent pas les règles.'}</p>
           <div className="mt-5 flex flex-wrap gap-2">
-            <Bouton variante="secondaire" icone={Crosshair} onClick={localiser}>{position ? 'Actualiser ma position' : 'Me localiser'}</Bouton>
+            {citoyen && <Bouton variante="secondaire" icone={Crosshair} onClick={localiser}>{position ? 'Actualiser ma position' : 'Me localiser'}</Bouton>}
             {position && <Selecteur aria-label="Rayon" vide={null} valeur={rayon} onChange={(v) => { setRayon(v); setPage(1); }} className="w-auto"
               options={[{ code: '2', libelle: '2 km' }, { code: '5', libelle: '5 km' }, { code: '10', libelle: '10 km' }, { code: '50', libelle: '50 km' }]} />}
             <Selecteur aria-label="Période" vide={null} valeur={jours} onChange={(v) => { setJours(v); setPage(1); }} className="w-auto"
@@ -107,34 +103,28 @@ export default function Communaute() {
         </div>
       </div>
       <EtatErreur erreur={erreur} onReessayer={recharger} />
-      <div className="grid gap-5 xl:grid-cols-[1fr_440px]">
-        <div className="space-y-3">
-          {chargement && !donnees ? <Chargement /> : liste.length === 0 ? (
-            <EtatVide icone={UsersRound} titre="Aucun incident récent" texte={position ? 'Rien n’a été signalé dans ce rayon sur la période.' : 'Localisez-vous pour voir les incidents proches.'} />
-          ) : liste.map((i) => (
-            <article key={i.id} className="carte flex flex-wrap items-center gap-4 p-4">
-              <span className="h-12 w-1.5 rounded-full" style={{ background: config.categorie(i.type_incident)?.couleur }} aria-hidden />
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2"><h2 className="font-bold">{i.categorie_libelle}</h2><BadgeStatut statut={i.statut} /></div>
-                <p className="text-sm text-texte-doux">{i.region_libelle} · {ilYa(i.date_creation)}{i.distance_m != null ? ` · à ${distance(i.distance_m)}` : ''}{i.est_mien ? ' · votre signalement' : ''}</p>
-              </div>
-              <div className="flex gap-2">
-                {utilisateur.role === 'citoyen' && !i.est_mien && (
-                  <Bouton taille="sm" variante={i.je_confirme ? 'succes' : 'secondaire'} icone={ThumbsUp} onClick={() => confirmer(i)} aria-pressed={i.je_confirme}>
-                    {i.je_confirme ? 'Confirmé' : 'Je le vois aussi'} · {i.nb_confirmations}
-                  </Bouton>
-                )}
-                {(utilisateur.role !== 'citoyen' || i.est_mien) && <span className="inline-flex items-center gap-1 rounded-xl bg-surface-douce px-3 text-sm"><ThumbsUp className="h-4 w-4" />{i.nb_confirmations}</span>}
-                <Bouton taille="sm" variante="secondaire" icone={MessageCircle} onClick={() => setDiscussion(i)}>{i.nb_commentaires}</Bouton>
-              </div>
-            </article>
-          ))}
-          {donnees && <Pagination page={page} total={donnees.count} onPage={setPage} />}
-        </div>
-        <div className="xl:sticky xl:top-24 xl:self-start">
-          <CarteSenAlert points={points} hauteur={460} cadrer={points.length > 0} />
-          <p className="mt-2 text-xs text-texte-pale">Positions arrondies (~100 m). Aucune description ni identité des déclarants n’est affichée.</p>
-        </div>
+      <div className="space-y-3">
+        {chargement && !donnees ? <Chargement /> : liste.length === 0 ? (
+          <EtatVide icone={UsersRound} titre="Aucun incident récent" texte={position ? 'Rien n’a été signalé dans ce rayon sur la période.' : citoyen ? 'Localisez-vous pour voir les incidents proches.' : 'Rien n’a été signalé sur la période.'} />
+        ) : liste.map((i) => (
+          <article key={i.id} className="carte flex flex-wrap items-center gap-4 p-4">
+            <span className="h-12 w-1.5 rounded-full" style={{ background: config.categorie(i.type_incident)?.couleur }} aria-hidden />
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2"><h2 className="font-bold">{i.categorie_libelle}</h2><BadgeStatut statut={i.statut} /></div>
+              <p className="text-sm text-texte-doux">{i.region_libelle} · {ilYa(i.date_creation)}{i.distance_m != null ? ` · à ${distance(i.distance_m)}` : ''}{i.est_mien ? ' · votre signalement' : ''}</p>
+            </div>
+            <div className="flex gap-2">
+              {citoyen && !i.est_mien && (
+                <Bouton taille="sm" variante={i.je_confirme ? 'succes' : 'secondaire'} icone={ThumbsUp} onClick={() => confirmer(i)} aria-pressed={i.je_confirme}>
+                  {i.je_confirme ? 'Confirmé' : 'Je le vois aussi'} · {i.nb_confirmations}
+                </Bouton>
+              )}
+              {(!citoyen || i.est_mien) && <span className="inline-flex items-center gap-1 rounded-xl bg-surface-douce px-3 text-sm"><ThumbsUp className="h-4 w-4" />{i.nb_confirmations}</span>}
+              <Bouton taille="sm" variante="secondaire" icone={MessageCircle} onClick={() => setDiscussion(i)}>{i.nb_commentaires}</Bouton>
+            </div>
+          </article>
+        ))}
+        {donnees && <Pagination page={page} total={donnees.count} onPage={setPage} />}
       </div>
       {discussion && <Commentaires incident={discussion} onFermer={() => setDiscussion(null)} onChange={() => recharger(true)} />}
     </>

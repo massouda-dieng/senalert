@@ -8,6 +8,7 @@ import '../../core/models.dart';
 import '../../state/configuration.dart';
 import '../../state/session.dart';
 import '../../ui/alertes_zone.dart';
+import '../../ui/cloche.dart';
 import '../../ui/kit.dart';
 import '../../ui/photo.dart';
 import '../../state/langue.dart';
@@ -19,7 +20,7 @@ class AccueilCitoyen extends StatefulWidget {
 }
 
 class _AccueilCitoyenState extends State<AccueilCitoyen> {
-  List<Dossier>? _recents;
+  List<Dossier>? _enCours;
   ApiException? _erreur;
 
   @override
@@ -31,12 +32,12 @@ class _AccueilCitoyenState extends State<AccueilCitoyen> {
   Future<void> _charger() async {
     try {
       final sos = await Api.instance.get<Map<String, dynamic>>('/alertes/sos/', params: {'taille': 3, 'actifs': true});
-      final inc = await Api.instance.get<Map<String, dynamic>>('/incidents/', params: {'taille': 4});
+      final inc = await Api.instance.get<Map<String, dynamic>>('/incidents/', params: {'taille': 3, 'actifs': true});
       setState(() {
-        _recents = [
+        _enCours = [
           ...(sos['results'] as List).map((j) => Dossier.depuis(j, estSos: true)),
           ...(inc['results'] as List).map((j) => Dossier.depuis(j, estSos: false)),
-        ];
+        ].take(3).toList();
         _erreur = null;
       });
     } on ApiException catch (e) {
@@ -50,7 +51,6 @@ class _AccueilCitoyenState extends State<AccueilCitoyen> {
     final config = context.watch<Configuration>();
     final actions = [
       (tr('Signaler'), tr('Accident, incendie…'), Icons.report_rounded, AppColors.jauneFonce, '/signaler'),
-      (tr('Autour de moi'), tr('Incidents proches'), Icons.groups_rounded, const Color(0xFF1D4ED8), '/communaute'),
       (tr('Premiers secours'), tr('Fiches hors ligne'), Icons.healing_rounded, AppColors.crimson, '/secours'),
       (tr('Services proches'), tr('Hôpitaux, pharmacies…'), Icons.local_hospital_rounded, const Color(0xFF047857), '/services'),
       (tr('Assistant'), tr('Questions, prévention'), Icons.smart_toy_rounded, const Color(0xFF6D28D9), '/assistant'),
@@ -69,8 +69,13 @@ class _AccueilCitoyenState extends State<AccueilCitoyen> {
                 Padding(
                   padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 16, 20, 28),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(tr('Bonjour {nom}', {'nom': u.prenom}).trim(), style: titre(24, couleur: Colors.white)),
-                    Text(tr('Besoin d’aide immédiate ?'), style: const TextStyle(color: AppColors.jaune, fontWeight: FontWeight.w600)),
+                    Row(children: [
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(tr('Bonjour {nom}', {'nom': u.prenom}).trim(), style: titre(24, couleur: Colors.white)),
+                        Text(tr('Besoin d’aide immédiate ?'), style: const TextStyle(color: AppColors.jaune, fontWeight: FontWeight.w600)),
+                      ])),
+                      const ClocheNotifications(),
+                    ]),
                     const SizedBox(height: 22),
                     Center(
                       child: Semantics(
@@ -119,23 +124,24 @@ class _AccueilCitoyenState extends State<AccueilCitoyen> {
               ],
             ),
           ),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            sliver: SliverToBoxAdapter(child: Row(children: [
-              Expanded(child: Text(tr('Mes derniers dossiers'), style: titre(17))),
-              TextButton(onPressed: () => context.go('/dossiers'), child: Text(tr('Tout voir'))),
-            ])),
-          ),
           if (_erreur != null) SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.all(16),
               child: Bandeau.erreur(_erreur!.message, action: TextButton(onPressed: _charger, child: Text(tr('Réessayer'))))))
-          else if (_recents == null) const SliverToBoxAdapter(child: Chargement())
-          else if (_recents!.isEmpty) SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.all(16), child: Text(tr('Aucun signalement pour l’instant.'), style: TextStyle(color: AppColors.textGrey))))
-          else SliverList.separated(
-            itemCount: _recents!.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
-            itemBuilder: (_, i) => Padding(padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: TuileDossier(_recents![i], onTap: () => context.push('/dossier/${_recents![i].estSos ? 'sos' : 'incident'}/${_recents![i].id}').then((_) => _charger()))),
-          ),
+          else if (_enCours == null) const SliverToBoxAdapter(child: Chargement())
+          else if (_enCours!.isNotEmpty) ...[
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              sliver: SliverToBoxAdapter(child: Row(children: [
+                Expanded(child: Text(tr('Mes dossiers en cours'), style: titre(17))),
+                TextButton(onPressed: () => context.go('/dossiers'), child: Text(tr('Tout voir'))),
+              ])),
+            ),
+            SliverList.separated(
+              itemCount: _enCours!.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemBuilder: (_, i) => Padding(padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: TuileDossier(_enCours![i], onTap: () => context.push('/dossier/${_enCours![i].estSos ? 'sos' : 'incident'}/${_enCours![i].id}').then((_) => _charger()))),
+            ),
+          ],
           SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.all(20),
               child: Text(config.avertissement, textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppColors.textMuted)))),
         ]),

@@ -75,6 +75,14 @@ export default function DossierDetail({ type = 'incident', id, onFermer, onModif
     if (s === 'nouveau') actions.push(<Bouton key="rej" variante="secondaire" onClick={() => setDialogue('rejeter')}>Rejeter</Bouton>);
     if (['nouveau', 'affecte', 'accepte', 'en_cours'].includes(s)) actions.push(<Bouton key="ann" variante="secondaire" icone={XCircle} onClick={() => setDialogue('annuler')}>Annuler</Bouton>);
   }
+  if (role !== 'citoyen' && d.latitude != null) {
+    actions.push(
+      <a key="itineraire" target="_blank" rel="noreferrer" href={`https://www.google.com/maps/dir/?api=1&destination=${d.latitude},${d.longitude}`}
+        className="inline-flex items-center justify-center gap-2 rounded-xl border border-surface-bord bg-surface px-4 py-2.5 text-sm font-semibold transition hover:bg-surface-douce">
+        <Navigation className="h-4 w-4" aria-hidden /> Itinéraire <ExternalLink className="h-3 w-3" aria-hidden />
+      </a>,
+    );
+  }
   const peutNoter = role === 'superadmin' || (role === 'agent' && estMien);
   const peutGravite = (role === 'superadmin' || (role === 'agent' && estMien)) && !['resolu', 'refuse', 'annule'].includes(s);
 
@@ -114,12 +122,11 @@ export default function DossierDetail({ type = 'incident', id, onFermer, onModif
         <div className="space-y-4">
           {(d.description || d.message) && <p className="whitespace-pre-wrap rounded-2xl bg-surface-douce p-4 text-sm leading-relaxed">{d.description || d.message}</p>}
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-            <Info libelle="Service">{d.service_nom || '—'}</Info>
-            <Info libelle="Adresse / repère">{d.adresse || '—'}</Info>
-            <Info libelle="Position">{d.latitude != null ? `${d.latitude.toFixed(5)}, ${d.longitude.toFixed(5)}` : 'Indisponible (GPS non fourni)'}</Info>
-            <Info libelle="Précision GPS">{d.precision_gps != null ? `± ${Math.round(d.precision_gps)} m` : '—'}</Info>
-            <Info libelle="Prise en charge">{d.date_prise_en_charge ? `${dateHeure(d.date_prise_en_charge)} (${duree((new Date(d.date_prise_en_charge) - new Date(d.date_creation)) / 60000)})` : '—'}</Info>
-            <Info libelle="Clôture">{d.date_cloture ? dateHeure(d.date_cloture) : '—'}</Info>
+            {d.service_nom && <Info libelle="Service">{d.service_nom}</Info>}
+            {d.adresse && <Info libelle="Adresse / repère">{d.adresse}</Info>}
+            <Info libelle="Position">{d.latitude != null ? `${d.latitude.toFixed(5)}, ${d.longitude.toFixed(5)}${d.precision_gps != null ? ` (± ${Math.round(d.precision_gps)} m)` : ''}` : 'Indisponible (GPS non fourni)'}</Info>
+            {d.date_prise_en_charge && <Info libelle="Prise en charge">{`${dateHeure(d.date_prise_en_charge)} (${duree((new Date(d.date_prise_en_charge) - new Date(d.date_creation)) / 60000)})`}</Info>}
+            {d.date_cloture && <Info libelle="Clôture">{dateHeure(d.date_cloture)}</Info>}
             {inter && <Info libelle="Intervenant">{inter.agent_nom || 'Non affecté'}{inter.service_nom ? ` · ${inter.service_nom}` : ''}</Info>}
             {d.motif_cloture && <Info libelle="Motif">{d.motif_cloture}</Info>}
           </dl>
@@ -142,19 +149,11 @@ export default function DossierDetail({ type = 'incident', id, onFermer, onModif
           {d.photos?.length > 0 && <Photos photos={d.photos} />}
 
           {d.latitude != null && (
-            <div className="space-y-2">
-              <CarteSenAlert hauteur={220} zoom={15} centre={[d.latitude, d.longitude]} regrouper={false} cadrer={Boolean(enIntervention && inter?.position_agent)}
-                points={[
-                  { id: d.id, lat: d.latitude, lng: d.longitude, couleur: type === 'sos' ? '#E31B23' : STATUTS[s]?.point, sos: type === 'sos', titre: 'Lieu du dossier' },
-                  ...(enIntervention && inter?.position_agent ? [{ id: 'agent', lat: inter.position_agent.lat, lng: inter.position_agent.lng, agent: true, titre: 'Agent de secours' }] : []),
-                ]} />
-              {(role !== 'citoyen') && (
-                <a className="lien inline-flex items-center gap-1.5 text-sm" target="_blank" rel="noreferrer"
-                  href={`https://www.google.com/maps/dir/?api=1&destination=${d.latitude},${d.longitude}`}>
-                  <Navigation className="h-4 w-4" /> Itinéraire (Google Maps) <ExternalLink className="h-3 w-3" />
-                </a>
-              )}
-            </div>
+            <CarteSenAlert hauteur={220} zoom={15} centre={[d.latitude, d.longitude]} regrouper={false} cadrer={Boolean(enIntervention && inter?.position_agent)}
+              points={[
+                { id: d.id, lat: d.latitude, lng: d.longitude, couleur: type === 'sos' ? '#E31B23' : STATUTS[s]?.point, sos: type === 'sos', titre: 'Lieu du dossier' },
+                ...(enIntervention && inter?.position_agent ? [{ id: 'agent', lat: inter.position_agent.lat, lng: inter.position_agent.lng, agent: true, titre: 'Agent de secours' }] : []),
+              ]} />
           )}
 
           {peutGravite && (

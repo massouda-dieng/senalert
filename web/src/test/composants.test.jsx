@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
+import { NAVIGATION } from '../components/Layout';
 import Photo from '../components/Photo';
 import { BadgeStatut, Confirmation, Pagination } from '../components/ui';
 import { CREDITS } from '../lib/photos';
@@ -18,6 +19,19 @@ describe('formatage', () => {
     expect(distance(2340)).toBe('2,3 km');
     expect(duree(75)).toBe('1 h 15');
     expect(duree(null)).toBe('—');
+  });
+});
+
+describe('navigation', () => {
+  it('chaque rôle a une seule entrée par destination', () => {
+    Object.values(NAVIGATION).forEach((liens) => {
+      const cibles = liens.filter((l) => l.a).map((l) => l.a);
+      expect(new Set(cibles).size).toBe(cibles.length);
+    });
+  });
+
+  it('l’agent n’a pas le fil des citoyens, qui recopie ses interventions', () => {
+    expect(NAVIGATION.agent.map((l) => l.a)).not.toContain('/agent/communaute');
   });
 });
 

@@ -70,7 +70,6 @@ export default function App() {
         <Route path="/agent" element={<Espace roles={['agent']}><TableauAgent /></Espace>} />
         <Route path="/agent/interventions" element={<Espace roles={['agent']}><Interventions /></Espace>} />
         <Route path="/agent/carte" element={<Espace roles={['agent']}><CartePage /></Espace>} />
-        <Route path="/agent/communaute" element={<Espace roles={['agent']}><Communaute /></Espace>} />
         <Route path="/agent/secours" element={<Espace roles={['agent']}><Guide /></Espace>} />
 
         <Route path="/supervision" element={<Espace roles={['superadmin']}><Suspense fallback={<Chargement />}><Supervision /></Suspense></Espace>} />

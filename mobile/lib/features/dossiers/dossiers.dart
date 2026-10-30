@@ -16,7 +16,7 @@ import '../../state/session.dart';
 import '../../ui/kit.dart';
 import '../../state/langue.dart';
 
-/// Liste paginée de dossiers (incidents ou SOS) avec recherche et filtre de statut.
+/// Liste paginée de dossiers (incidents ou SOS) avec recherche et vues simples.
 class ListeDossiersScreen extends StatefulWidget {
   final bool agent;
   const ListeDossiersScreen({super.key, this.agent = false});
@@ -27,8 +27,8 @@ class ListeDossiersScreen extends StatefulWidget {
 class _ListeDossiersScreenState extends State<ListeDossiersScreen> with SingleTickerProviderStateMixin {
   late final TabController _onglets = TabController(length: 2, vsync: this)..addListener(() { if (!_onglets.indexIsChanging) _recharger(); });
   final _recherche = TextEditingController();
-  String _statut = '';
-  bool _miens = false;
+  int _vue = 0;
+  Map<String, int> _compteurs = {};
   final List<Dossier> _elements = [];
   int _page = 1;
   bool _suivante = false;
@@ -37,6 +37,10 @@ class _ListeDossiersScreenState extends State<ListeDossiersScreen> with SingleTi
   DateTime? _synchro;
 
   bool get _sos => _onglets.index == 1;
+
+  List<(String, Map<String, dynamic>)> get _vues => widget.agent
+      ? const [('Ouverts', {'actifs': true}), ('Mes interventions', {'actifs': true, 'affecte_a_moi': true}), ('Tous', {})]
+      : const [('Tous', {}), ('En cours', {'actifs': true})];
 
   @override
   void initState() {
@@ -47,7 +51,19 @@ class _ListeDossiersScreenState extends State<ListeDossiersScreen> with SingleTi
   Future<void> _recharger() async {
     _page = 1;
     _elements.clear();
+    if (widget.agent) _chargerCompteurs();
     await _charger();
+  }
+
+  Future<void> _chargerCompteurs() async {
+    try {
+      final r = await Future.wait([
+        for (final c in ['/incidents/', '/alertes/sos/']) Api.instance.get<Map<String, dynamic>>(c, params: {'actifs': true, 'taille': 1}),
+      ]);
+      if (mounted) setState(() => _compteurs = {'incident': (r[0]['count'] as num).toInt(), 'sos': (r[1]['count'] as num).toInt()});
+    } on ApiException {
+      // Les onglets restent sans nombre : la liste affiche l'erreur réseau.
+    }
   }
 
   Future<void> _charger() async {
@@ -55,9 +71,7 @@ class _ListeDossiersScreenState extends State<ListeDossiersScreen> with SingleTi
     setState(() { _chargement = true; _erreur = null; });
     try {
       final r = await Api.instance.get<Map<String, dynamic>>(_sos ? '/alertes/sos/' : '/incidents/', params: {
-        'page': _page, 'q': _recherche.text.trim(), 'statut': _statut,
-        if (widget.agent && _statut.isEmpty) 'actifs': true,
-        if (_miens) 'affecte_a_moi': true,
+        'page': _page, 'q': _recherche.text.trim(), ..._vues[_vue].$2,
       });
       setState(() {
         _elements.addAll((r['results'] as List).map((j) => Dossier.depuis(j, estSos: _sos)));
@@ -76,7 +90,10 @@ class _ListeDossiersScreenState extends State<ListeDossiersScreen> with SingleTi
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.agent ? 'Interventions' : 'Mes dossiers'),
-        bottom: TabBar(controller: _onglets, tabs: const [Tab(text: 'Incidents'), Tab(text: 'Alertes SOS')]),
+        bottom: TabBar(controller: _onglets, tabs: [
+          Tab(text: 'Incidents${_compteurs['incident'] != null ? ' (${_compteurs['incident']})' : ''}'),
+          Tab(text: 'Alertes SOS${_compteurs['sos'] != null ? ' (${_compteurs['sos']})' : ''}'),
+        ]),
       ),
       body: Column(children: [
         Padding(
@@ -90,11 +107,9 @@ class _ListeDossiersScreenState extends State<ListeDossiersScreen> with SingleTi
         SizedBox(
           height: 48,
           child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 12), children: [
-            if (widget.agent) Padding(padding: const EdgeInsets.all(4), child: FilterChip(label: const Text('Affectés à moi'), selected: _miens, onSelected: (v) { setState(() => _miens = v); _recharger(); })),
-            for (final s in ['', 'nouveau', 'affecte', 'accepte', 'en_cours', 'resolu', 'annule'])
+            for (var i = 0; i < _vues.length; i++)
               Padding(padding: const EdgeInsets.all(4), child: ChoiceChip(
-                label: Text(s.isEmpty ? (widget.agent ? 'Ouverts' : 'Tous') : statut(s).libelle),
-                selected: _statut == s, onSelected: (_) { setState(() => _statut = s); _recharger(); })),
+                label: Text(_vues[i].$1), selected: _vue == i, onSelected: (_) { setState(() => _vue = i); _recharger(); })),
           ]),
         ),
         if (_synchro != null) Padding(padding: const EdgeInsets.only(bottom: 4),
@@ -346,10 +361,10 @@ class _DossierScreenState extends State<DossierScreen> {
                     const SizedBox(height: 12),
                     Carte(child: Column(children: [
                       LigneInfo('Gravité', gravites[d.gravite] ?? d.gravite),
-                      LigneInfo('Service', d.serviceNom ?? '—'),
-                      LigneInfo('Repère', d.adresse.isEmpty ? '—' : d.adresse),
+                      if (d.serviceNom != null) LigneInfo('Service', d.serviceNom!),
+                      if (d.adresse.isNotEmpty) LigneInfo('Repère', d.adresse),
                       LigneInfo('Position', d.lat == null ? 'Indisponible' : '${d.lat!.toStringAsFixed(5)}, ${d.lng!.toStringAsFixed(5)}${d.precision != null ? ' (± ${d.precision!.round()} m)' : ''}'),
-                      LigneInfo('Prise en charge', dateHeure(d.priseEnCharge)),
+                      if (d.priseEnCharge != null) LigneInfo('Prise en charge', dateHeure(d.priseEnCharge)),
                       if (d.intervention != null) LigneInfo('Intervenant', '${d.intervention!['agent_nom'] ?? 'Non affecté'}${d.intervention!['service_nom'] != null ? ' · ${d.intervention!['service_nom']}' : ''}'),
                       if (d.cloture != null) LigneInfo('Clôture', dateHeure(d.cloture)),
                       if (d.motifCloture.isNotEmpty) LigneInfo('Motif', d.motifCloture),

@@ -19,7 +19,8 @@ const _fonds = {
 
 const _couleursNiveau = {'critique': AppColors.crimson, 'eleve': Color(0xFFEA580C), 'moyen': Color(0xFFD97706)};
 const _couleursAlerte = {'danger': AppColors.crimson, 'vigilance': Color(0xFFF5D90A), 'info': AppColors.vert700};
-const _couleursServices = {'hopital': AppColors.crimson, 'clinique': Color(0xFFEA580C), 'pharmacie': AppColors.success, 'police': AppColors.info, 'pompiers': Color(0xFFB45309)};
+/// Cadre de la carte nationale : le Sénégal et ses frontières.
+final _bornes = LatLngBounds(const LatLng(9, -22), const LatLng(20, -7));
 
 /// Carte à couches. Citoyen : vue publique ; agent : dossiers ouverts et SOS en plus.
 class CarteScreen extends StatefulWidget {
@@ -32,8 +33,8 @@ class CarteScreen extends StatefulWidget {
 class _CarteScreenState extends State<CarteScreen> {
   final _carte = MapController();
   String _fond = 'clair';
-  final Map<String, bool> _couches = {'incidents': true, 'risque': false, 'alertes': true, 'services': false, 'dossiers': true, 'sos': true};
-  List<Map<String, dynamic>> _incidents = [], _dossiers = [], _sos = [], _niveaux = [], _alertes = [], _services = [];
+  final Map<String, bool> _couches = {'incidents': true, 'risque': false, 'alertes': true, 'dossiers': true, 'sos': true};
+  List<Map<String, dynamic>> _incidents = [], _dossiers = [], _sos = [], _niveaux = [], _alertes = [];
   LatLng? _moi;
   ApiException? _erreur;
   bool _chargement = true;
@@ -72,19 +73,17 @@ class _CarteScreenState extends State<CarteScreen> {
     final p = await Localisation.lire();
     if (!mounted) return;
     if (!p.ok) { afficherMessage(context, p.erreur ?? 'Position indisponible.', erreur: true); return; }
-    setState(() => _moi = LatLng(p.lat!, p.lng!));
-    _carte.move(_moi!, 14);
+    final position = LatLng(p.lat!, p.lng!);
+    if (!_bornes.contains(position)) { afficherMessage(context, 'Votre position est hors du Sénégal : elle ne peut pas être affichée sur cette carte.', erreur: true); return; }
+    setState(() => _moi = position);
+    _carte.move(position, 14);
   }
 
-  Future<void> _chargerServices() async {
-    final c = _carte.camera.center;
-    try {
-      final r = await Api.instance.get<Map<String, dynamic>>('/services-proximite/', params: {'lat': c.latitude, 'lng': c.longitude, 'rayon': 5000});
-      setState(() { _services = List<Map<String, dynamic>>.from(r['resultats']); _couches['services'] = true; });
-      if (mounted) afficherMessage(context, '${_services.length} établissement(s) trouvé(s) autour du centre de la carte.');
-    } on ApiException catch (e) {
-      if (mounted) afficherMessage(context, e.message, erreur: true);
-    }
+  /// Un dossier ouvert a déjà son point dans la couche Dossiers : il n'est pas dessiné deux fois.
+  List<Map<String, dynamic>> get _autresIncidents {
+    if (!widget.agent || !_couches['dossiers']!) return _incidents;
+    final ouverts = _dossiers.map((d) => d['id']).toSet();
+    return _incidents.where((p) => !ouverts.contains(p['id'])).toList();
   }
 
   Future<void> _rechercher() async {
@@ -124,13 +123,11 @@ class _CarteScreenState extends State<CarteScreen> {
             ),
             const SizedBox(height: 12),
             Text('Couches', style: titre(16)),
-            SwitchListTile(value: _couches['incidents']!, onChanged: (v) => bascule('incidents', v), title: Text('Incidents récents (${_incidents.length})')),
+            SwitchListTile(value: _couches['incidents']!, onChanged: (v) => bascule('incidents', v), title: Text('${widget.agent ? 'Autres incidents récents' : 'Incidents récents'} (${_autresIncidents.length})')),
             SwitchListTile(value: _couches['risque']!, onChanged: (v) => bascule('risque', v), title: const Text('Zones à risque')),
             SwitchListTile(value: _couches['alertes']!, onChanged: (v) => bascule('alertes', v), title: Text('Alertes de zone (${_alertes.length})')),
             if (widget.agent) SwitchListTile(value: _couches['dossiers']!, onChanged: (v) => bascule('dossiers', v), title: Text('Dossiers ouverts (${_dossiers.length})')),
             if (widget.agent) SwitchListTile(value: _couches['sos']!, onChanged: (v) => bascule('sos', v), title: Text('SOS actifs (${_sos.length})')),
-            SwitchListTile(value: _couches['services']!, onChanged: _services.isEmpty ? null : (v) => bascule('services', v), title: Text('Services proches (${_services.length})')),
-            OutlinedButton.icon(onPressed: () { Navigator.pop(c); _chargerServices(); }, icon: const Icon(Icons.local_hospital_outlined), label: const Text('Charger les services autour du centre')),
             const SizedBox(height: 8),
             Text('L’absence d’incident ne signifie pas qu’une zone est sans danger. Positions publiques arrondies à ~100 m.',
                 style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
@@ -157,7 +154,7 @@ class _CarteScreenState extends State<CarteScreen> {
     final fond = _fonds[_fond]!;
     final marqueurs = <Marker>[
       if (_couches['incidents']!)
-        for (final p in _incidents)
+        for (final p in _autresIncidents)
           _point(_ll(p), couleurHex(config.categorie(p['type_incident'])?.couleur), label: config.categorie(p['type_incident'])?.libelle, onTap: () => showModalBottomSheet(
             context: context, builder: (_) => Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(config.categorie(p['type_incident'])?.libelle ?? p['type_incident'], style: titre(18)),
@@ -172,13 +169,6 @@ class _CarteScreenState extends State<CarteScreen> {
       if (widget.agent && _couches['sos']!)
         for (final d in _sos.where((d) => d['latitude'] != null))
           _point(_ll(d), AppColors.crimson, taille: 30, label: 'SOS ${d['reference']}', onTap: () => context.push('/dossier/sos/${d['id']}')),
-      if (_couches['services']!)
-        for (final s in _services)
-          _point(_ll(s), _couleursServices[s['type']] ?? AppColors.textGrey, taille: 18, label: s['nom'], onTap: () => showModalBottomSheet(
-            context: context, builder: (_) => ListTile(
-              title: Text(s['nom'] ?? 'Nom non renseigné'), subtitle: Text('${s['type']} · ${distance(s['distance_m'])}'),
-              trailing: IconButton(tooltip: 'Itinéraire', icon: const Icon(Icons.directions), onPressed: () => itineraire(s['latitude'], s['longitude'])),
-            ))),
       if (_moi != null) Marker(point: _moi!, width: 24, height: 24, child: Container(decoration: BoxDecoration(
           shape: BoxShape.circle, color: AppColors.info, border: Border.all(color: Colors.white, width: 3)))),
     ];
@@ -203,7 +193,8 @@ class _CarteScreenState extends State<CarteScreen> {
       body: Stack(children: [
         FlutterMap(
           mapController: _carte,
-          options: const MapOptions(initialCenter: LatLng(14.45, -14.9), initialZoom: 6.3),
+          options: MapOptions(initialCenter: const LatLng(14.45, -14.9), initialZoom: 6.3, minZoom: 5.5,
+              cameraConstraint: CameraConstraint.containCenter(bounds: _bornes)),
           children: [
             TileLayer(key: ValueKey(_fond), urlTemplate: fond.$2, userAgentPackageName: 'com.senalert.senalert_mobile'),
             CircleLayer(circles: cercles),

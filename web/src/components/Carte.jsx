@@ -6,6 +6,8 @@ import { useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 
 export const CENTRE_SENEGAL = [14.45, -14.9];
+/** Cadre de la carte nationale : le Sénégal et ses frontières, jamais le planisphère répété. */
+export const BORNES_SENEGAL = [[9, -22], [20, -7]];
 
 /** Icône ronde colorée (pas d'image externe). `sos` ajoute un halo rouge. */
 export function icone(couleur, { sos = false, taille = 16 } = {}) {
@@ -67,7 +69,7 @@ export default function CarteSenAlert({ points = [], centre = CENTRE_SENEGAL, zo
   const pts = useMemo(() => points.filter((p) => p.lat != null && p.lng != null), [points]);
   return (
     <div className={`relative overflow-hidden rounded-2xl border border-surface-bord ${className}`} style={{ height: hauteur }}>
-      <MapContainer center={centre} zoom={zoom} scrollWheelZoom className="h-full w-full" aria-label="Carte interactive">
+      <MapContainer center={centre} zoom={zoom} minZoom={5} scrollWheelZoom={false} className="h-full w-full" aria-label="Carte interactive">
         {/* Plan Esri : les tuiles tile.openstreetmap.org renvoient 403 sans en-tête Referer (Referrer-Policy same-origin). */}
         <TileLayer attribution='Fond &copy; Esri, HERE, Garmin, &copy; contributeurs <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}" maxZoom={19} />

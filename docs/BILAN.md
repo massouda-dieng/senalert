@@ -18,7 +18,7 @@
 * **Page vitrine publique** (`/app/`) : héros photo, chiffres **réels** de la base, fonctionnalités, « comment ça marche » (scénario illustré, présenté comme tel), alertes en cours. Pas de faux témoignages ni de faux chiffres.
 * **Alertes de zone** : publication par le superadmin (niveau, régions, consignes, fin), bandeau chez les citoyens et agents concernés, notification ciblée, couche sur les cartes.
 * **Communauté « Autour de moi »** : incidents récents triés par distance, confirmation « je le vois aussi » (nombre visible des agents et du superadmin), messages publics modérables.
-* **Carte avancée** : fonds plan / clair / satellite, recherche d'adresse, « me localiser », couches incidents, carte de chaleur (web), zones à risque, alertes de zone, services proches, dossiers ouverts et SOS (agents, superadmin).
+* **Carte avancée** : fonds plan / clair / satellite, recherche d'adresse, « me localiser », couches incidents, carte de chaleur (web), zones à risque, alertes de zone, dossiers ouverts et SOS (agents, superadmin), chaque dossier ouvert n'y figurant qu'une fois ; les services proches ont leur page dédiée.
 * **Mobile** : écran de bienvenue en carrousel photo avant connexion, accueil et tableau agent illustrés, onglet « Autour », carte à couches.
 * Tests : 130 backend, 13 web, 13 Flutter.
 

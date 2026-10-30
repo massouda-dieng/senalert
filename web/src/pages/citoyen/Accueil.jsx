@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { BookOpenCheck, Bot, ChevronRight, Crosshair, FolderOpen, Map, MapPinned, Phone, RotateCcw, ShieldAlert, Siren, UsersRound, X } from 'lucide-react';
+import { ChevronRight, Crosshair, Phone, RotateCcw, ShieldAlert, Siren, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, nouvelleCle } from '../../api/client';
@@ -161,22 +161,12 @@ function PositionInfo({ position }) {
   );
 }
 
-const ACTIONS = [
-  { a: '/citoyen/signaler', libelle: 'Signaler un incident', texte: 'Accident, incendie, inondation…', icone: ShieldAlert, ton: 'bg-or-clair text-or-fonce' },
-  { a: '/citoyen/dossiers', libelle: 'Mes dossiers', texte: 'Suivre mes signalements', icone: FolderOpen, ton: 'bg-marque-50 text-marque-700' },
-  { a: '/citoyen/communaute', libelle: 'Autour de moi', texte: 'Incidents proches, entraide', icone: UsersRound, ton: 'bg-blue-50 text-blue-700' },
-  { a: '/citoyen/carte', libelle: 'Carte interactive', texte: 'Couches, chaleur, satellite', icone: Map, ton: 'bg-sky-50 text-sky-700' },
-  { a: '/citoyen/services', libelle: 'Services proches', texte: 'Hôpitaux, pharmacies…', icone: MapPinned, ton: 'bg-succes-clair text-emerald-700' },
-  { a: '/citoyen/secours', libelle: 'Premiers secours', texte: 'Fiches hors ligne', icone: BookOpenCheck, ton: 'bg-rose-50 text-rose-700' },
-  { a: '/citoyen/assistant', libelle: 'Assistant', texte: 'Questions et prévention', icone: Bot, ton: 'bg-violet-50 text-violet-700' },
-];
-
 export default function Accueil() {
   const { utilisateur } = useAuth();
   const { t, langue } = useLangue();
-  const incidents = useRessource('/incidents/', { taille: 4 });
+  const incidents = useRessource('/incidents/', { taille: 3, actifs: true });
   const sos = useRessource('/alertes/sos/', { taille: 3, actifs: true });
-  const recents = [...(sos.donnees?.results || []).map((d) => ({ ...d, sos: true })), ...(incidents.donnees?.results || [])].slice(0, 5);
+  const enCours = [...(sos.donnees?.results || []).map((d) => ({ ...d, sos: true })), ...(incidents.donnees?.results || [])].slice(0, 3);
 
   return (
     <div className="space-y-6">
@@ -185,21 +175,17 @@ export default function Accueil() {
         <p className="text-sm text-texte-doux">{t('Que souhaitez-vous faire ?')}</p>
       </div>
       <SOS />
-      <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 md:grid-cols-3">
-        {ACTIONS.map((a) => (
-          <Link key={a.a} to={a.a} className="carte group flex items-center gap-3 p-4 transition hover:-translate-y-0.5 hover:shadow-flottant">
-            <div className={clsx('rounded-2xl p-3', a.ton)}><a.icone className="h-6 w-6" /></div>
-            <div className="min-w-0"><p className="font-semibold">{t(a.libelle)}</p><p className="truncate text-xs text-texte-doux">{t(a.texte)}</p></div>
-            <ChevronRight className="ml-auto hidden h-4 w-4 text-texte-pale transition group-hover:translate-x-0.5 sm:block" />
-          </Link>
-        ))}
-      </div>
-      <Carte titre={t('Mes derniers dossiers')} action={<Link to="/citoyen/dossiers" className="lien text-sm">{t('Tout voir')}</Link>} corpsClassName="p-0">
-        {incidents.chargement && !incidents.donnees ? <Chargement /> : recents.length === 0 ? (
+      <Link to="/citoyen/signaler" className="carte group flex items-center gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-flottant">
+        <div className="rounded-2xl bg-or-clair p-3 text-or-fonce"><ShieldAlert className="h-6 w-6" /></div>
+        <div className="min-w-0"><p className="font-semibold">{t('Signaler un incident')}</p><p className="truncate text-sm text-texte-doux">{t('Accident, incendie, inondation…')}</p></div>
+        <ChevronRight className="ml-auto h-5 w-5 text-texte-pale transition group-hover:translate-x-0.5" />
+      </Link>
+      <Carte titre={t('Mes dossiers en cours')} action={<Link to="/citoyen/dossiers" className="lien text-sm">{t('Tout voir')}</Link>} corpsClassName="p-0">
+        {incidents.chargement && !incidents.donnees ? <Chargement /> : enCours.length === 0 ? (
           <p className="p-5 text-sm text-texte-doux">{t('Aucun signalement pour l’instant.')}</p>
         ) : (
           <ul className="divide-y divide-surface-bord">
-            {recents.map((d) => (
+            {enCours.map((d) => (
               <li key={`${d.sos ? 's' : 'i'}${d.id}`}>
                 <Link to={`/citoyen/dossiers?${d.sos ? 'type=sos&' : ''}dossier=${d.id}`} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-surface-douce">
                   <div className="min-w-0">

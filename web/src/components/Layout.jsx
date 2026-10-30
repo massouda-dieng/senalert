@@ -30,7 +30,6 @@ export const NAVIGATION = {
     { a: '/agent', libelle: 'Tableau de bord', icone: Gauge, fin: true },
     { a: '/agent/interventions', libelle: 'Interventions', icone: ClipboardList },
     { a: '/agent/carte', libelle: 'Carte opérationnelle', icone: Map },
-    { a: '/agent/communaute', libelle: 'Signalements citoyens', icone: UsersRound },
     { a: '/agent/secours', libelle: 'Premiers secours', icone: BookOpenCheck },
   ],
   superadmin: [
@@ -41,13 +40,13 @@ export const NAVIGATION = {
     { a: '/supervision/risques', libelle: 'Zones de risque', icone: Activity },
     { a: '/supervision/alertes-zone', libelle: 'Alertes de zone', icone: Megaphone },
     { a: '/supervision/communaute', libelle: 'Communauté', icone: UsersRound },
-    { a: '/supervision/demo', libelle: 'Démonstration', icone: Presentation },
     { groupe: 'Administration' },
     { a: '/supervision/utilisateurs', libelle: 'Utilisateurs', icone: Users },
     { a: '/supervision/demandes-agent', libelle: 'Demandes d’accès', icone: UserCheck, compteur: 'demandes' },
     { a: '/supervision/referentiels', libelle: 'Services & catégories', icone: Tags },
     { a: '/supervision/parametres', libelle: 'Paramètres', icone: SlidersHorizontal },
     { a: '/supervision/audit', libelle: "Journal d'audit", icone: FileClock },
+    { a: '/supervision/demo', libelle: 'Démonstration', icone: Presentation },
   ],
 };
 
@@ -110,6 +109,8 @@ export default function Layout() {
   const compteurs = { demandes: demandes?.en_attente || 0 };
   const liens = NAVIGATION[utilisateur.role] || [];
   const nonLues = compteur?.non_lues || 0;
+  // Les listes ont leur propre recherche : une seule barre à l'écran.
+  const rechercheGlobale = utilisateur.role !== 'citoyen' && !/\/(interventions|incidents|sos)$/.test(lieu.pathname);
   const regionAlertes = utilisateur.role === 'agent' ? utilisateur.profil_agent?.zones?.[0] : utilisateur.region;
 
   useEffect(() => setMobileOuvert(false), [lieu.pathname]);
@@ -124,8 +125,7 @@ export default function Layout() {
     e.preventDefault();
     const q = recherche.trim();
     if (!q) return;
-    const cible = utilisateur.role === 'superadmin' ? (q.toUpperCase().startsWith('SOS') ? '/supervision/sos' : '/supervision/incidents')
-      : utilisateur.role === 'agent' ? '/agent/interventions' : '/citoyen/dossiers';
+    const cible = utilisateur.role === 'agent' ? '/agent/interventions' : q.toUpperCase().startsWith('SOS') ? '/supervision/sos' : '/supervision/incidents';
     navigate(`${cible}?q=${encodeURIComponent(q)}`);
   };
 
@@ -172,18 +172,21 @@ export default function Layout() {
         <header className="sticky top-0 z-[700] border-b border-surface-bord bg-surface/90 backdrop-blur">
           <div className="flex h-16 items-center gap-3 px-4 sm:px-6">
             <button type="button" className="rounded-lg p-2 hover:bg-surface-douce lg:hidden" onClick={() => setMobileOuvert(true)} aria-label="Ouvrir le menu"><Menu className="h-5 w-5" /></button>
-            <form onSubmit={rechercher} className="relative hidden max-w-md flex-1 sm:block" role="search">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-texte-pale" aria-hidden />
-              <input value={recherche} onChange={(e) => setRecherche(e.target.value)} className="champ rounded-full bg-surface-douce py-2 pl-9"
-                placeholder={utilisateur.role === 'citoyen' ? 'Rechercher un de mes dossiers (référence)…' : 'Rechercher une référence, une adresse…'} aria-label="Recherche" />
-            </form>
+            {rechercheGlobale && (
+              <form onSubmit={rechercher} className="relative hidden max-w-md flex-1 sm:block" role="search">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-texte-pale" aria-hidden />
+                <input value={recherche} onChange={(e) => setRecherche(e.target.value)} className="champ rounded-full bg-surface-douce py-2 pl-9"
+                  placeholder="Rechercher une référence, une adresse…" aria-label="Recherche" />
+              </form>
+            )}
             <div className="ml-auto flex items-center gap-1.5">
               {!enLigne && <span className="mr-2 inline-flex items-center gap-1.5 rounded-full bg-alerte-clair px-3 py-1 text-xs font-semibold text-alerte"><WifiOff className="h-3.5 w-3.5" /> Hors connexion</span>}
-              {utilisateur.role === 'citoyen' && (
+              {utilisateur.role === 'citoyen' && lieu.pathname !== '/citoyen' && (
                 <NavLink to="/citoyen" className="mr-1 hidden items-center gap-1.5 rounded-full bg-sos px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-sos-fonce sm:inline-flex">
                   <Siren className="h-4 w-4" /> SOS
                 </NavLink>
               )}
+              {utilisateur.role !== 'citoyen' && <AlertesTempsReel role={utilisateur.role} />}
               {traduit && (
                 <div className="mr-1 inline-flex rounded-full bg-surface-douce p-0.5 text-xs font-bold ring-1 ring-surface-bord" role="group" aria-label="Langue / Làkk">
                   {[['fr', 'FR', 'Français'], ['wo', 'WO', 'Wolof']].map(([code, court, long]) => (
@@ -213,7 +216,6 @@ export default function Layout() {
         )}
         {config?.erreur && <div className="bg-red-50 px-6 py-2 text-sm text-red-800">Configuration indisponible : certaines listes peuvent être vides. {config.erreur.detail}</div>}
 
-        {utilisateur.role !== 'citoyen' && <AlertesTempsReel role={utilisateur.role} />}
         <main id="contenu" className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6 lg:px-8" tabIndex={-1}>
           <Outlet />
         </main>

@@ -5,11 +5,10 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useRessource } from '../../api/hooks';
-import CarteSenAlert, { Legende, echapper } from '../../components/Carte';
 import Photo from '../../components/Photo';
 import { Bandeau, Carte, Chargement, EnTetePage, EtatErreur, IndicateurSynchro, Indicateur, Selecteur } from '../../components/ui';
 import { useConfig } from '../../lib/config';
-import { STATUTS, date, duree, isoJour, nombre, pct } from '../../lib/format';
+import { date, duree, isoJour, nombre, pct } from '../../lib/format';
 
 // Palette validée (validate_palette.js : vert et rouge du drapeau, ΔE daltonisme 8,5 ; SOS en pointillé en plus).
 const COULEUR_INCIDENTS = '#00853F';
@@ -40,20 +39,12 @@ export default function Supervision() {
   const debut = new Date(Date.now() - (Number(periode) - 1) * 86400000);
   const filtres = { date_debut: isoJour(debut), date_fin: isoJour(fin), region, type_incident: categorie, granularite };
   const { donnees: s, chargement, erreur, recharger, derniereSynchro } = useRessource('/tableau-de-bord/statistiques/', filtres, { intervalle: 60000 });
-  const actifsI = useRessource('/incidents/', { actifs: true, taille: 100, region }, { intervalle: 60000 });
-  const actifsS = useRessource('/alertes/sos/', { actifs: true, taille: 100, region }, { intervalle: 60000 });
 
   const serie = useMemo(() => {
     if (!s) return [];
     const cles = [...new Set([...Object.keys(s.evolution.incidents), ...Object.keys(s.evolution.sos)])].sort();
     return cles.map((k) => ({ periode: date(k), incidents: s.evolution.incidents[k] || 0, sos: s.evolution.sos[k] || 0 }));
   }, [s]);
-  const points = useMemo(() => [
-    ...(actifsI.donnees?.results || []).map((d) => ({ id: `i${d.id}`, lat: d.latitude, lng: d.longitude, couleur: STATUTS[d.statut].point,
-      popup: `<b>${echapper(d.reference)}</b><br/>${echapper(d.categorie_libelle)} · ${echapper(STATUTS[d.statut].libelle)}<br/><a href="/app/supervision/incidents?dossier=${d.id}">Ouvrir</a>` })),
-    ...(actifsS.donnees?.results || []).map((d) => ({ id: `s${d.id}`, lat: d.latitude, lng: d.longitude, couleur: COULEUR_SOS, sos: true,
-      popup: `<b>${echapper(d.reference)}</b><br/>Alerte SOS · ${echapper(STATUTS[d.statut].libelle)}<br/><a href="/app/supervision/sos?dossier=${d.id}">Ouvrir</a>` })),
-  ], [actifsI.donnees, actifsS.donnees]);
 
   const r = s?.resume;
   const def = s?.definitions || {};
@@ -136,12 +127,53 @@ export default function Supervision() {
             </Carte>
           </div>
 
-          <div className="mt-5 grid gap-5 xl:grid-cols-[1.4fr_1fr]">
-            <Carte titre="Dossiers ouverts sur la carte" action={<Link to="/supervision/risques" className="lien text-sm">Zones de risque →</Link>} corpsClassName="space-y-3 p-3">
-              <CarteSenAlert points={points} hauteur={420} cadrer={points.length > 0} />
-              <Legende elements={[{ libelle: 'SOS', couleur: COULEUR_SOS }, ...['nouveau', 'affecte', 'accepte', 'en_cours'].map((k) => ({ libelle: STATUTS[k].libelle, couleur: STATUTS[k].point }))]} />
+          <div className="mt-5 grid items-start gap-5 xl:grid-cols-[1.4fr_1fr]">
+            <div className="space-y-5">
+              <Carte titre="Satisfaction des citoyens (dossiers résolus de la période)">
+                {!s.satisfaction?.nombre ? (
+                  <p className="text-sm text-texte-doux">Aucune évaluation sur la période. Après la résolution d’un dossier, le déclarant peut noter l’intervention de 1 à 5.</p>
+                ) : (
+                  <div className="grid gap-6 md:grid-cols-[220px_1fr]">
+                    <div title={def.satisfaction}>
+                      <p className="flex items-center gap-2 font-titre text-4xl font-extrabold">{s.satisfaction.moyenne.toFixed(1).replace('.', ',')}<Star className="h-7 w-7 fill-or text-or-vif" /></p>
+                      <p className="text-sm text-texte-doux">sur 5 · {nombre(s.satisfaction.nombre)} avis</p>
+                      <p className="mt-1 text-xs text-texte-pale">Taux de réponse : {pct(s.satisfaction.taux_reponse)}</p>
+                    </div>
+                    <ul className="space-y-2.5">
+                      {s.satisfaction.par_service.map((x) => (
+                        <li key={x.service} className="grid grid-cols-[minmax(0,180px)_1fr_auto] items-center gap-3 text-sm" title={`${x.moyenne} / 5 sur ${x.nombre} avis`}>
+                          <span className="truncate">{x.service}</span>
+                          <span className="h-2 overflow-hidden rounded-full bg-surface-douce"><span className="block h-full rounded-[4px] bg-marque-600" style={{ width: `${(x.moyenne / 5) * 100}%` }} /></span>
+                          <span className="font-semibold tabular-nums">{x.moyenne.toFixed(1).replace('.', ',')} <span className="font-normal text-texte-pale">({x.nombre})</span></span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </Carte>
+            <Carte titre="Qualité et complétude des données (incidents de la période)">
+              {s.qualite.total === 0 ? <p className="text-sm text-texte-doux">Aucun incident sur la période.</p> : (
+                <div className="grid gap-4 grid-cols-2 sm:grid-cols-3">
+                  {[
+                    ['avec_position_pct', 'Avec position'], ['precision_gps_50m_pct', 'GPS ≤ 50 m'], ['avec_description_pct', 'Description ≥ 20 car.'],
+                    ['avec_photo_pct', 'Avec photo'],
+                  ].map(([k, l]) => (
+                    <div key={k} title={s.qualite.definitions[k]}>
+                      <p className="text-xs text-texte-doux">{l}</p>
+                      <p className="font-titre text-xl font-extrabold">{pct(s.qualite[k])}</p>
+                      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-douce"><div className="h-full rounded-full bg-marque-600" style={{ width: `${s.qualite[k]}%` }} /></div>
+                    </div>
+                  ))}
+                  <div>
+                    <p className="text-xs text-texte-doux">Doublons potentiels</p>
+                    <p className="font-titre text-xl font-extrabold">{s.qualite.doublons_potentiels}</p>
+                    {s.qualite.doublons_potentiels > 0 && <Link className="lien text-xs" to="/supervision/incidents?doublons=true">Examiner</Link>}
+                  </div>
+                </div>
+              )}
             </Carte>
-            <Carte titre="Répartition par région" corpsClassName="max-h-[480px] overflow-y-auto p-0">
+            </div>
+            <Carte titre="Répartition par région" action={<Link to="/supervision/carte" className="lien text-sm">Voir sur la carte →</Link>} corpsClassName="max-h-[480px] overflow-y-auto p-0">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-surface-douce text-left text-xs uppercase text-texte-doux">
                   <tr><th className="px-4 py-2">Région</th><th className="px-4 py-2 text-right">Incidents</th><th className="px-4 py-2 text-right">SOS</th></tr>
@@ -158,51 +190,6 @@ export default function Supervision() {
               </table>
             </Carte>
           </div>
-
-          <Carte className="mt-5" titre="Satisfaction des citoyens (dossiers résolus de la période)">
-            {!s.satisfaction?.nombre ? (
-              <p className="text-sm text-texte-doux">Aucune évaluation sur la période. Après la résolution d’un dossier, le déclarant peut noter l’intervention de 1 à 5.</p>
-            ) : (
-              <div className="grid gap-6 md:grid-cols-[220px_1fr]">
-                <div title={def.satisfaction}>
-                  <p className="flex items-center gap-2 font-titre text-4xl font-extrabold">{s.satisfaction.moyenne.toFixed(1).replace('.', ',')}<Star className="h-7 w-7 fill-or text-or-vif" /></p>
-                  <p className="text-sm text-texte-doux">sur 5 · {nombre(s.satisfaction.nombre)} avis</p>
-                  <p className="mt-1 text-xs text-texte-pale">Taux de réponse : {pct(s.satisfaction.taux_reponse)}</p>
-                </div>
-                <ul className="space-y-2.5">
-                  {s.satisfaction.par_service.map((x) => (
-                    <li key={x.service} className="grid grid-cols-[minmax(0,180px)_1fr_auto] items-center gap-3 text-sm" title={`${x.moyenne} / 5 sur ${x.nombre} avis`}>
-                      <span className="truncate">{x.service}</span>
-                      <span className="h-2 overflow-hidden rounded-full bg-surface-douce"><span className="block h-full rounded-[4px] bg-marque-600" style={{ width: `${(x.moyenne / 5) * 100}%` }} /></span>
-                      <span className="font-semibold tabular-nums">{x.moyenne.toFixed(1).replace('.', ',')} <span className="font-normal text-texte-pale">({x.nombre})</span></span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </Carte>
-
-          <Carte className="mt-5" titre="Qualité et complétude des données (incidents de la période)">
-            {s.qualite.total === 0 ? <p className="text-sm text-texte-doux">Aucun incident sur la période.</p> : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                {[
-                  ['avec_position_pct', 'Avec position'], ['precision_gps_50m_pct', 'GPS ≤ 50 m'], ['avec_description_pct', 'Description ≥ 20 car.'],
-                  ['avec_photo_pct', 'Avec photo'],
-                ].map(([k, l]) => (
-                  <div key={k} title={s.qualite.definitions[k]}>
-                    <p className="text-xs text-texte-doux">{l}</p>
-                    <p className="font-titre text-xl font-extrabold">{pct(s.qualite[k])}</p>
-                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-douce"><div className="h-full rounded-full bg-marque-600" style={{ width: `${s.qualite[k]}%` }} /></div>
-                  </div>
-                ))}
-                <div>
-                  <p className="text-xs text-texte-doux">Doublons potentiels</p>
-                  <p className="font-titre text-xl font-extrabold">{s.qualite.doublons_potentiels}</p>
-                  {s.qualite.doublons_potentiels > 0 && <Link className="lien text-xs" to="/supervision/incidents?doublons=true">Examiner</Link>}
-                </div>
-              </div>
-            )}
-          </Carte>
 
           <details className="carte mt-5 p-5 text-sm">
             <summary className="flex cursor-pointer items-center gap-2 font-semibold"><Info className="h-4 w-4" /> Définition des indicateurs</summary>

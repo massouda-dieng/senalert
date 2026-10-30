@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import { BellRing, ShieldAlert, Siren, Volume2, VolumeX, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { ilYa } from '../lib/format';
@@ -87,7 +88,7 @@ export default function AlertesTempsReel({ role }) {
 
   return (
     <>
-      <div className="pointer-events-none fixed right-4 top-20 z-[1050] flex w-[min(92vw,380px)] flex-col gap-2" aria-live="assertive">
+      {createPortal(<div className="pointer-events-none fixed right-4 top-20 z-[1050] flex w-[min(92vw,380px)] flex-col gap-2" aria-live="assertive">
         {alertes.map((d) => (
           <div key={d.cle} className={clsx('pointer-events-auto animate-apparition overflow-hidden rounded-2xl shadow-flottant ring-1',
             d.sos ? 'bg-sos text-white ring-sos-fonce' : 'bg-surface text-texte ring-surface-bord')}>
@@ -108,9 +109,9 @@ export default function AlertesTempsReel({ role }) {
             </button>
           </div>
         ))}
-      </div>
-      <div className="fixed bottom-4 left-4 z-[1040] flex items-center gap-1 rounded-full bg-surface/95 p-1 text-xs shadow-flottant ring-1 ring-surface-bord lg:left-[calc(16rem+1rem)]">
-        <span className="flex items-center gap-1.5 px-2.5 font-semibold text-texte-doux"><span className="h-2 w-2 animate-pulse rounded-full bg-succes" /> En direct</span>
+      </div>, document.body)}
+      <div className="mr-1 flex items-center gap-0.5 rounded-full bg-surface-douce p-0.5 text-xs ring-1 ring-surface-bord">
+        <span className="flex items-center gap-1.5 px-2 font-semibold text-texte-doux"><span className="h-2 w-2 animate-pulse rounded-full bg-succes" /> <span className="hidden md:inline">En direct</span></span>
         <button type="button" onClick={basculerSon} className="rounded-full p-1.5 text-texte-doux hover:bg-surface-douce" aria-label={son ? 'Couper le son des alertes' : 'Activer le son des alertes'} title={son ? 'Son activé' : 'Son coupé'}>
           {son ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
         </button>

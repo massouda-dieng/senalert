@@ -1,7 +1,8 @@
 import {
-  ArrowRight, BellRing, BookOpenCheck, Bot, CheckCircle2, Flame, Map, MapPinned, Megaphone, Phone, ShieldCheck, Siren,
+  ArrowRight, BellRing, BookOpenCheck, Bot, Check, CheckCircle2, Flame, Map, MapPinned, Megaphone, Phone, Siren,
   Smartphone, UsersRound,
 } from 'lucide-react';
+import clsx from 'clsx';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useRessource } from '../api/hooks';
@@ -48,6 +49,44 @@ const ETAPES = [
   { photo: 'croix-rouge-agent', titre: '3. Vous êtes informé', texte: 'Chaque étape vous est notifiée jusqu’au compte rendu de l’intervention.' },
 ];
 
+const PARCOURS = [
+  { titre: 'Alerte reçue', texte: 'Le dossier arrive au service de votre zone.' },
+  { titre: 'Pris en charge', texte: 'Un agent accepte l’intervention.' },
+  { titre: 'Secours en route', texte: 'Vous voyez l’agent approcher sur la carte.' },
+  { titre: 'Résolu', texte: 'Compte rendu, puis votre évaluation.' },
+];
+
+/** Les étapes réelles d'un dossier, parcourues en boucle (immobile si l'utilisateur réduit les animations). */
+function ParcoursDossier({ className }) {
+  const [etape, setEtape] = useState(PARCOURS.length - 1);
+  useEffect(() => {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
+    setEtape(0);
+    const t = setInterval(() => setEtape((e) => (e + 1) % PARCOURS.length), 2400);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className={clsx('rounded-3xl border border-surface-bord bg-surface p-5 shadow-flottant', className)}>
+      <p className="text-xs font-bold uppercase tracking-widest text-marque-600">Le parcours d’un dossier</p>
+      <ol className="mt-4">
+        {PARCOURS.map((p, i) => (
+          <li key={p.titre} className="relative flex gap-3 pb-3.5 last:pb-0">
+            {i < PARCOURS.length - 1 && <span className={clsx('absolute bottom-0 left-[11px] top-6 w-0.5 transition-colors duration-500', i < etape ? 'bg-marque-600' : 'bg-surface-bord')} aria-hidden />}
+            <span className={clsx('relative grid h-6 w-6 shrink-0 place-items-center rounded-full transition-colors duration-500',
+              i <= etape ? 'bg-marque-600 text-white' : 'bg-surface-douce text-texte-pale ring-1 ring-surface-bord', i === etape && 'ring-4 ring-marque-600/20')}>
+              {i < etape ? <Check className="h-3.5 w-3.5" aria-hidden /> : <span className="text-[11px] font-bold">{i + 1}</span>}
+            </span>
+            <div className={clsx('min-w-0 transition-opacity duration-500', i > etape && 'opacity-50')}>
+              <p className="text-sm font-bold leading-6">{p.titre}</p>
+              <p className="text-[13px] leading-snug text-texte-doux">{p.texte}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
 export default function Vitrine() {
   const { utilisateur } = useAuth();
   const config = useConfig();
@@ -59,20 +98,19 @@ export default function Vitrine() {
   return (
     <div className="bg-surface-douce">
       {/* Barre de navigation */}
-      <header className="absolute inset-x-0 top-0 z-20">
+      <header className="relative z-20">
         <BandeDrapeau className="h-1" />
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-8">
-          <Link to="/" className="flex items-center gap-2.5 text-white"><Logo className="h-10 w-10" clair /><span className="font-titre text-xl font-extrabold">SenAlert</span></Link>
+          <Link to="/" className="flex items-center gap-2.5"><Logo className="h-10 w-10" /><span className="font-titre text-xl font-extrabold">SenAlert</span></Link>
           <nav className="flex items-center gap-2">
-            <a href="#fonctionnalites" className="hidden rounded-full px-4 py-2 text-sm font-semibold text-white/90 hover:bg-white/10 md:block">Fonctionnalités</a>
-            <a href="#comment" className="hidden rounded-full px-4 py-2 text-sm font-semibold text-white/90 hover:bg-white/10 md:block">Comment ça marche</a>
-            <Link to="/simulateur" className="hidden rounded-full px-4 py-2 text-sm font-semibold text-white/90 hover:bg-white/10 md:block">Essayer l’app mobile</Link>
+            <a href="#fonctionnalites" className="hidden rounded-full px-4 py-2 text-sm font-semibold text-texte-doux hover:text-texte md:block">Fonctionnalités</a>
+            <a href="#comment" className="hidden rounded-full px-4 py-2 text-sm font-semibold text-texte-doux hover:text-texte md:block">Comment ça marche</a>
             {espace ? (
-              <Link to={espace} className="rounded-full bg-surface px-5 py-2 text-sm font-bold text-marque-800 hover:bg-marque-50">Mon espace</Link>
+              <Link to={espace} className="rounded-full bg-marque-800 px-5 py-2 text-sm font-bold text-white hover:bg-marque-700">Mon espace</Link>
             ) : (
               <>
-                <Link to="/connexion" className="rounded-full px-4 py-2 text-sm font-semibold text-white hover:bg-white/10">Connexion</Link>
-                <Link to="/inscription" className="rounded-full bg-surface px-5 py-2 text-sm font-bold text-marque-800 hover:bg-marque-50">S’inscrire</Link>
+                <Link to="/connexion" className="rounded-full px-4 py-2 text-sm font-semibold hover:bg-surface">Connexion</Link>
+                <Link to="/inscription" className="rounded-full bg-marque-800 px-5 py-2 text-sm font-bold text-white hover:bg-marque-700">S’inscrire</Link>
               </>
             )}
           </nav>
@@ -80,70 +118,52 @@ export default function Vitrine() {
       </header>
 
       {/* Héros */}
-      <section className="relative min-h-[640px] overflow-hidden lg:min-h-[720px]">
-        <Photo nom="dakar-coucher-soleil" priorite className="absolute inset-0 h-full w-full" imgClassName="animate-zoomLent" alt="Coucher de soleil sur Dakar" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/10" aria-hidden />
-        <div className="relative mx-auto flex max-w-7xl flex-col gap-10 px-4 pb-20 pt-36 sm:px-8 lg:flex-row lg:items-center lg:pt-44">
-          <div className="max-w-2xl text-white">
-            <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-or ring-1 ring-white/20">
-              <ShieldCheck className="h-4 w-4" /> Plateforme citoyenne d’alerte — Sénégal
-            </p>
-            <h1 className="mt-5 font-titre text-4xl font-extrabold leading-[1.1] sm:text-6xl">
-              Ensemble, <span className="text-or">protégeons</span> nos quartiers.
-            </h1>
-            <p className="mt-5 max-w-xl text-lg text-white/85">
-              Signalez une urgence en quelques secondes, suivez l’intervention des secours et restez informé des alertes de votre région — sur un seul canal.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link to={espace || '/inscription'} className="inline-flex items-center gap-2 rounded-full bg-marque-600 px-6 py-3.5 font-bold text-white shadow-lg shadow-marque-600/30 hover:bg-marque-500">
-                {espace ? 'Ouvrir mon espace' : 'Créer mon compte gratuit'} <ArrowRight className="h-5 w-5" />
-              </Link>
-              <Link to={espace ? `${espace}` : '/connexion'} className="inline-flex items-center gap-2 rounded-full bg-sos px-6 py-3.5 font-bold text-white shadow-lg hover:bg-sos-fonce">
-                <Siren className="h-5 w-5" /> Alerte SOS
-              </Link>
-            </div>
-            {config.numeros_urgence.length > 0 && (
-              <p className="mt-6 flex flex-wrap items-center gap-2 text-sm text-white/80">
-                Danger immédiat ? Appelez :
-                {config.numeros_urgence.map((n) => <a key={n.numero} href={`tel:${n.numero}`} className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 font-bold text-white hover:bg-white/25"><Phone className="h-3.5 w-3.5" />{n.service} {n.numero}</a>)}
-              </p>
-            )}
+      <section className="mx-auto grid max-w-7xl items-center gap-10 px-4 pb-14 pt-8 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-14 lg:pb-20 lg:pt-12">
+        <div>
+          <p className="text-sm font-bold uppercase tracking-widest text-marque-600">Plateforme citoyenne d’alerte · Sénégal</p>
+          <h1 className="mt-4 font-titre text-4xl font-extrabold leading-[1.08] sm:text-[3.4rem]">
+            De l’alerte à l’intervention, suivez <span className="text-marque-600">chaque étape</span>.
+          </h1>
+          <p className="mt-5 max-w-xl text-lg leading-relaxed text-texte-doux">
+            SenAlert relie les citoyens, les agents de secours et les superviseurs. Votre SOS ou votre signalement part vers le service de votre zone, et vous voyez où en est votre dossier.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link to={espace || '/inscription'} className="inline-flex items-center gap-2 rounded-full bg-marque-800 px-6 py-3.5 font-bold text-white hover:bg-marque-700">
+              {espace ? 'Ouvrir mon espace' : 'Créer mon compte'} <ArrowRight className="h-5 w-5" />
+            </Link>
+            <Link to="/simulateur" className="inline-flex items-center gap-2 rounded-full border border-surface-bord bg-surface px-6 py-3.5 font-bold hover:bg-surface-douce">
+              <Smartphone className="h-5 w-5" /> Essayer l’app mobile
+            </Link>
           </div>
-          {/* Aperçu téléphone */}
-          <div className="mx-auto hidden w-[290px] shrink-0 rotate-2 rounded-[2.6rem] bg-marque-950 p-3 shadow-2xl ring-4 ring-white/10 lg:block">
-            <div className="overflow-hidden rounded-[2rem] bg-surface-douce">
-              <div className="bg-gradient-to-br from-marque-700 to-marque-900 px-5 pb-8 pt-7 text-white">
-                <p className="text-xs text-white/70">Bonjour Awa</p>
-                <p className="font-titre text-lg font-extrabold">Besoin d’aide ?</p>
-                <div className="mx-auto mt-5 grid h-28 w-28 animate-pulsation place-items-center rounded-full bg-sos font-titre text-2xl font-extrabold">SOS</div>
-              </div>
-              <div className="space-y-2 p-4">
-                {[['Inondation', 'En cours', 'bg-amber-100 text-amber-800'], ['Accident', 'Résolu', 'bg-emerald-100 text-emerald-800']].map(([t, st, c]) => (
-                  <div key={t} className="flex items-center justify-between rounded-2xl bg-surface p-3 text-xs shadow-sm"><span className="font-semibold">{t}</span><span className={`rounded-full px-2 py-0.5 font-bold ${c}`}>{st}</span></div>
-                ))}
-                <p className="pt-1 text-center text-[10px] text-texte-pale">Aperçu de l’interface</p>
-              </div>
+          {config.numeros_urgence.length > 0 && (
+            <div className="mt-8 flex flex-wrap items-center gap-2 border-t border-surface-bord pt-5 text-sm">
+              <span className="font-semibold text-texte-doux">Danger immédiat ? Appelez :</span>
+              {config.numeros_urgence.map((n) => <a key={n.numero} href={`tel:${n.numero}`} className="inline-flex items-center gap-1.5 rounded-full bg-sos-clair px-3 py-1 font-bold text-sos-fonce hover:bg-sos hover:text-white"><Phone className="h-3.5 w-3.5" />{n.service} {n.numero}</a>)}
             </div>
-          </div>
+          )}
+        </div>
+        <div className="relative lg:pl-10">
+          <Photo nom="ambulance-pompiers" priorite className="h-72 rounded-[2rem] sm:h-96 lg:h-[520px]" imgClassName="object-[62%_20%]" alt="Ambulance des sapeurs-pompiers à Thiès" />
+          <ParcoursDossier className="relative mx-4 -mt-20 sm:mx-10 lg:absolute lg:bottom-8 lg:left-0 lg:mx-0 lg:mt-0 lg:w-[310px]" />
         </div>
       </section>
 
       {/* Chiffres réels */}
-      <section className="relative z-10 mx-auto -mt-12 max-w-6xl px-4 sm:px-8">
-        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-3xl bg-surface-bord shadow-flottant md:grid-cols-4">
+      <section className="border-y border-surface-bord bg-surface">
+        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-y-5 px-4 py-6 sm:px-8 md:grid-cols-4">
           {[
             ['Signalements', s?.signalements], ['Dossiers résolus', s?.resolus], ['Citoyens inscrits', s?.citoyens], ['Services mobilisables', s?.services],
           ].map(([l, v]) => (
-            <div key={l} className="bg-surface p-6 text-center">
-              <p className="font-titre text-3xl font-extrabold text-marque-700 sm:text-4xl"><Compteur valeur={v} /></p>
-              <p className="mt-1 text-sm text-texte-doux">{l}</p>
+            <div key={l} className="flex items-baseline gap-2.5">
+              <p className="font-titre text-3xl font-extrabold text-marque-700"><Compteur valeur={v} /></p>
+              <p className="text-sm text-texte-doux">{l}</p>
             </div>
           ))}
         </div>
-        <p className="mt-2 text-center text-xs text-texte-pale">
-          Chiffres calculés en direct depuis la base SenAlert{s?.donnees_demo ? ' — elle contient actuellement des données de démonstration' : ''}.
-        </p>
       </section>
+      <p className="mx-auto max-w-7xl px-4 pt-2 text-xs text-texte-pale sm:px-8">
+        Chiffres calculés en direct depuis la base SenAlert{s?.donnees_demo ? ' — elle contient actuellement des données de démonstration' : ''}.
+      </p>
 
       {/* Alertes officielles en cours */}
       {alertes?.results?.length > 0 && (
@@ -206,10 +226,7 @@ export default function Vitrine() {
               ))}
             </ul>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Photo nom="ambulance-pompiers" className="h-48 rounded-3xl" alt="Ambulance des sapeurs-pompiers" />
-            <Photo nom="croix-rouge-equipe" className="mt-8 h-48 rounded-3xl" alt="Croix-Rouge du Sénégal" />
-          </div>
+          <Photo nom="croix-rouge-equipe" className="h-72 rounded-3xl" alt="Croix-Rouge du Sénégal" />
         </div>
       </section>
 

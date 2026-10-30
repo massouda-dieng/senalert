@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:senalert_mobile/features/auth/auth_screens.dart';
+import 'package:senalert_mobile/features/auth/bienvenue_screen.dart';
 import 'package:senalert_mobile/state/configuration.dart';
 import 'package:senalert_mobile/state/session.dart';
 import 'package:senalert_mobile/ui/kit.dart';
@@ -43,6 +44,14 @@ void main() {
     for (final libelle in ['Citoyen', 'Agent', 'Superviseur']) {
       expect(find.text(libelle), findsOneWidget);
     }
+  });
+
+  testWidgets('accueil : un seul écran, deux actions et les premiers secours sans compte', (t) async {
+    await t.pumpWidget(envelopper(const BienvenueScreen()));
+    expect(find.text('Créer mon compte'), findsOneWidget);
+    expect(find.text('J’ai déjà un compte'), findsOneWidget);
+    expect(find.text('Premiers secours, sans compte'), findsOneWidget);
+    expect(find.byType(PageView), findsNothing);
   });
 
   testWidgets('badge de statut lisible', (t) async {

@@ -25,7 +25,7 @@ Le jour J : `./run.sh backend` (et `./run.sh mobile` si l'application Flutter es
 3. **Superadmin (3 min)** — `superadmin.test@…`.
    * Supervision : indicateurs définis, bandeau « données de démonstration », évolution, carte.
    * Incidents : retrouver la référence, ouvrir le détail, **Affecter** à l'agent pompier (seuls les agents couvrant la zone sont proposés) ; montrer un doublon potentiel s'il apparaît.
-   * Carte & risques : formule du mémoire, classement, comparaison de période, avertissement « indicateur descriptif ».
+   * Zones de risque : formule du mémoire, classement, comparaison de période, avertissement « indicateur descriptif ».
    * Export CSV / PDF ; journal d'audit (l'affectation y figure).
 4. **Agent (2 min)** — `agent.pompiers@…` : notification d'affectation, **Accepter**, **Démarrer**, itinéraire, **Clôturer** avec compte rendu.
 5. **Retour citoyen (1 min)** — le dossier est « Résolu », historique horodaté, compte rendu, notifications.

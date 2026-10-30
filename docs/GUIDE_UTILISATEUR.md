@@ -24,13 +24,13 @@ L'écran de connexion propose trois onglets : **Citoyen**, **Agent**, **Supervis
 
 **Signaler un incident** — 4 étapes : catégorie → lieu (« Utiliser ma position » ou toucher la carte, repère facultatif) → détails (description, photos ≤ 5) → vérification → envoi. Le brouillon est conservé sur l'appareil en cas de coupure. Vous recevez une référence `INC-AAAA-NNNNNN`.
 
-**Suivre mes dossiers** — « Mes dossiers » : recherche par référence, filtre par statut. Le détail montre l'historique horodaté (Nouveau → Affecté → Pris en charge → En cours → Résolu), le service intervenant et, à la clôture, le compte rendu. Vous pouvez **compléter** un dossier ouvert (texte, photos) ou l'**annuler** tant qu'il n'est pas pris en charge.
+**Suivre mes dossiers** — « Mes dossiers » : recherche par référence, vues **Tous** et **En cours**. L'accueil rappelle uniquement les dossiers en cours. Le détail montre l'historique horodaté (Nouveau → Affecté → Pris en charge → En cours → Résolu), le service intervenant et, à la clôture, le compte rendu. Vous pouvez **compléter** un dossier ouvert (texte, photos) ou l'**annuler** tant qu'il n'est pas pris en charge.
 
 **Autres fonctions** — Carte des incidents récents (positions arrondies) ; Services proches (hôpitaux, cliniques, pharmacies, police, pompiers d'après OpenStreetMap, avec distance, téléphone si connu et itinéraire) ; Premiers secours (12 fiches consultables hors connexion) ; Assistant (questions de prévention et d'utilisation ; historique gardé sur votre appareil) ; Notifications ; Profil (préférences, mot de passe, déconnexion de tous les appareils, suppression du compte).
 
 **Autour de moi** — incidents récents près de chez vous (après localisation), triés par distance. « Je le vois aussi » confirme un incident et aide les secours à prioriser ; les messages sont publics : n'y mettez aucune donnée personnelle.
 
-**Carte interactive** — bouton « Couches » : fond plan / clair / satellite, incidents, carte de chaleur, zones à risque, alertes de zone, services proches (« Charger les services autour du centre »). Barre de recherche pour trouver un lieu, bouton « Me localiser ».
+**Carte interactive** — bouton « Couches » : fond plan / clair / satellite, incidents, carte de chaleur, zones à risque, alertes de zone. Les services proches ont leur propre page. Barre de recherche pour trouver un lieu, bouton « Me localiser ».
 
 **Alertes de zone** — les alertes officielles de votre région apparaissent en bandeau (jaune : vigilance, rouge : danger) et en notification.
 
@@ -40,7 +40,9 @@ L'écran de connexion propose trois onglets : **Citoyen**, **Agent**, **Supervis
 
 Le compte est rattaché à un **service** (Police, Pompiers, Santé, SENELEC, ONAS…) et des **zones** (régions). S’il a été créé par le superadministrateur avec un mot de passe initial, changez-le à la première connexion (bandeau d’invitation).
 
-**Tableau de bord** — nouvelles alertes accessibles, interventions en attente / en cours, résolues sur 7 jours, délai moyen de prise en charge, listes « Mes interventions en cours » et « Nouvelles alertes de ma zone ». Actualisation automatique (web) ou tirer pour rafraîchir (mobile).
+**Tableau de bord** — nombre de nouvelles alertes (qui mène à Interventions), interventions en cours, résolues sur 7 jours, délai moyen de prise en charge (web) et liste « Mes interventions en cours ». Actualisation automatique (web) ou tirer pour rafraîchir (mobile).
+
+**Interventions** — onglets Incidents / SOS avec le nombre de dossiers ouverts, puis trois vues : **Ouverts**, **Mes interventions**, **Tous** (y compris les dossiers clos). Le bouton **Filtres** ouvre catégorie, région, gravité et dates.
 
 **Traiter une intervention**
 | Situation | Action |
@@ -54,15 +56,15 @@ Le compte est rattaché à un **service** (Police, Pompiers, Santé, SENELEC, ON
 
 ## Superadministrateur (web uniquement : `/app/supervision`)
 
-**Supervision** — indicateurs calculés en direct (filtres période, région, catégorie, granularité), évolution, répartition par catégorie et par région, carte des dossiers ouverts, qualité des données (position, précision GPS, description, photos, doublons). Survolez un indicateur pour sa définition ; la section « Définition des indicateurs » les détaille.
+**Supervision** — indicateurs calculés en direct (filtres période, région, catégorie, granularité), évolution, répartition par catégorie et par région, qualité des données (position, précision GPS, description, photos, doublons). Survolez un indicateur pour sa définition ; la section « Définition des indicateurs » les détaille.
 
 **Alertes de zone** — « Nouvelle alerte » : titre, message, consignes, niveau, régions (aucune = tout le pays), fin éventuelle. Les citoyens et agents concernés sont notifiés ; « Terminer » met fin à l'alerte.
 
-**Communauté** — fil des incidents avec le nombre de confirmations ; modération des messages (masquer / rétablir), journalisée.
+**Communauté** — confirmations et messages des citoyens sur les incidents ; modération des messages (masquer / rétablir), journalisée.
 
 **Incidents / Alertes SOS** — tableau paginé, filtres combinables (référence, statut, catégorie, région, gravité, dates, doublons potentiels), panneau de détail. Actions : **Affecter / Réaffecter** (agents actifs couvrant la région, filtrables par service), **Rejeter** (signalement non fondé), **Annuler**, gravité, notes. Exports **CSV** (tableur, sans données personnelles) et **Rapport PDF**.
 
-**Carte & risques** — score par région selon la méthode du mémoire, classement, carte, comparaison avec la période précédente, « Enregistrer un instantané » (historique). Un contour pointillé signale des données insuffisantes.
+**Zones de risque** — score par région selon la méthode du mémoire, classement, comparaison avec la période précédente, « Enregistrer un instantané » (historique), lien « Voir sur la carte » qui ouvre la carte interactive avec la couche des zones à risque. La mention « données insuffisantes » signale un niveau peu fiable.
 
 **Satisfaction** — sur la page Supervision : note moyenne des citoyens, taux de réponse et moyenne par service.
 
