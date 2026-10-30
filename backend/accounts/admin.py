@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import AgentProfil, CompteExterne, DeviceToken, User
+from .models import AgentProfil, CompteExterne, DemandeCompteAgent, DeviceToken, User
 
 
 class AgentProfilInline(admin.StackedInline):
@@ -31,3 +31,10 @@ class CompteExterneAdmin(admin.ModelAdmin):
 class DeviceTokenAdmin(admin.ModelAdmin):
     list_display = ['user', 'plateforme', 'actif', 'derniere_utilisation']
     list_filter = ['plateforme', 'actif']
+
+
+@admin.register(DemandeCompteAgent)
+class DemandeCompteAgentAdmin(admin.ModelAdmin):
+    list_display = ['prenom', 'nom', 'service', 'structure', 'statut', 'date_demande']
+    list_filter = ['statut', 'service']
+    exclude = ['mot_de_passe_hash']

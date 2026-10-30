@@ -11,12 +11,12 @@
 
 | Domaine | Mesure | Où |
 |---|---|---|
-| Rôles | Rôle attribué par le serveur ; inscription toujours citoyen ; Google ne donne jamais de rôle privilégié ; superadmin uniquement par `python manage.py creer_superadmin` ; un superadmin ne peut ni se modifier ni être modifié via l'API | `accounts/serializers.py`, `accounts/views.py`, `accounts/google.py` |
+| Rôles | Rôle attribué par le serveur ; inscription toujours citoyen ; Google ne donne jamais de rôle privilégié ; superadmin uniquement par `python manage.py creer_superadmin` ; un compte agent n'existe qu'après création ou validation d'une demande par un superadmin (mot de passe choisi par l'agent, haché dès la demande, effacé de la demande après traitement) ; un superadmin ne peut ni se modifier ni être modifié via l'API | `accounts/serializers.py`, `accounts/views.py`, `accounts/google.py` |
 | Contrôle d'accès | Requêtes filtrées par rôle (un dossier non visible renvoie 404) ; chaque action de la machine à états vérifie rôle, affectation, zone et service | `incidents/workflow.py`, `dossier_views.py` |
 | Sessions | JWT 15 min ; rafraîchissement 7 jours avec rotation et liste noire ; déconnexion révoque ; « tous les appareils » ; changement de mot de passe / désactivation / changement de rôle ferment toutes les sessions | `config/settings.py`, `accounts/views.py` |
 | Stockage des jetons | Mobile : trousseau (Keychain/Keystore) ; web : accès en mémoire, rafraîchissement en `sessionStorage` | `mobile/lib/core/api.dart`, `web/src/api/client.js` |
 | Mots de passe | Validateurs Django (8 car. min., courants, numériques) ; réinitialisation par lien signé à usage unique, 1 h, réponse identique que le compte existe ou non | `accounts/views.py` |
-| Force brute / abus | Limitation : connexion 10/min, inscription 10/h, mot de passe 5/h, SOS 10/h, signalement 30/h, assistant 20/min et 200/jour, services 30/min | `REST_FRAMEWORK.DEFAULT_THROTTLE_RATES` |
+| Force brute / abus | Limitation : connexion 10/min, inscription et demande de compte agent 10/h, mot de passe 5/h, SOS 10/h, signalement 30/h, assistant 20/min et 200/jour, services 30/min | `REST_FRAMEWORK.DEFAULT_THROTTLE_RATES` |
 | Google | ID token vérifié côté serveur (signature Google, émetteur, audience = nos identifiants, expiration, e-mail vérifié) ; liaison automatique seulement vers un compte citoyen ; compte agent/superadmin : liaison depuis une session authentifiée | `accounts/google.py` |
 | Fichiers | Taille ≤ 5 Mo, ≤ 5 par dossier, JPEG/PNG/WEBP vérifiés par Pillow, ré-encodés en JPEG (EXIF et GPS supprimés), nom aléatoire, jamais servis publiquement (vue contrôlée) | `incidents/photos.py`, `views.py` |
 | Injection | ORM uniquement ; échappement HTML dans les infobulles de carte ; React échappe par défaut | — |

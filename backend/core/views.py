@@ -46,6 +46,7 @@ class ConfigurationPubliqueView(APIView):
             'statuts': [{'code': c, 'libelle': l} for c, l in STATUT_CHOICES],
             'gravites': [{'code': c, 'libelle': l} for c, l in GRAVITE_CHOICES],
             'roles': [{'code': c, 'libelle': l} for c, l in ROLE_CHOICES],
+            'services': [{'code': str(i), 'libelle': n} for i, n in Service.objects.filter(actif=True).values_list('id', 'nom')],
             'categories': CategorieSerializer(Categorie.objects.filter(actif=True).select_related('service_defaut'), many=True).data,
             'fonctionnalites': fonctions,
         })

@@ -8,7 +8,7 @@ import { Audit, Parametres, Referentiels } from './pages/admin/Configuration';
 import { IncidentsAdmin, SOSAdmin } from './pages/admin/Dossiers';
 import Risques from './pages/admin/Risques';
 import Utilisateurs from './pages/admin/Utilisateurs';
-import { Connexion, Inscription, MotDePasseOublie, Reinitialiser } from './pages/auth/Auth';
+import { Connexion, DemandeAgent, Inscription, MotDePasseOublie, Reinitialiser } from './pages/auth/Auth';
 import Accueil from './pages/citoyen/Accueil';
 import Assistant from './pages/citoyen/Assistant';
 import Guide from './pages/citoyen/Guide';
@@ -16,6 +16,7 @@ import MesDossiers from './pages/citoyen/MesDossiers';
 import Services from './pages/citoyen/Services';
 import Signaler from './pages/citoyen/Signaler';
 import AlertesZone from './pages/admin/AlertesZone';
+import DemandesAgent from './pages/admin/DemandesAgent';
 import Demonstration from './pages/admin/Demonstration';
 import CartePage from './pages/commun/CartePage';
 import Communaute from './pages/commun/Communaute';
@@ -49,6 +50,7 @@ export default function App() {
     <Routes>
       <Route path="/connexion" element={<Public><Connexion /></Public>} />
       <Route path="/inscription" element={<Public><Inscription /></Public>} />
+      <Route path="/demande-agent" element={<Public><DemandeAgent /></Public>} />
       <Route path="/mot-de-passe-oublie" element={<Public><MotDePasseOublie /></Public>} />
       <Route path="/reinitialiser" element={<Reinitialiser />} />
       <Route path="/" element={<Vitrine />} />
@@ -79,6 +81,7 @@ export default function App() {
         <Route path="/supervision/alertes-zone" element={<Espace roles={['superadmin']}><AlertesZone /></Espace>} />
         <Route path="/supervision/communaute" element={<Espace roles={['superadmin']}><Communaute /></Espace>} />
         <Route path="/supervision/risques" element={<Espace roles={['superadmin']}><Risques /></Espace>} />
+        <Route path="/supervision/demandes-agent" element={<Espace roles={['superadmin']}><DemandesAgent /></Espace>} />
         <Route path="/supervision/utilisateurs" element={<Espace roles={['superadmin']}><Utilisateurs /></Espace>} />
         <Route path="/supervision/referentiels" element={<Espace roles={['superadmin']}><Referentiels /></Espace>} />
         <Route path="/supervision/parametres" element={<Espace roles={['superadmin']}><Parametres /></Espace>} />

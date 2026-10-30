@@ -26,7 +26,9 @@ SenAlert ne remplace pas les services officiels de secours. En cas de danger imm
 
 ## Agent de secours (web : `/app/agent`, mobile)
 
-Le compte est créé par le superadministrateur, avec un **service** (Police, Pompiers, Santé, SENELEC, ONAS…) et des **zones** (régions). À la première connexion, changez le mot de passe initial (bandeau d'invitation).
+**Obtenir un compte** — sur l'écran de connexion, « Demander un compte agent » (web : `/app/demande-agent`) : identité, e-mail professionnel, service, matricule, structure (commissariat, caserne…), zones d'intervention et mot de passe choisi. La demande est examinée par un superadministrateur ; la connexion n'est possible qu'après validation (un e-mail informe de la décision). Un superadministrateur peut aussi créer le compte directement depuis **Utilisateurs**.
+
+Le compte est rattaché à un **service** (Police, Pompiers, Santé, SENELEC, ONAS…) et des **zones** (régions). S’il a été créé par le superadministrateur avec un mot de passe initial, changez-le à la première connexion (bandeau d’invitation).
 
 **Tableau de bord** — nouvelles alertes accessibles, interventions en attente / en cours, résolues sur 7 jours, délai moyen de prise en charge, listes « Mes interventions en cours » et « Nouvelles alertes de ma zone ». Actualisation automatique (web) ou tirer pour rafraîchir (mobile).
 
@@ -51,6 +53,8 @@ Le détail donne la position et sa précision, l'**itinéraire** (Google Maps), 
 **Incidents / Alertes SOS** — tableau paginé, filtres combinables (référence, statut, catégorie, région, gravité, dates, doublons potentiels), panneau de détail. Actions : **Affecter / Réaffecter** (agents actifs couvrant la région, filtrables par service), **Rejeter** (signalement non fondé), **Annuler**, gravité, notes. Exports **CSV** (tableur, sans données personnelles) et **Rapport PDF**.
 
 **Carte & risques** — score par région selon la méthode du mémoire, classement, carte, comparaison avec la période précédente, « Enregistrer un instantané » (historique). Un contour pointillé signale des données insuffisantes.
+
+**Demandes d'accès** — demandes de compte agent (badge = nombre en attente). Vérifiez matricule et structure auprès du service, puis **Valider** (crée un compte agent limité au service et aux zones demandés ; le mot de passe reste celui choisi par l'agent) ou **Refuser** avec un motif. Tout est tracé dans le journal d'audit.
 
 **Utilisateurs** — recherche et filtres ; **Créer un agent** (service, zones, mot de passe initial) ; modifier rôle (citoyen ↔ agent), service, zones, activer/désactiver (ferme les sessions). Le rôle superadministrateur ne se donne qu'en ligne de commande : `python manage.py creer_superadmin email@exemple.sn`.
 

@@ -1,7 +1,9 @@
 from django.urls import path
+from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from . import views
+from .demandes import DemandePubliqueView
 
 urlpatterns = [
     path('inscription/', views.InscriptionView.as_view(), name='inscription'),
@@ -16,3 +18,7 @@ urlpatterns = [
     path('google/lier/', views.GoogleLiaisonView.as_view(), name='google-lier'),
     path('appareils/', views.DeviceTokenView.as_view(), name='appareils'),
 ]
+
+routeur = DefaultRouter()
+routeur.register('demandes-agent', DemandePubliqueView, basename='demande-agent')
+urlpatterns += routeur.urls

@@ -100,3 +100,38 @@ class DeviceToken(models.Model):
 
     def __str__(self):
         return f'{self.user.username} - {self.token[:12]}…'
+
+
+class DemandeCompteAgent(models.Model):
+    """Demande d'accès d'un agent (policier, pompier…) validée ou refusée par le superadministrateur.
+
+    Le demandeur choisit son mot de passe : seul son empreinte (hash) est conservée.
+    Aucun compte n'existe tant que la demande n'est pas validée.
+    """
+
+    STATUTS = [('en_attente', 'En attente'), ('validee', 'Validée'), ('refusee', 'Refusée')]
+
+    prenom = models.CharField(max_length=150)
+    nom = models.CharField(max_length=150)
+    email = models.EmailField()
+    telephone = models.CharField(max_length=20)
+    matricule = models.CharField(max_length=40)
+    service = models.ForeignKey('core.Service', on_delete=models.PROTECT, related_name='demandes')
+    structure = models.CharField(max_length=150, help_text='Commissariat, caserne, hôpital, agence…')
+    fonction = models.CharField(max_length=80, blank=True)
+    zones = models.JSONField(default=list)
+    message = models.TextField(max_length=1000, blank=True)
+    mot_de_passe_hash = models.CharField(max_length=256)
+    statut = models.CharField(max_length=12, choices=STATUTS, default='en_attente', db_index=True)
+    motif_refus = models.CharField(max_length=255, blank=True)
+    traite_par = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
+    date_traitement = models.DateTimeField(null=True, blank=True)
+    utilisateur = models.OneToOneField(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='demande_agent')
+    date_demande = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date_demande']
+        verbose_name = "Demande de compte agent"
+
+    def __str__(self):
+        return f'{self.prenom} {self.nom} — {self.service} ({self.statut})'

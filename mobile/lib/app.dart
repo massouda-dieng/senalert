@@ -20,7 +20,7 @@ import 'state/apparence.dart';
 import 'state/session.dart';
 import 'ui/kit.dart';
 
-const _publiques = {'/bienvenue', '/connexion', '/inscription', '/mot-de-passe-oublie', '/secours'};
+const _publiques = {'/bienvenue', '/connexion', '/inscription', '/demande-agent', '/mot-de-passe-oublie', '/secours'};
 const _citoyen = {'/accueil', '/signaler', '/sos', '/services', '/assistant', '/carte', '/dossiers'};
 const _agent = {'/agent', '/interventions', '/carte-agent'};
 const _citoyenEtAgent = {'/communaute'};
@@ -35,7 +35,7 @@ GoRouter creerRouteur(Session session) => GoRouter(
         if (!session.initialisee) return lieu == '/' ? null : '/';
         final u = session.utilisateur;
         if (u == null) return _publiques.contains(lieu) ? null : '/bienvenue';
-        if (lieu == '/' || const {'/bienvenue', '/connexion', '/inscription', '/mot-de-passe-oublie'}.contains(lieu)) return accueilPour(u.role);
+        if (lieu == '/' || const {'/bienvenue', '/connexion', '/inscription', '/demande-agent', '/mot-de-passe-oublie'}.contains(lieu)) return accueilPour(u.role);
         if (_citoyenEtAgent.contains(lieu) && u.estSuperadmin) return accueilPour(u.role);
         if (_citoyen.contains(lieu) && !u.estCitoyen) return accueilPour(u.role);
         if (_agent.contains(lieu) && !u.estAgent) return accueilPour(u.role);
@@ -47,6 +47,7 @@ GoRouter creerRouteur(Session session) => GoRouter(
         GoRoute(path: '/bienvenue', builder: (_, __) => const BienvenueScreen()),
         GoRoute(path: '/connexion', builder: (_, __) => const ConnexionScreen()),
         GoRoute(path: '/inscription', builder: (_, __) => const InscriptionScreen()),
+        GoRoute(path: '/demande-agent', builder: (_, __) => const DemandeAgentScreen()),
         GoRoute(path: '/mot-de-passe-oublie', builder: (_, __) => const MotDePasseOublieScreen()),
         GoRoute(path: '/sos', builder: (_, __) => const SosScreen()),
         GoRoute(path: '/signaler', builder: (_, __) => const SignalerScreen()),

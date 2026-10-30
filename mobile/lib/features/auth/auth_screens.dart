@@ -142,6 +142,8 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
           child: _envoi ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white)) : const Text('Se connecter')),
       const SizedBox(height: 12),
       TextButton(onPressed: () => context.push('/inscription'), child: const Text('Pas de compte ? Créer un compte citoyen')),
+      TextButton.icon(onPressed: () => context.push('/demande-agent'), icon: const Icon(Icons.badge_outlined, size: 18),
+          label: const Text('Agent de secours ? Demander un compte agent')),
     ]);
   }
 }
@@ -179,7 +181,7 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
   @override
   Widget build(BuildContext context) {
     final config = context.watch<Configuration>();
-    return _Cadre(titreEcran: 'Créer un compte', sousTitre: 'Compte citoyen. Les comptes agents sont créés par un responsable habilité.', enfants: [
+    return _Cadre(titreEcran: 'Créer un compte', sousTitre: 'Compte citoyen. Agent d’un service de secours : utilisez « Demander un compte agent » depuis la connexion.', enfants: [
       _BoutonGoogle(onErreur: (e) => setState(() => _erreur = e)),
       const _Separateur('ou avec votre e-mail'),
       Row(children: [Expanded(child: _champ('first_name', 'Prénom')), const SizedBox(width: 10), Expanded(child: _champ('last_name', 'Nom'))]),
@@ -239,4 +241,93 @@ class _MotDePasseOublieScreenState extends State<MotDePasseOublieScreen> {
         ],
         TextButton(onPressed: () => context.pop(), child: const Text('Retour')),
       ]);
+}
+
+/// Demande d'accès agent : le compte n'existe qu'après validation par un superadministrateur.
+class DemandeAgentScreen extends StatefulWidget {
+  const DemandeAgentScreen({super.key});
+  @override
+  State<DemandeAgentScreen> createState() => _DemandeAgentScreenState();
+}
+
+class _DemandeAgentScreenState extends State<DemandeAgentScreen> {
+  final _c = {for (final k in ['prenom', 'nom', 'email', 'telephone', 'matricule', 'structure', 'fonction', 'message', 'mot_de_passe']) k: TextEditingController()};
+  int? _service;
+  final Set<String> _zones = {};
+  bool _envoi = false;
+  ApiException? _erreur;
+  String? _ok;
+
+  Future<void> _valider() async {
+    setState(() { _envoi = true; _erreur = null; });
+    try {
+      final r = await Api.instance.post('/auth/demandes-agent/', auth: false, data: {
+        for (final e in _c.entries) e.key: e.key == 'mot_de_passe' ? e.value.text : e.value.text.trim(),
+        'service': _service,
+        'zones': _zones.toList(),
+      });
+      setState(() => _ok = r['detail']);
+    } on ApiException catch (e) {
+      setState(() => _erreur = e);
+    } finally {
+      if (mounted) setState(() => _envoi = false);
+    }
+  }
+
+  Widget _champ(String cle, String libelle, {TextInputType? clavier, bool secret = false, String? aide, int lignes = 1}) => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: TextField(controller: _c[cle], keyboardType: clavier, obscureText: secret, maxLines: lignes,
+            decoration: InputDecoration(labelText: libelle, helperText: aide, helperMaxLines: 2, errorText: _erreur?.erreurChamp(cle))),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final config = context.watch<Configuration>();
+    if (_ok != null) {
+      return _Cadre(titreEcran: 'Demande envoyée', enfants: [
+        Bandeau.succes(_ok!),
+        const SizedBox(height: 12),
+        Text('Un superviseur vérifie votre service, votre matricule et votre structure. Tant que la demande n’est pas validée, la connexion est impossible.',
+            style: TextStyle(color: AppColors.textGrey)),
+        const SizedBox(height: 12),
+        FilledButton(onPressed: () => context.go('/connexion'), child: const Text('Retour à la connexion')),
+      ]);
+    }
+    return _Cadre(
+      titreEcran: 'Demander un compte agent',
+      sousTitre: 'Réservé aux agents des services de secours et d’intervention. Chaque demande est vérifiée avant activation.',
+      enfants: [
+        Row(children: [Expanded(child: _champ('prenom', 'Prénom')), const SizedBox(width: 10), Expanded(child: _champ('nom', 'Nom'))]),
+        _champ('email', 'E-mail professionnel', clavier: TextInputType.emailAddress, aide: 'Servira d’identifiant de connexion.'),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: DropdownButtonFormField<int>(
+            value: _service, isExpanded: true,
+            decoration: InputDecoration(labelText: 'Service', errorText: _erreur?.erreurChamp('service')),
+            items: [for (final (id, nom) in config.services) DropdownMenuItem(value: id, child: Text(nom))],
+            onChanged: (v) => setState(() => _service = v),
+          ),
+        ),
+        _champ('matricule', 'Matricule'),
+        _champ('structure', 'Structure d’affectation', aide: 'Commissariat, caserne, district sanitaire, agence…'),
+        Row(children: [Expanded(child: _champ('fonction', 'Fonction / grade')), const SizedBox(width: 10),
+          Expanded(child: _champ('telephone', 'Téléphone', clavier: TextInputType.phone))]),
+        Text('Zones d’intervention', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textDark)),
+        const SizedBox(height: 6),
+        Wrap(spacing: 6, runSpacing: 6, children: [
+          for (final r in config.regions)
+            FilterChip(label: Text(r.libelle), selected: _zones.contains(r.code),
+                onSelected: (v) => setState(() => v ? _zones.add(r.code) : _zones.remove(r.code))),
+        ]),
+        if (_erreur?.erreurChamp('zones') != null)
+          Padding(padding: const EdgeInsets.only(top: 4), child: Text(_erreur!.erreurChamp('zones')!, style: const TextStyle(color: Colors.red, fontSize: 12))),
+        const SizedBox(height: 14),
+        _champ('message', 'Message au superviseur (facultatif)', lignes: 2),
+        _champ('mot_de_passe', 'Mot de passe', secret: true, aide: 'Choisi par vous, stocké chiffré : le superviseur ne le voit jamais.'),
+        if (_erreur != null) Padding(padding: const EdgeInsets.only(bottom: 12), child: Bandeau.erreur(_erreur!.message)),
+        FilledButton(onPressed: _envoi ? null : _valider, child: _envoi ? const CircularProgressIndicator(color: Colors.white) : const Text('Envoyer ma demande')),
+        TextButton(onPressed: () => context.pop(), child: const Text('Retour')),
+      ],
+    );
+  }
 }

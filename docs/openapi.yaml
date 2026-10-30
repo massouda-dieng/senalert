@@ -1033,6 +1033,35 @@ paths:
               schema:
                 $ref: '#/components/schemas/Deconnexion'
           description: ''
+  /api/auth/demandes-agent/:
+    post:
+      operationId: auth_demandes_agent_create
+      description: 'POST /api/auth/demandes-agent/ : demande d''accès agent (publique,
+        limitée à 10 par heure).'
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DemandeCreationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DemandeCreationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DemandeCreationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DemandeCreation'
+          description: ''
   /api/auth/google/:
     post:
       operationId: auth_google_create
@@ -1529,6 +1558,148 @@ paths:
               schema:
                 type: object
                 additionalProperties: {}
+          description: ''
+  /api/gestion/demandes-agent/:
+    get:
+      operationId: gestion_demandes_agent_list
+      description: Demandes d'accès agent, pour le superadministrateur (filtre ?statut=).
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Quel champ utiliser pour classer les résultats.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      - name: taille
+        required: false
+        in: query
+        description: Nombre de résultats à retourner par page.
+        schema:
+          type: integer
+      tags:
+      - gestion
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDemandeList'
+          description: ''
+  /api/gestion/demandes-agent/{id}/:
+    get:
+      operationId: gestion_demandes_agent_retrieve
+      description: Demandes d'accès agent, pour le superadministrateur (filtre ?statut=).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Demande de
+          compte agent.
+        required: true
+      tags:
+      - gestion
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Demande'
+          description: ''
+  /api/gestion/demandes-agent/{id}/refuser/:
+    post:
+      operationId: gestion_demandes_agent_refuser_create
+      description: Demandes d'accès agent, pour le superadministrateur (filtre ?statut=).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Demande de
+          compte agent.
+        required: true
+      tags:
+      - gestion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DemandeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DemandeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DemandeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Demande'
+          description: ''
+  /api/gestion/demandes-agent/{id}/valider/:
+    post:
+      operationId: gestion_demandes_agent_valider_create
+      description: Demandes d'accès agent, pour le superadministrateur (filtre ?statut=).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Demande de
+          compte agent.
+        required: true
+      tags:
+      - gestion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DemandeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DemandeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DemandeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Demande'
+          description: ''
+  /api/gestion/demandes-agent/compteur/:
+    get:
+      operationId: gestion_demandes_agent_compteur_retrieve
+      description: Demandes d'accès agent, pour le superadministrateur (filtre ?statut=).
+      tags:
+      - gestion
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Demande'
           description: ''
   /api/gestion/utilisateurs/:
     get:
@@ -2970,6 +3141,53 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /api/tableau-de-bord/demo/:
+    get:
+      operationId: tableau_de_bord_demo_retrieve
+      description: 'GET : liste des étapes ; POST {etape, incident?, sos?} : exécute
+        une étape.'
+      tags:
+      - tableau-de-bord
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    post:
+      operationId: tableau_de_bord_demo_create
+      description: 'GET : liste des étapes ; POST {etape, incident?, sos?} : exécute
+        une étape.'
+      tags:
+      - tableau-de-bord
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: {}
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              additionalProperties: {}
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: {}
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/tableau-de-bord/export/csv/:
     get:
       operationId: tableau_de_bord_export_csv_retrieve
@@ -3003,6 +3221,26 @@ paths:
               schema:
                 type: string
                 format: binary
+          description: ''
+  /api/tableau-de-bord/flux/:
+    get:
+      operationId: tableau_de_bord_flux_retrieve
+      description: |-
+        Nouveaux SOS et incidents depuis `depuis` (ISO 8601), selon la visibilité de l'utilisateur.
+
+        Interrogé toutes les quelques secondes par le web (alertes sonores de la supervision
+        et des agents). Premier appel sans `depuis` : renvoie seulement l'heure du serveur.
+      tags:
+      - tableau-de-bord
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
           description: ''
   /api/tableau-de-bord/statistiques/:
     get:
@@ -3589,6 +3827,179 @@ components:
         tout:
           type: boolean
           default: false
+    Demande:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        prenom:
+          type: string
+          maxLength: 150
+        nom:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        telephone:
+          type: string
+          maxLength: 20
+        matricule:
+          type: string
+          maxLength: 40
+        service:
+          type: integer
+        service_nom:
+          type: string
+          readOnly: true
+        structure:
+          type: string
+          description: Commissariat, caserne, hôpital, agence…
+          maxLength: 150
+        fonction:
+          type: string
+          maxLength: 80
+        zones: {}
+        zones_libelles:
+          type: array
+          items: {}
+          readOnly: true
+        message:
+          type: string
+          maxLength: 1000
+        statut:
+          $ref: '#/components/schemas/DemandeStatutEnum'
+        motif_refus:
+          type: string
+          maxLength: 255
+        traite_par_nom:
+          type: string
+          readOnly: true
+        date_traitement:
+          type: string
+          format: date-time
+          nullable: true
+        date_demande:
+          type: string
+          format: date-time
+          readOnly: true
+        utilisateur:
+          type: integer
+          nullable: true
+      required:
+      - date_demande
+      - email
+      - id
+      - matricule
+      - nom
+      - prenom
+      - service
+      - service_nom
+      - structure
+      - telephone
+      - traite_par_nom
+      - zones_libelles
+    DemandeCreation:
+      type: object
+      properties:
+        prenom:
+          type: string
+          maxLength: 150
+        nom:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        telephone:
+          type: string
+          maxLength: 20
+        matricule:
+          type: string
+          maxLength: 40
+        service:
+          type: integer
+        structure:
+          type: string
+          description: Commissariat, caserne, hôpital, agence…
+          maxLength: 150
+        fonction:
+          type: string
+          maxLength: 80
+        zones:
+          type: array
+          items:
+            $ref: '#/components/schemas/ZonesEnum'
+        message:
+          type: string
+          maxLength: 1000
+      required:
+      - email
+      - matricule
+      - nom
+      - prenom
+      - service
+      - structure
+      - telephone
+      - zones
+    DemandeCreationRequest:
+      type: object
+      properties:
+        prenom:
+          type: string
+          minLength: 1
+          maxLength: 150
+        nom:
+          type: string
+          minLength: 1
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        telephone:
+          type: string
+          minLength: 1
+          maxLength: 20
+        matricule:
+          type: string
+          minLength: 1
+          maxLength: 40
+        service:
+          type: integer
+        structure:
+          type: string
+          minLength: 1
+          description: Commissariat, caserne, hôpital, agence…
+          maxLength: 150
+        fonction:
+          type: string
+          maxLength: 80
+        zones:
+          type: array
+          items:
+            $ref: '#/components/schemas/ZonesEnum'
+        message:
+          type: string
+          maxLength: 1000
+        mot_de_passe:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - matricule
+      - mot_de_passe
+      - nom
+      - prenom
+      - service
+      - structure
+      - telephone
+      - zones
     DemandeReinitialisation:
       type: object
       properties:
@@ -3606,6 +4017,74 @@ components:
           minLength: 1
       required:
       - email
+    DemandeRequest:
+      type: object
+      properties:
+        prenom:
+          type: string
+          minLength: 1
+          maxLength: 150
+        nom:
+          type: string
+          minLength: 1
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        telephone:
+          type: string
+          minLength: 1
+          maxLength: 20
+        matricule:
+          type: string
+          minLength: 1
+          maxLength: 40
+        service:
+          type: integer
+        structure:
+          type: string
+          minLength: 1
+          description: Commissariat, caserne, hôpital, agence…
+          maxLength: 150
+        fonction:
+          type: string
+          maxLength: 80
+        zones: {}
+        message:
+          type: string
+          maxLength: 1000
+        statut:
+          $ref: '#/components/schemas/DemandeStatutEnum'
+        motif_refus:
+          type: string
+          maxLength: 255
+        date_traitement:
+          type: string
+          format: date-time
+          nullable: true
+        utilisateur:
+          type: integer
+          nullable: true
+      required:
+      - email
+      - matricule
+      - nom
+      - prenom
+      - service
+      - structure
+      - telephone
+    DemandeStatutEnum:
+      enum:
+      - en_attente
+      - validee
+      - refusee
+      type: string
+      description: |-
+        * `en_attente` - En attente
+        * `validee` - Validée
+        * `refusee` - Refusée
     DeviceToken:
       type: object
       properties:
@@ -3712,7 +4191,8 @@ components:
           format: double
           readOnly: true
         distance_m:
-          type: string
+          type: integer
+          nullable: true
           readOnly: true
         nb_confirmations:
           type: integer
@@ -4294,6 +4774,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AlerteZone'
+    PaginatedDemandeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Demande'
     PaginatedFilList:
       type: object
       required:

@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import {
   Activity, Bell, BookOpenCheck, Bot, Building2, ClipboardList, FileClock, FolderOpen, Gauge, Home, LogOut, Map,
   MapPinned, Megaphone, Menu, Moon, Presentation, Sun, PanelLeftClose, PanelLeftOpen, Search, Settings2, ShieldAlert, Siren, SlidersHorizontal,
-  Smartphone, Tags, UserCircle2, Users, UsersRound, WifiOff, X,
+  Smartphone, Tags, UserCheck, UserCircle2, Users, UsersRound, WifiOff, X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -43,6 +43,7 @@ export const NAVIGATION = {
     { a: '/supervision/demo', libelle: 'Démonstration', icone: Presentation },
     { groupe: 'Administration' },
     { a: '/supervision/utilisateurs', libelle: 'Utilisateurs', icone: Users },
+    { a: '/supervision/demandes-agent', libelle: 'Demandes d’accès', icone: UserCheck, compteur: 'demandes' },
     { a: '/supervision/referentiels', libelle: 'Services & catégories', icone: Tags },
     { a: '/supervision/parametres', libelle: 'Paramètres', icone: SlidersHorizontal },
     { a: '/supervision/audit', libelle: "Journal d'audit", icone: FileClock },
@@ -102,11 +103,18 @@ export default function Layout() {
   const [recherche, setRecherche] = useState('');
   const [sombre, setSombre] = useState(() => appliquerTheme(themeChoisi()));
   const { donnees: compteur } = useRessource('/notifications/compteur/', null, { intervalle: 30000 });
+  const { donnees: demandes, recharger: rechargerDemandes } = useRessource(utilisateur.role === 'superadmin' ? '/gestion/demandes-agent/compteur/' : null, null, { intervalle: 60000 });
+  const compteurs = { demandes: demandes?.en_attente || 0 };
   const liens = NAVIGATION[utilisateur.role] || [];
   const nonLues = compteur?.non_lues || 0;
   const regionAlertes = utilisateur.role === 'agent' ? utilisateur.profil_agent?.zones?.[0] : utilisateur.region;
 
   useEffect(() => setMobileOuvert(false), [lieu.pathname]);
+  useEffect(() => {
+    const maj = () => rechargerDemandes(true);
+    window.addEventListener('senalert:demandes-agent', maj);
+    return () => window.removeEventListener('senalert:demandes-agent', maj);
+  }, [rechargerDemandes]);
   useEffect(() => { try { localStorage.setItem('senalert.menu', replie ? 'replie' : 'ouvert'); } catch { /* rien */ } }, [replie]);
 
   const rechercher = (e) => {
@@ -145,6 +153,7 @@ export default function Layout() {
                 isActive ? 'bg-marque-600 text-white shadow-[0_8px_24px_rgba(0,133,63,.35)]' : 'text-white/70 hover:bg-white/[.06] hover:text-white')}>
               <l.icone className="h-[18px] w-[18px] shrink-0" aria-hidden />
               <span className={clsx('truncate', replie && 'lg:sr-only')}>{l.libelle}</span>
+              {compteurs[l.compteur] > 0 && <span className={clsx('ml-auto rounded-full bg-or px-2 py-0.5 text-[11px] font-bold text-black', replie && 'lg:hidden')} aria-label={`${compteurs[l.compteur]} en attente`}>{compteurs[l.compteur]}</span>}
             </NavLink>
           )))}
         </nav>

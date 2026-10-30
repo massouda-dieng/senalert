@@ -3,6 +3,7 @@ from django.urls import include, path, re_path
 from django.views.generic import RedirectView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
+from accounts.demandes import DemandeGestionViewSet
 from accounts.views import UtilisateurAdminViewSet
 from dashboard.views import application_mobile, application_web
 from rest_framework.routers import DefaultRouter
@@ -11,6 +12,7 @@ admin.site.site_header = 'SenAlert — administration technique'
 
 router_admin = DefaultRouter()
 router_admin.register('utilisateurs', UtilisateurAdminViewSet, basename='admin-utilisateur')
+router_admin.register('demandes-agent', DemandeGestionViewSet, basename='admin-demande-agent')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
