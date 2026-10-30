@@ -288,3 +288,23 @@ class GestionUtilisateursTests(SenAlertTestCase):
         self.agent('a2', zones=['matam'])
         r = self.client.get(self.URL, {'role': 'agent', 'zone': 'matam'})
         self.assertEqual([u['username'] for u in r.data['results']], ['a2'])
+
+
+class OngletsConnexionTests(SenAlertTestCase):
+    def test_onglet_doit_correspondre_au_role(self):
+        from core.tests_utils import MDP
+        self.citoyen('awa')
+        self.agent('moussa')
+        self.superadmin('chef')
+        for nom, bon, mauvais in [('awa', 'citoyen', 'agent'), ('moussa', 'agent', 'superadmin'), ('chef', 'superadmin', 'citoyen')]:
+            r = self.client.post(CONNEXION, {'username': nom, 'password': MDP, 'espace': bon}, format='json')
+            self.assertEqual(r.status_code, 200, (nom, r.data))
+            r = self.client.post(CONNEXION, {'username': nom, 'password': MDP, 'espace': mauvais}, format='json')
+            self.assertEqual(r.status_code, 401)
+            self.assertIn('onglet', r.data['detail'])
+            self.assertNotIn('access', r.data)
+        # Mauvais mot de passe : message générique, le rôle n'est pas révélé
+        r = self.client.post(CONNEXION, {'username': 'chef', 'password': 'faux-mot-de-passe', 'espace': 'citoyen'}, format='json')
+        self.assertNotIn('onglet', r.data['detail'])
+        # Sans onglet (anciens clients) : inchangé
+        self.assertEqual(self.client.post(CONNEXION, {'username': 'awa', 'password': MDP}, format='json').status_code, 200)

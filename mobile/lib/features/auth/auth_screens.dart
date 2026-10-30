@@ -101,7 +101,14 @@ class ConnexionScreen extends StatefulWidget {
   State<ConnexionScreen> createState() => _ConnexionScreenState();
 }
 
+const _espaces = {
+  'citoyen': ('Citoyen', Icons.person_outline, 'Signalez un incident, lancez un SOS et suivez vos dossiers.', 'E-mail ou identifiant'),
+  'agent': ('Agent', Icons.badge_outlined, 'Police, pompiers, santé, SENELEC, ONAS : traitez les interventions de votre service.', 'E-mail professionnel'),
+  'superadmin': ('Superviseur', Icons.admin_panel_settings_outlined, 'Supervisez les dossiers, les agents et la plateforme.', 'E-mail ou identifiant'),
+};
+
 class _ConnexionScreenState extends State<ConnexionScreen> {
+  String _espace = 'citoyen';
   final _ident = TextEditingController();
   final _mdp = TextEditingController();
   bool _visible = false;
@@ -115,7 +122,7 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
     }
     setState(() { _envoi = true; _erreur = null; });
     try {
-      await context.read<Session>().connexion(_ident.text, _mdp.text);
+      await context.read<Session>().connexion(_ident.text, _mdp.text, espace: _espace);
     } on ApiException catch (e) {
       setState(() => _erreur = e.message);
     } finally {
@@ -126,12 +133,22 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
   @override
   Widget build(BuildContext context) {
     final expiree = context.watch<Session>().expiree;
-    return _Cadre(titreEcran: 'Connexion', sousTitre: 'Citoyens et agents de secours.', enfants: [
+    final e = _espaces[_espace]!;
+    return _Cadre(titreEcran: 'Connexion', sousTitre: e.$3, enfants: [
+      SegmentedButton<String>(
+        showSelectedIcon: false,
+        segments: [for (final x in _espaces.entries) ButtonSegment(value: x.key, icon: Icon(x.value.$2, size: 18), label: Text(x.value.$1))],
+        selected: {_espace},
+        onSelectionChanged: (s) => setState(() { _espace = s.first; _erreur = null; }),
+      ),
+      const SizedBox(height: 20),
       if (expiree) const Padding(padding: EdgeInsets.only(bottom: 16), child: Bandeau.alerte('Votre session a expiré. Reconnectez-vous.')),
-      _BoutonGoogle(onErreur: (e) => setState(() => _erreur = e.message)),
-      const _Separateur('ou'),
+      if (_espace == 'citoyen') ...[
+        _BoutonGoogle(onErreur: (e) => setState(() => _erreur = e.message)),
+        const _Separateur('ou'),
+      ],
       TextField(controller: _ident, keyboardType: TextInputType.emailAddress, autofillHints: const [AutofillHints.username],
-          textInputAction: TextInputAction.next, decoration: const InputDecoration(labelText: 'E-mail ou identifiant', prefixIcon: Icon(Icons.alternate_email))),
+          textInputAction: TextInputAction.next, decoration: InputDecoration(labelText: e.$4, prefixIcon: const Icon(Icons.alternate_email))),
       const SizedBox(height: 12),
       TextField(controller: _mdp, obscureText: !_visible, autofillHints: const [AutofillHints.password], onSubmitted: (_) => _valider(),
           decoration: InputDecoration(labelText: 'Mot de passe', prefixIcon: const Icon(Icons.lock_outline),
@@ -139,11 +156,18 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
       Align(alignment: Alignment.centerRight, child: TextButton(onPressed: () => context.push('/mot-de-passe-oublie'), child: const Text('Mot de passe oublié ?'))),
       if (_erreur != null) Padding(padding: const EdgeInsets.only(bottom: 12), child: Bandeau.erreur(_erreur!)),
       FilledButton(onPressed: _envoi ? null : _valider,
-          child: _envoi ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white)) : const Text('Se connecter')),
+          child: _envoi
+              ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white))
+              : Text('Se connecter en tant que ${e.$1.toLowerCase()}')),
       const SizedBox(height: 12),
-      TextButton(onPressed: () => context.push('/inscription'), child: const Text('Pas de compte ? Créer un compte citoyen')),
-      TextButton.icon(onPressed: () => context.push('/demande-agent'), icon: const Icon(Icons.badge_outlined, size: 18),
-          label: const Text('Agent de secours ? Demander un compte agent')),
+      if (_espace == 'citoyen') TextButton(onPressed: () => context.push('/inscription'), child: const Text('Pas de compte ? Créer un compte citoyen')),
+      if (_espace == 'agent') ...[
+        TextButton.icon(onPressed: () => context.push('/demande-agent'), icon: const Icon(Icons.badge_outlined, size: 18), label: const Text('Pas de compte ? Demander un compte agent')),
+        Text('Activé après vérification par un superviseur.', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppColors.textGrey)),
+      ],
+      if (_espace == 'superadmin')
+        Text('Les comptes superviseur ne se créent pas dans l’application : ils sont attribués par l’administrateur du serveur.',
+            textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: AppColors.textGrey)),
     ]);
   }
 }

@@ -47,8 +47,9 @@ class Session extends ChangeNotifier {
     Push.instance.enregistrerAppareil();
   }
 
-  Future<void> connexion(String identifiant, String motDePasse) async => _ouvrir(await Api.instance
-      .post('/auth/connexion/', data: {'username': identifiant.trim(), 'password': motDePasse}, auth: false));
+  /// [espace] : onglet choisi (citoyen, agent, superadmin). Le serveur refuse si le rôle réel diffère.
+  Future<void> connexion(String identifiant, String motDePasse, {String? espace}) async => _ouvrir(await Api.instance.post('/auth/connexion/',
+      data: {'username': identifiant.trim(), 'password': motDePasse, if (espace != null) 'espace': espace}, auth: false));
 
   Future<void> inscription(Map<String, dynamic> donnees) async =>
       _ouvrir(await Api.instance.post('/auth/inscription/', data: donnees, auth: false));

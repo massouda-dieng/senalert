@@ -2,6 +2,10 @@
 
 SenAlert ne remplace pas les services officiels de secours. En cas de danger immédiat, appelez directement les numéros affichés dans l'application (Police 17, Sapeurs-pompiers 18).
 
+## Connexion
+
+L'écran de connexion propose trois onglets : **Citoyen**, **Agent**, **Superviseur**. L'onglet ne donne aucun droit : le serveur vérifie le rôle réel du compte et, s'il ne correspond pas, refuse avec un message indiquant le bon onglet (uniquement si le mot de passe est correct). Création de compte : libre pour un citoyen, sur demande validée pour un agent, jamais depuis l'application pour un superviseur (`python manage.py creer_superadmin`).
+
 ## Citoyen (web : `/app/citoyen`, mobile)
 
 **Créer un compte** — « Créer un compte citoyen » (e-mail + mot de passe) ou « Continuer avec Google » si le service est configuré. Le téléphone est facultatif ; il n'est visible que de l'agent chargé de votre dossier.

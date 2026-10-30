@@ -1,9 +1,12 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.contrib.auth.models import update_last_login
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenObtainSerializer
+from rest_framework_simplejwt.settings import api_settings as jwt_settings
 
-from core.constants import REGIONS, ROLE_AGENT, ROLE_CITOYEN
+from core.constants import REGIONS, ROLE_AGENT, ROLE_CITOYEN, ROLE_SUPERADMIN
 from core.models import Service
 
 from .models import PREFERENCES_DEFAUT, AgentProfil, User
@@ -109,8 +112,17 @@ class InscriptionSerializer(serializers.ModelSerializer):
         return User.objects.create_user(password=password, role=ROLE_CITOYEN, **validated_data)
 
 
+ONGLETS_CONNEXION = {ROLE_CITOYEN: 'Citoyen', ROLE_AGENT: 'Agent', ROLE_SUPERADMIN: 'Superviseur'}
+
+
 class ConnexionSerializer(TokenObtainPairSerializer):
-    """Connexion par identifiant OU adresse e-mail. Renvoie aussi le profil (dont le rôle serveur)."""
+    """Connexion par identifiant OU adresse e-mail. Renvoie aussi le profil (dont le rôle serveur).
+
+    `espace` (facultatif) est l'onglet choisi à l'écran : il ne donne aucun droit, il refuse seulement
+    la connexion si le rôle réel du compte est différent (vérifié après le mot de passe).
+    """
+
+    espace = serializers.ChoiceField(choices=list(ONGLETS_CONNEXION), required=False, write_only=True)
 
     default_error_messages = {'no_active_account': 'Identifiants incorrects ou compte désactivé.'}
 
@@ -120,7 +132,16 @@ class ConnexionSerializer(TokenObtainPairSerializer):
         attrs['username'] = user.username if user else identifiant
         if user is None and '@' in identifiant:
             self._signaler_demande_en_cours(identifiant, attrs.get('password') or '')
-        data = super().validate(attrs)
+        espace = attrs.pop('espace', '')
+        data = TokenObtainSerializer.validate(self, attrs)  # authentification seule : aucun jeton émis avant le contrôle
+        if espace and espace != self.user.role:
+            raise AuthenticationFailed(
+                f'Ce compte est un compte {ONGLETS_CONNEXION[self.user.role].lower()} : choisissez l’onglet '
+                f'« {ONGLETS_CONNEXION[self.user.role]} » pour vous connecter.', code='mauvais_espace')
+        refresh = self.get_token(self.user)
+        data['refresh'], data['access'] = str(refresh), str(refresh.access_token)
+        if jwt_settings.UPDATE_LAST_LOGIN:
+            update_last_login(None, self.user)
         data['utilisateur'] = UtilisateurSerializer(self.user).data
         return data
 

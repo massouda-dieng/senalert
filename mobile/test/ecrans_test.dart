@@ -17,7 +17,7 @@ void main() {
 
   testWidgets('connexion : champs vides refusés sans appel réseau', (t) async {
     await t.pumpWidget(envelopper(const ConnexionScreen()));
-    await t.tap(find.text('Se connecter'));
+    await t.tap(find.text('Se connecter en tant que citoyen'));
     await t.pump();
     expect(find.text('Renseignez votre e-mail et votre mot de passe.'), findsOneWidget);
   });
@@ -26,6 +26,16 @@ void main() {
     await t.pumpWidget(envelopper(const ConnexionScreen()));
     expect(find.textContaining('Connexion Google non configurée'), findsOneWidget);
     expect(find.text('Continuer avec Google'), findsNothing);
+  });
+
+  testWidgets('connexion : onglet Superviseur sans création de compte ni Google', (t) async {
+    await t.pumpWidget(envelopper(const ConnexionScreen()));
+    await t.tap(find.text('Superviseur'));
+    await t.pump();
+    expect(find.text('Se connecter en tant que superviseur'), findsOneWidget);
+    expect(find.textContaining('Créer un compte'), findsNothing);
+    expect(find.textContaining('Connexion Google'), findsNothing);
+    expect(find.textContaining('administrateur du serveur'), findsOneWidget);
   });
 
   testWidgets('badge de statut lisible', (t) async {

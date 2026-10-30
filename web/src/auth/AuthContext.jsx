@@ -37,8 +37,8 @@ export function FournisseurAuth({ children }) {
     utilisateur,
     initialise,
     sessionExpiree,
-    connexion: async (identifiant, motDePasse) =>
-      ouvrirSession(await api('/auth/connexion/', { methode: 'POST', corps: { username: identifiant, password: motDePasse }, auth: false })),
+    connexion: async (identifiant, motDePasse, espace) =>
+      ouvrirSession(await api('/auth/connexion/', { methode: 'POST', corps: { username: identifiant, password: motDePasse, ...(espace ? { espace } : {}) }, auth: false })),
     inscription: async (donnees) =>
       ouvrirSession(await api('/auth/inscription/', { methode: 'POST', corps: donnees, auth: false })),
     connexionGoogle: async (idToken) =>

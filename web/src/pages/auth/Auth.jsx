@@ -5,7 +5,7 @@ import { api } from '../../api/client';
 import { ESPACE_PAR_ROLE, useAuth } from '../../auth/AuthContext';
 import { BandeDrapeau, Logo } from '../../components/Logo';
 import Photo from '../../components/Photo';
-import { Bandeau, Bouton, Champ, Selecteur } from '../../components/ui';
+import { Bandeau, Bouton, Champ, Onglets, Selecteur } from '../../components/ui';
 import { useConfig } from '../../lib/config';
 
 function Cadre({ titre, sousTitre, children }) {
@@ -93,13 +93,28 @@ function useApresConnexion() {
   return (u) => navigate(lieu.state?.depuis && lieu.state.depuis !== '/' ? lieu.state.depuis : ESPACE_PAR_ROLE[u.role] || '/', { replace: true });
 }
 
+const ESPACES = {
+  citoyen: {
+    libelle: 'Citoyen', sousTitre: 'Signalez un incident, lancez un SOS et suivez vos dossiers.', identifiant: 'E-mail ou identifiant',
+  },
+  agent: {
+    libelle: 'Agent', sousTitre: 'Police, pompiers, santé, SENELEC, ONAS : traitez les interventions de votre service.', identifiant: 'E-mail professionnel',
+  },
+  superadmin: {
+    libelle: 'Superviseur', sousTitre: 'Supervisez les dossiers, les agents et la plateforme.', identifiant: 'E-mail ou identifiant',
+  },
+};
+
 export function Connexion() {
   const { connexion, connexionGoogle, sessionExpiree } = useAuth();
   const apres = useApresConnexion();
+  const [params, setParams] = useSearchParams();
+  const espace = ESPACES[params.get('espace')] ? params.get('espace') : 'citoyen';
   const [identifiant, setIdentifiant] = useState('');
   const [mdp, setMdp] = useState('');
   const [erreur, setErreur] = useState(null);
   const [envoi, setEnvoi] = useState(false);
+  const choisir = (e) => { setErreur(null); setParams(e === 'citoyen' ? {} : { espace: e }, { replace: true }); };
 
   const google = async (jeton) => {
     setErreur(null);
@@ -107,24 +122,32 @@ export function Connexion() {
   };
 
   return (
-    <Cadre titre="Connexion" sousTitre="Accédez à votre espace citoyen, agent ou supervision.">
+    <Cadre titre="Connexion" sousTitre={ESPACES[espace].sousTitre}>
+      <div className="mb-6"><Onglets onglets={Object.entries(ESPACES).map(([code, e]) => ({ code, libelle: e.libelle }))} actif={espace} onChange={choisir} /></div>
       {sessionExpiree && <Bandeau type="alerte" className="mb-4">Votre session a expiré. Reconnectez-vous.</Bandeau>}
-      <BoutonGoogle onJeton={google} />
-      <div className="my-5 flex items-center gap-3 text-xs text-texte-pale"><span className="h-px flex-1 bg-surface-bord" />ou<span className="h-px flex-1 bg-surface-bord" /></div>
+      {espace === 'citoyen' && (
+        <>
+          <BoutonGoogle onJeton={google} />
+          <div className="my-5 flex items-center gap-3 text-xs text-texte-pale"><span className="h-px flex-1 bg-surface-bord" />ou<span className="h-px flex-1 bg-surface-bord" /></div>
+        </>
+      )}
       <form className="space-y-4" onSubmit={async (e) => {
         e.preventDefault();
         setEnvoi(true);
         setErreur(null);
-        try { apres(await connexion(identifiant.trim(), mdp)); } catch (err) { setErreur(err.detail); } finally { setEnvoi(false); }
+        try { apres(await connexion(identifiant.trim(), mdp, espace)); } catch (err) { setErreur(err.detail); } finally { setEnvoi(false); }
       }}>
-        <Champ libelle="E-mail ou identifiant">{(id) => <input id={id} className="champ" value={identifiant} onChange={(e) => setIdentifiant(e.target.value)} autoComplete="username" required autoFocus />}</Champ>
+        <Champ libelle={ESPACES[espace].identifiant}>{(id) => <input id={id} className="champ" value={identifiant} onChange={(e) => setIdentifiant(e.target.value)} autoComplete="username" required autoFocus />}</Champ>
         <Champ libelle="Mot de passe">{(id) => <ChampMotDePasse id={id} valeur={mdp} onChange={setMdp} />}</Champ>
         <div className="flex justify-end"><Link to="/mot-de-passe-oublie" className="lien text-sm">Mot de passe oublié ?</Link></div>
         {erreur && <Bandeau type="danger">{erreur}</Bandeau>}
-        <Bouton type="submit" taille="lg" className="w-full" icone={LogIn} chargement={envoi}>Se connecter</Bouton>
+        <Bouton type="submit" taille="lg" className="w-full" icone={LogIn} chargement={envoi}>Se connecter en tant que {ESPACES[espace].libelle.toLowerCase()}</Bouton>
       </form>
-      <p className="mt-6 text-center text-sm text-texte-doux">Pas encore de compte ? <Link to="/inscription" className="lien">Créer un compte citoyen</Link></p>
-      <p className="mt-2 text-center text-sm text-texte-doux">Police, pompiers, santé, SENELEC, ONAS ? <Link to="/demande-agent" className="lien">Demander un compte agent</Link></p>
+      <p className="mt-6 text-center text-sm text-texte-doux">
+        {espace === 'citoyen' && <>Pas encore de compte ? <Link to="/inscription" className="lien">Créer un compte citoyen</Link></>}
+        {espace === 'agent' && <>Pas encore de compte ? <Link to="/demande-agent" className="lien">Demander un compte agent</Link><br /><span className="text-xs">Activé après vérification par un superviseur.</span></>}
+        {espace === 'superadmin' && <>Les comptes superviseur ne se créent pas en ligne : ils sont attribués par l’administrateur du serveur.</>}
+      </p>
     </Cadre>
   );
 }
@@ -239,7 +262,7 @@ export function DemandeAgent() {
       <Cadre titre="Demande envoyée">
         <Bandeau type="succes" titre="Votre demande est en cours d’examen">{fait}</Bandeau>
         <p className="mt-4 text-sm text-texte-doux">Un superviseur vérifie votre identité professionnelle (service, matricule, structure). Vous serez informé par e-mail ; tant que la demande n’est pas validée, la connexion est impossible.</p>
-        <p className="mt-6 text-center text-sm"><Link to="/connexion" className="lien">Retour à la connexion</Link></p>
+        <p className="mt-6 text-center text-sm"><Link to="/connexion?espace=agent" className="lien">Retour à la connexion</Link></p>
       </Cadre>
     );
   }
@@ -282,7 +305,7 @@ export function DemandeAgent() {
         {erreur && <Bandeau type="danger">{erreur}</Bandeau>}
         <Bouton type="submit" taille="lg" className="w-full" icone={BadgeCheck} chargement={envoi}>Envoyer ma demande</Bouton>
       </form>
-      <p className="mt-6 text-center text-sm text-texte-doux">Déjà validé ? <Link to="/connexion" className="lien">Se connecter</Link></p>
+      <p className="mt-6 text-center text-sm text-texte-doux">Déjà validé ? <Link to="/connexion?espace=agent" className="lien">Se connecter</Link></p>
     </Cadre>
   );
 }

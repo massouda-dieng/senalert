@@ -189,7 +189,7 @@ export default function Layout() {
                 <Bell className="h-5 w-5" />
                 {nonLues > 0 && <span className="absolute right-1 top-1 min-w-[18px] rounded-full bg-sos px-1 text-center text-[10px] font-bold leading-[18px] text-white">{nonLues > 99 ? '99+' : nonLues}</span>}
               </NavLink>
-              <MenuProfil utilisateur={utilisateur} onDeconnexion={async () => { await deconnexion(); navigate('/connexion'); }} />
+              <MenuProfil utilisateur={utilisateur} onDeconnexion={async () => { const role = utilisateur.role; await deconnexion(); navigate(role === 'citoyen' ? '/connexion' : `/connexion?espace=${role}`); }} />
             </div>
           </div>
           {utilisateur.role !== 'superadmin' && <BandeauAlertesZone region={regionAlertes} />}

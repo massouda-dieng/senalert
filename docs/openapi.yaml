@@ -3755,9 +3755,16 @@ components:
       - uid
     ConnexionRequest:
       type: object
-      description: Connexion par identifiant OU adresse e-mail. Renvoie aussi le profil
-        (dont le rôle serveur).
+      description: |-
+        Connexion par identifiant OU adresse e-mail. Renvoie aussi le profil (dont le rôle serveur).
+
+        `espace` (facultatif) est l'onglet choisi à l'écran : il ne donne aucun droit, il refuse seulement
+        la connexion si le rôle réel du compte est différent (vérifié après le mot de passe).
       properties:
+        espace:
+          allOf:
+          - $ref: '#/components/schemas/EspaceEnum'
+          writeOnly: true
         username:
           type: string
           writeOnly: true
@@ -4110,6 +4117,16 @@ components:
           default: inconnu
       required:
       - token
+    EspaceEnum:
+      enum:
+      - citoyen
+      - agent
+      - superadmin
+      type: string
+      description: |-
+        * `citoyen` - citoyen
+        * `agent` - agent
+        * `superadmin` - superadmin
     FicheSecours:
       type: object
       properties:
@@ -5382,6 +5399,8 @@ components:
       - username
     UtilisateurAdmin:
       type: object
+      description: Le service et les zones ne concernent que le rôle agent (un profil
+        conservé après changement de rôle est masqué).
       properties:
         id:
           type: integer
