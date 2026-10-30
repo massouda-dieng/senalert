@@ -81,7 +81,7 @@ export default function Simulateur() {
             <Smartphone className="mx-auto h-10 w-10 text-or" />
             <h1 className="mt-3 font-titre text-2xl font-extrabold">Application mobile non compilée</h1>
             <p className="mt-2 text-white/70">Dans un terminal, lancez une fois :</p>
-            <pre className="mt-3 rounded-xl bg-black/40 p-3 text-left text-sm text-or">cd mobile{'\n'}flutter build web --base-href /mobile/</pre>
+            <pre className="mt-3 rounded-xl bg-black/40 p-3 text-left text-sm text-or">cd ~/Documents/PFF/senalert{'\n'}./run.sh simulateur</pre>
             <p className="mt-3 text-sm text-white/60">puis rechargez cette page.</p>
           </div>
         ) : (

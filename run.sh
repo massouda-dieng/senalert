@@ -41,7 +41,7 @@ case "${1:-backend}" in
   simulateur)
     cd "$RACINE/mobile"
     "$FLUTTER" pub get
-    "$FLUTTER" build web --release --base-href /mobile/
+    "$FLUTTER" build web --release --base-href /mobile/ --output "$RACINE/simulateur-mobile"
     echo "→ Lancez le serveur (cd backend && python manage.py runserver) puis ouvrez http://127.0.0.1:8000/app/simulateur"
     ;;
   tests)

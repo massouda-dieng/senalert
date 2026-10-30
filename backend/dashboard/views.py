@@ -173,8 +173,7 @@ def application_mobile(request, chemin=''):
     racine = settings.MOBILE_WEB_DIR
     if not (racine / 'index.html').exists():
         return HttpResponse(
-            "<h1>Application mobile non compilée</h1><p>Lancez : <code>cd mobile && flutter build web "
-            "--base-href /mobile/</code> puis rechargez cette page.</p>", status=503)
+            "<h1>Application mobile non compilée</h1><p>Lancez : <code>./run.sh simulateur</code> puis rechargez cette page.</p>", status=503)
     cible = (racine / chemin).resolve()
     if not chemin or not cible.is_file() or racine.resolve() not in cible.parents:
         chemin = 'index.html'  # route interne de l'app, ou tentative de sortir du dossier

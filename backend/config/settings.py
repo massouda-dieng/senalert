@@ -127,7 +127,8 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 WEB_DIST_DIR = PROJECT_DIR / 'web' / 'dist'
 STATICFILES_DIRS = [WEB_DIST_DIR] if WEB_DIST_DIR.exists() else []
 # Application Flutter compilée pour le web, affichée dans le simulateur mobile (/app/simulateur)
-MOBILE_WEB_DIR = PROJECT_DIR / 'mobile' / 'build' / 'web'
+# Dossier séparé de mobile/build : `flutter run` et `flutter clean` ne le touchent jamais.
+MOBILE_WEB_DIR = PROJECT_DIR / 'simulateur-mobile'
 STORAGES = {
     'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
     'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage'},
