@@ -59,6 +59,11 @@ class DemandeCompteAgentTests(SenAlertTestCase):
         d.refresh_from_db()
         self.assertEqual((d.statut, d.mot_de_passe_hash), ('refusee', ''))
         self.assertFalse(User.objects.filter(email='cheikh@police.sn').exists())
+        # Le refus ne se devine pas depuis la page de connexion
+        self.client.force_authenticate(user=None)
+        r = self.client.post('/api/auth/connexion/', {'username': 'cheikh@police.sn', 'password': 'nimporte-quoi-123'}, format='json')
+        self.assertEqual(r.status_code, 401)
+        self.assertNotIn('refus', r.data['detail'])
 
     def test_validations_du_formulaire(self):
         self.citoyen('awa')
