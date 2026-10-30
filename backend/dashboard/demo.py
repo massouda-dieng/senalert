@@ -32,8 +32,10 @@ ETAPES = {
     2: ('Elle signale un incendie', "Elle précise la situation : incendie dans un entrepôt, avec sa position. Le dossier est orienté automatiquement vers les sapeurs-pompiers."),
     3: ('La supervision affecte le dossier', "Le superviseur affecte l'incendie à l'agent sapeur-pompier de la zone. L'agent et la citoyenne sont notifiés."),
     4: ("L'agent accepte", "L'agent accepte l'intervention et prend aussi en charge le SOS : le délai de prise en charge est mesuré."),
-    5: ("Les secours interviennent", "L'agent démarre l'intervention : la citoyenne voit « En cours » sur son téléphone."),
-    6: ("Intervention terminée", "L'agent clôture avec un compte rendu. Les indicateurs de supervision sont mis à jour."),
+    5: ("Les secours sont en route", "L'agent démarre et partage sa position : la citoyenne voit « Les secours sont en route » et la distance sur son téléphone."),
+    6: ("L'agent approche", "La position se met à jour : l'agent n'est plus qu'à quelques centaines de mètres."),
+    7: ("Intervention terminée", "L'agent clôture avec un compte rendu ; sa position est effacée. Les indicateurs de supervision sont mis à jour."),
+    8: ("La citoyenne note l'intervention", "Awa donne 5 étoiles : la satisfaction par service apparaît dans la supervision."),
 }
 
 
@@ -88,10 +90,15 @@ class DemoView(APIView):
             elif etape == 5:
                 inc = workflow.demarrer(inc, agent)
                 sos = workflow.demarrer(sos, agent)
+                workflow.partager_position(inc, agent, 14.6858, -17.4452, 20)
             elif etape == 6:
+                workflow.partager_position(inc, agent, 14.6762, -17.4391, 15)
+            elif etape == 7:
                 inc = workflow.resoudre(inc, agent, 'Feu maîtrisé en 25 minutes, entrepôt sécurisé, aucun blessé. (démonstration)',
                                         'Accès étroit pour le camion.')
                 sos = workflow.resoudre(sos, agent, 'Personne prise en charge et rassurée sur place. (démonstration)')
+            elif etape == 8:
+                inc = workflow.evaluer(inc, citoyen, 5, 'Arrivés très vite, merci ! (démonstration)')
             journaliser(request, 'demo.etape', details={'etape': etape})
 
         ctx = {'request': request}

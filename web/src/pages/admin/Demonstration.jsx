@@ -49,7 +49,12 @@ export default function Demonstration() {
   const points = useMemo(() => [
     dossiers.sos && { id: 's', lat: dossiers.sos.latitude, lng: dossiers.sos.longitude, couleur: '#E31B23', sos: true, taille: 22 },
     dossiers.incident && { id: 'i', lat: dossiers.incident.latitude, lng: dossiers.incident.longitude, couleur: '#DC2626', taille: 18 },
+    dossiers.incident?.intervention?.position_agent && {
+      id: 'agent', lat: dossiers.incident.intervention.position_agent.lat, lng: dossiers.incident.intervention.position_agent.lng, agent: true, titre: 'Agent de secours',
+    },
   ].filter(Boolean), [dossiers]);
+  const position = dossiers.incident?.intervention?.position_agent;
+  const note = dossiers.incident?.intervention?.note_satisfaction;
 
   if (erreurDef) return <EtatErreur erreur={erreurDef} />;
   if (!def) return <Chargement />;
@@ -110,7 +115,11 @@ export default function Demonstration() {
             ))}
           </div>
           <div className="grid gap-5 lg:grid-cols-2">
-            <CarteSenAlert points={points} hauteur={380} zoom={14} centre={[14.6735, -17.4374]} regrouper={false} />
+            <div className="space-y-2">
+              <CarteSenAlert points={points} hauteur={380} zoom={14} centre={[14.6795, -17.4410]} regrouper={false} />
+              {position && <p className="text-sm font-semibold text-blue-700">Agent à {position.distance_m} m du lieu (vu par la citoyenne)</p>}
+              {note != null && <p className="flex items-center gap-1 text-sm font-semibold">Note de la citoyenne : <span className="text-or-vif" aria-label={`${note} sur 5`}>{'★'.repeat(note)}</span><span className="text-texte-pale" aria-hidden>{'★'.repeat(5 - note)}</span></p>}
+            </div>
             <Carte titre="Historique du signalement" corpsClassName="max-h-[380px] overflow-y-auto p-5">
               {evenements.length ? <Chronologie evenements={evenements} /> : <p className="text-sm text-texte-pale">L’historique horodaté apparaîtra ici.</p>}
             </Carte>

@@ -145,12 +145,16 @@ class DemonstrationGuideeTests(SenAlertTestCase):
         self.en_tant_que(self.superadmin())
         with override_settings(DEMO_GUIDEE=True), self.captureOnCommitCallbacks(execute=True):
             ids = {}
-            for n in range(1, 7):
+            for n in range(1, 9):
                 r = self.client.post(self.URL, {'etape': n, **ids}, format='json')
                 self.assertEqual(r.status_code, 200, r.data)
                 if r.data['sos']: ids['sos'] = r.data['sos']['id']
                 if r.data['incident']: ids['incident'] = r.data['incident']['id']
+                if n == 6:
+                    self.assertLess(r.data['incident']['intervention']['position_agent']['distance_m'], 400)
         self.assertEqual(r.data['incident']['statut'], 'resolu')
+        self.assertEqual(r.data['incident']['intervention']['note_satisfaction'], 5)
+        self.assertIsNone(r.data['incident']['intervention']['position_agent'])
         self.assertEqual(r.data['sos']['statut'], 'resolu')
         self.assertTrue(Incident.objects.get(pk=ids['incident']).description.startswith('[DÉMO]'))
         call_command('donnees_demo', '--supprimer', stdout=StringIO())

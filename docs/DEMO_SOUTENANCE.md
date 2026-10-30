@@ -41,3 +41,10 @@ Le jour J : `./run.sh backend` (et `./run.sh mobile` si l'application Flutter es
 | Le score de risque est-il prédictif ? | Non, c'est l'indicateur descriptif du mémoire (poids × facteur 7 jours), reproductible et testé à chaque seuil ; peu de signalements ne signifie pas zone sûre. |
 | Et si l'IA tombe en panne ? | L'assistant répond en mode secours à partir des fiches ; le SOS et les fiches ne dépendent jamais de l'IA (testé). |
 | Les données personnelles ? | Minimisation (positions arrondies sur la carte publique, contact visible du seul agent affecté, exports anonymes, EXIF supprimé), suppression de compte, journal d'audit ; démarches CDP restant à faire. |
+
+
+## Nouveautés à montrer (v3.4)
+
+* **Suivi de l’agent en direct** : étapes 5 et 6 de la démonstration guidée (« Les secours sont en route », distance qui diminue).
+* **Note de satisfaction** : étape 8, puis carte « Satisfaction des citoyens » sur la page Supervision.
+* **Wolof** : dans l’espace citoyen, boutons **FR / WO** (web) ou *Profil → Langue* (mobile).

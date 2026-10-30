@@ -2,6 +2,7 @@ import {
   ArrowRight, BellRing, BookOpenCheck, Bot, CheckCircle2, Flame, Map, MapPinned, Megaphone, Phone, ShieldCheck, Siren,
   Smartphone, UsersRound,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useRessource } from '../api/hooks';
 import { ESPACE_PAR_ROLE, useAuth } from '../auth/AuthContext';
@@ -14,13 +15,32 @@ import { nombre } from '../lib/format';
 const FONCTIONS = [
   { icone: Siren, titre: 'SOS en un geste', texte: 'Votre position GPS et sa précision sont envoyées aux agents de votre zone. 5 secondes pour annuler.', ton: 'bg-sos-clair text-sos' },
   { icone: Flame, titre: 'Signalement guidé', texte: 'Accident, incendie, inondation… en 4 étapes, avec photos et position sur la carte.', ton: 'bg-or-clair text-or-fonce' },
-  { icone: BellRing, titre: 'Suivi en temps utile', texte: 'Affecté, pris en charge, en cours, résolu : chaque étape est horodatée et notifiée.', ton: 'bg-marque-50 text-marque-700' },
+  { icone: BellRing, titre: 'Les secours en direct', texte: 'Chaque étape est notifiée et vous voyez l’agent approcher sur la carte, puis vous notez l’intervention.', ton: 'bg-marque-50 text-marque-700' },
   { icone: UsersRound, titre: 'Entraide de quartier', texte: 'Voyez les incidents autour de vous, confirmez ce que vous constatez, partagez une information utile.', ton: 'bg-blue-50 text-blue-700' },
   { icone: Map, titre: 'Carte interactive', texte: 'Incidents récents, carte de chaleur, zones à risque, alertes officielles et vue satellite.', ton: 'bg-emerald-50 text-emerald-700' },
   { icone: MapPinned, titre: 'Services proches', texte: 'Hôpitaux, pharmacies, police et pompiers autour de vous, avec itinéraire.', ton: 'bg-violet-50 text-violet-700' },
   { icone: BookOpenCheck, titre: 'Premiers secours', texte: '12 fiches pratiques, consultables même sans connexion.', ton: 'bg-rose-50 text-rose-700' },
-  { icone: Bot, titre: 'Assistant', texte: 'Des réponses simples sur la prévention et l’utilisation de l’application.', ton: 'bg-amber-50 text-amber-700' },
+  { icone: Bot, titre: 'En français et en wolof', texte: 'L’espace citoyen parle wolof, et un assistant répond aux questions de prévention.', ton: 'bg-amber-50 text-amber-700' },
 ];
+
+/** Compteur animé jusqu'à la valeur réelle (désactivé si l'utilisateur réduit les animations). */
+function Compteur({ valeur }) {
+  const [affiche, setAffiche] = useState(0);
+  useEffect(() => {
+    if (valeur == null) return undefined;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { setAffiche(valeur); return undefined; }
+    let image;
+    const debut = performance.now();
+    const pas = (t) => {
+      const p = Math.min(1, (t - debut) / 1200);
+      setAffiche(Math.round(valeur * (1 - (1 - p) ** 3)));
+      if (p < 1) image = requestAnimationFrame(pas);
+    };
+    image = requestAnimationFrame(pas);
+    return () => cancelAnimationFrame(image);
+  }, [valeur]);
+  return valeur == null ? '…' : nombre(affiche);
+}
 
 const ETAPES = [
   { photo: 'rue-inondee', titre: '1. Vous signalez', texte: 'Un citoyen constate une rue inondée et envoie un signalement géolocalisé avec photo.' },
@@ -115,7 +135,7 @@ export default function Vitrine() {
             ['Signalements', s?.signalements], ['Dossiers résolus', s?.resolus], ['Citoyens inscrits', s?.citoyens], ['Services mobilisables', s?.services],
           ].map(([l, v]) => (
             <div key={l} className="bg-surface p-6 text-center">
-              <p className="font-titre text-3xl font-extrabold text-marque-700 sm:text-4xl">{v == null ? '…' : nombre(v)}</p>
+              <p className="font-titre text-3xl font-extrabold text-marque-700 sm:text-4xl"><Compteur valeur={v} /></p>
               <p className="mt-1 text-sm text-texte-doux">{l}</p>
             </div>
           ))}

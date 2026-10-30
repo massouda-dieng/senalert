@@ -107,7 +107,20 @@ class _SosScreenState extends State<SosScreen> {
             if (_etape == _Etape.decompte) ...[
               const SizedBox(height: 12),
               Text(tr('Envoi automatique dans'), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
-              Semantics(liveRegion: true, child: Text('$_reste', textAlign: TextAlign.center, style: titre(96, couleur: const Color(0xFFFB7185)))),
+              const SizedBox(height: 16),
+              Center(child: SizedBox(width: 190, height: 190, child: Stack(alignment: Alignment.center, children: [
+                // Anneau qui se vide en 5 s : l'utilisateur voit le temps restant pour annuler.
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: (_reste + 1) / _duree, end: _reste / _duree),
+                  duration: const Duration(seconds: 1),
+                  key: ValueKey(_reste),
+                  builder: (_, v, __) => SizedBox.expand(child: CircularProgressIndicator(
+                      value: v.clamp(0, 1), strokeWidth: 10, strokeCap: StrokeCap.round,
+                      color: const Color(0xFFFB7185), backgroundColor: Colors.white12)),
+                ),
+                Semantics(liveRegion: true, child: Text('$_reste', style: titre(88, couleur: Colors.white))),
+              ]))),
+              const SizedBox(height: 16),
               _infoPosition(),
               const SizedBox(height: 32),
               FilledButton(style: FilledButton.styleFrom(backgroundColor: AppColors.crimson, minimumSize: const Size.fromHeight(60)),
