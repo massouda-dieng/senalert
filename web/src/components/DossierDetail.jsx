@@ -14,6 +14,7 @@ import CarteSenAlert from './Carte';
 import {
   BadgeGravite, BadgeStatut, Bandeau, Bouton, Champ, Chargement, Confirmation, EtatErreur, Fenetre, Selecteur, useToast,
 } from './ui';
+import { COULEURS } from '../lib/couleurs';
 
 const chemin = (type, id) => (type === 'sos' ? `/alertes/sos/${id}/` : `/incidents/${id}/`);
 
@@ -97,7 +98,7 @@ export default function DossierDetail({ type = 'incident', id, onFermer, onModif
             </button>
             <BadgeStatut statut={s} />
             <BadgeGravite gravite={d.gravite} />
-            {d.en_retard && <span className="inline-flex items-center gap-1 rounded-full bg-alerte-clair px-2 py-0.5 text-xs font-semibold text-amber-800"><Clock className="h-3 w-3" /> En retard</span>}
+            {d.en_retard && <span className="inline-flex items-center gap-1 rounded-full bg-alerte-clair px-2 py-0.5 text-xs font-semibold text-alerte"><Clock className="h-3 w-3" /> En retard</span>}
           </div>
           <h2 className="mt-1.5 text-xl font-extrabold">{type === 'sos' ? t('Alerte SOS') : (role === 'citoyen' ? libelleCategorie(lg.langue, d.type_incident, d.categorie_libelle) : d.categorie_libelle)}</h2>
           <p className="text-sm text-texte-doux">{d.region_libelle || 'Région inconnue'} · créé {ilYa(d.date_creation)} ({dateHeure(d.date_creation)})</p>
@@ -139,10 +140,10 @@ export default function DossierDetail({ type = 'incident', id, onFermer, onModif
           )}
 
           {inter?.compte_rendu && (
-            <div className="rounded-2xl border border-emerald-200 bg-succes-clair/50 p-4 text-sm">
-              <p className="font-semibold text-emerald-900">Compte rendu d’intervention</p>
+            <div className="rounded-2xl border border-succes/30 bg-succes-clair/50 p-4 text-sm">
+              <p className="font-semibold text-succes">Compte rendu d’intervention</p>
               <p className="mt-1 whitespace-pre-wrap">{inter.compte_rendu}</p>
-              {inter.difficultes && <p className="mt-2 text-emerald-900/80"><b>Difficultés :</b> {inter.difficultes}</p>}
+              {inter.difficultes && <p className="mt-2 text-succes"><b>Difficultés :</b> {inter.difficultes}</p>}
             </div>
           )}
 
@@ -151,7 +152,7 @@ export default function DossierDetail({ type = 'incident', id, onFermer, onModif
           {d.latitude != null && (
             <CarteSenAlert hauteur={220} zoom={15} centre={[d.latitude, d.longitude]} regrouper={false} cadrer={Boolean(enIntervention && inter?.position_agent)}
               points={[
-                { id: d.id, lat: d.latitude, lng: d.longitude, couleur: type === 'sos' ? '#E31B23' : STATUTS[s]?.point, sos: type === 'sos', titre: 'Lieu du dossier' },
+                { id: d.id, lat: d.latitude, lng: d.longitude, couleur: type === 'sos' ? COULEURS.sos : STATUTS[s]?.point, sos: type === 'sos', titre: 'Lieu du dossier' },
                 ...(enIntervention && inter?.position_agent ? [{ id: 'agent', lat: inter.position_agent.lat, lng: inter.position_agent.lng, agent: true, titre: 'Agent de secours' }] : []),
               ]} />
           )}
@@ -218,7 +219,7 @@ function usePartagePosition(url) {
 
 function PartagePosition({ partage }) {
   return (
-    <div className={clsx('flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4 text-sm ring-1', partage.actif ? 'bg-blue-50 text-blue-900 ring-blue-200' : 'bg-surface-douce ring-surface-bord')}>
+    <div className={clsx('flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4 text-sm ring-1', partage.actif ? 'bg-marque-50 text-marque-700 ring-marque-100' : 'bg-surface-douce ring-surface-bord')}>
       <div className="flex items-start gap-3">
         <LocateFixed className={clsx('mt-0.5 h-5 w-5 shrink-0', partage.actif && 'animate-pulse')} />
         <div>
@@ -237,8 +238,8 @@ function PartagePosition({ partage }) {
 
 function AgentEnRoute({ position, t }) {
   return (
-    <div className="flex items-center gap-4 rounded-2xl bg-blue-50 p-4 text-blue-900 ring-1 ring-blue-200">
-      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-blue-600 text-white"><Truck className="h-6 w-6" /></span>
+    <div className="flex items-center gap-4 rounded-2xl bg-marque-50 p-4 text-marque-700 ring-1 ring-marque-100">
+      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-marque-600 text-white"><Truck className="h-6 w-6" /></span>
       <div>
         <p className="font-bold">{t('Les secours sont en route')}</p>
         <p className="text-sm">{position.distance_m != null ? t('L’agent est à environ {d} du lieu', { d: distanceLisible(position.distance_m) }) : 'Position de l’agent disponible'} · {ilYa(position.date)}</p>
@@ -303,7 +304,7 @@ export function Chronologie({ evenements }) {
     <ol className="relative space-y-4 border-l-2 border-surface-bord pl-5">
       {evenements.map((e) => (
         <li key={e.id} className="relative">
-          <span className="absolute -left-[27px] top-1 h-3 w-3 rounded-full ring-4 ring-white" style={{ background: STATUTS[e.statut_apres]?.point || '#94A3B8' }} aria-hidden />
+          <span className="absolute -left-[27px] top-1 h-3 w-3 rounded-full ring-4 ring-white" style={{ background: STATUTS[e.statut_apres]?.point || COULEURS.grisClair }} aria-hidden />
           <p className="text-sm font-semibold">
             {e.type === 'transition' ? STATUTS[e.statut_apres]?.libelle : { creation: 'Création', affectation: 'Affectation', complement: 'Complément du citoyen', note: 'Note', gravite: 'Gravité', doublon: 'Doublon potentiel' }[e.type] || e.type}
             {!e.visible_citoyen && <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-slate-500">interne</span>}
@@ -359,7 +360,7 @@ function NoteRapide({ onEnvoyer }) {
   );
 }
 
-function DialogueCloture({ ouverte, onFermer, onValider }) {
+export function DialogueCloture({ ouverte, onFermer, onValider }) {
   const [cr, setCr] = useState('');
   const [diff, setDiff] = useState('');
   const [envoi, setEnvoi] = useState(false);
@@ -403,7 +404,7 @@ function DialogueAffectation({ dossier, onFermer, onValider }) {
         )}</Champ>
         <Champ libelle="Agent" requis aide={`Agents actifs couvrant la région ${config.region(dossier.region)?.libelle || ''}.`}>{(id) => (
           agents.chargement ? <Chargement className="py-3" /> : liste.length === 0
-            ? <p id={id} className="rounded-xl bg-alerte-clair p-3 text-sm text-amber-900">Aucun agent actif ne couvre cette zone pour ce service. Créez ou rattachez un agent dans « Utilisateurs ».</p>
+            ? <p id={id} className="rounded-xl bg-alerte-clair p-3 text-sm text-alerte">Aucun agent actif ne couvre cette zone pour ce service. Créez ou rattachez un agent dans « Utilisateurs ».</p>
             : <Selecteur id={id} valeur={agent} onChange={setAgent} vide="Choisir un agent…"
               options={liste.map((a) => ({ code: String(a.id), libelle: `${a.first_name} ${a.last_name} — ${a.profil_agent?.service_nom || 'sans service'}`.trim() }))} />
         )}</Champ>

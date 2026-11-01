@@ -1,17 +1,18 @@
 import clsx from 'clsx';
-import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Info, Loader2, RefreshCw, X, XCircle } from 'lucide-react';
+import { AlertTriangle, BellRing, CheckCircle2, ChevronLeft, ChevronRight, ClipboardCheck, Info, Loader2, Megaphone, RefreshCw, Siren, X, XCircle } from 'lucide-react';
 import { createContext, useCallback, useContext, useEffect, useId, useRef, useState } from 'react';
 import { GRAVITES, STATUTS, ilYa } from '../lib/format';
 import { useLangue } from '../lib/langue';
+import { COULEURS } from '../lib/couleurs';
 
 /* ---------------------------------------------------------------- Boutons */
 
 const VARIANTES = {
-  primaire: 'bg-marque-800 text-white hover:bg-marque-700 shadow-sm',
+  primaire: 'bg-marque-800 text-white hover:bg-marque-700 active:bg-marque-900 shadow-sm',
   secondaire: 'bg-surface text-texte border border-surface-bord hover:bg-surface-douce',
   fantome: 'text-texte-doux hover:bg-surface-douce hover:text-texte',
-  danger: 'bg-sos text-white hover:bg-sos-fonce shadow-sm',
-  succes: 'bg-succes text-white hover:bg-emerald-700 shadow-sm',
+  danger: 'bg-sos-fonce text-white hover:bg-sos-sombre shadow-sm',
+  succes: 'bg-succes text-white hover:bg-succes-fonce shadow-sm',
 };
 
 export function Bouton({ variante = 'primaire', taille = 'md', chargement, icone: Icone, className, children, disabled, ...props }) {
@@ -52,13 +53,26 @@ export function BadgeGravite({ gravite }) {
   return <span className={clsx('rounded-md px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide', g.classe)}>{g.libelle}</span>;
 }
 
-export function Pastille({ couleur = '#475569', children }) {
+export function Pastille({ couleur = COULEURS.gris, children }) {
   return (
     <span className="inline-flex items-center gap-1.5 text-sm">
       <span className="h-2.5 w-2.5 rounded-full" style={{ background: couleur }} aria-hidden />
       {children}
     </span>
   );
+}
+
+const TONS_NOTIFICATION = {
+  nouvelle_alerte: [Siren, 'bg-sos-clair text-sos-fonce'],
+  alerte_zone: [Megaphone, 'bg-or-clair text-alerte'],
+  resolution: [CheckCircle2, 'bg-succes-clair text-succes'],
+  affectation: [ClipboardCheck, 'bg-marque-50 text-marque-600'],
+};
+
+/** Pastille d'une notification : couleur et icône selon son importance (jamais la couleur seule). */
+export function IconeNotification({ type }) {
+  const [Icone, ton] = TONS_NOTIFICATION[type] || [BellRing, 'bg-surface-subtile text-texte-doux'];
+  return <span className={clsx('grid h-9 w-9 shrink-0 place-items-center rounded-xl', ton)}><Icone className="h-[18px] w-[18px]" aria-hidden /></span>;
 }
 
 /* ---------------------------------------------------------------- États */
@@ -89,7 +103,7 @@ export function EtatVide({ icone: Icone = Info, titre, texte, action }) {
 export function EtatErreur({ erreur, onReessayer }) {
   if (!erreur) return null;
   return (
-    <div role="alert" className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
+    <div role="alert" className="flex items-start gap-3 rounded-2xl border border-sos/30 bg-sos-clair p-4 text-sm text-sos-fonce">
       <XCircle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
       <div className="flex-1">
         <p className="font-semibold">Impossible de charger les données</p>
@@ -102,10 +116,10 @@ export function EtatErreur({ erreur, onReessayer }) {
 
 export function Bandeau({ type = 'info', titre, children, className }) {
   const styles = {
-    info: ['border-marque-600/20 bg-marque-50 text-marque-900', Info],
-    alerte: ['border-amber-300 bg-alerte-clair text-amber-900', AlertTriangle],
-    danger: ['border-red-200 bg-red-50 text-red-900', XCircle],
-    succes: ['border-emerald-200 bg-succes-clair text-emerald-900', CheckCircle2],
+    info: ['border-marque-600/20 bg-marque-50 text-marque-800', Info],
+    alerte: ['border-or/40 bg-alerte-clair text-alerte', AlertTriangle],
+    danger: ['border-sos/30 bg-sos-clair text-sos-fonce', XCircle],
+    succes: ['border-succes/30 bg-succes-clair text-succes', CheckCircle2],
   }[type];
   const Icone = styles[1];
   return (
@@ -154,18 +168,19 @@ export function Carte({ titre, action, className, corpsClassName, children }) {
   );
 }
 
-export function Indicateur({ libelle, valeur, icone: Icone, ton = 'nuit', aide, sous }) {
+export function Indicateur({ libelle, valeur, icone: Icone, ton = 'nuit', aide, sous, tendance }) {
   const tons = {
-    nuit: 'bg-marque-50 text-marque-700', sos: 'bg-sos-clair text-sos', alerte: 'bg-alerte-clair text-amber-700',
-    succes: 'bg-succes-clair text-emerald-700', neutre: 'bg-slate-100 text-slate-600',
+    nuit: 'bg-marque-50 text-marque-600', sos: 'bg-sos-clair text-sos-fonce', alerte: 'bg-alerte-clair text-alerte',
+    succes: 'bg-succes-clair text-succes', neutre: 'bg-slate-100 text-slate-600',
   };
   return (
     <div className="carte flex items-start gap-3 p-4" title={aide}>
       {Icone && <div className={clsx('rounded-xl p-2.5', tons[ton])}><Icone className="h-5 w-5" aria-hidden /></div>}
       <div className="min-w-0">
         <p className="text-[13px] font-medium text-texte-doux">{libelle}</p>
-        <p className="mt-0.5 font-titre text-2xl font-extrabold tabular-nums">{valeur}</p>
-        {sous && <p className="text-xs text-texte-pale">{sous}</p>}
+        <p className="mt-0.5 font-titre text-2xl font-extrabold tabular-nums text-marque-800">{valeur}</p>
+        {sous && <p className="text-xs text-texte-doux">{sous}</p>}
+        {tendance}
       </div>
     </div>
   );
@@ -178,10 +193,10 @@ export function Champ({ libelle, erreur, aide, children, requis }) {
   const enfant = typeof children === 'function' ? children(id) : children;
   return (
     <div>
-      {libelle && <label htmlFor={id} className="etiquette">{libelle}{requis && <span className="text-sos"> *</span>}</label>}
+      {libelle && <label htmlFor={id} className="etiquette">{libelle}{requis && <span className="text-sos-fonce"> *</span>}</label>}
       {enfant}
       {aide && !erreur && <p className="mt-1 text-xs text-texte-pale">{aide}</p>}
-      {erreur && <p className="mt-1 text-xs font-medium text-red-700" role="alert">{Array.isArray(erreur) ? erreur[0] : erreur}</p>}
+      {erreur && <p className="mt-1 text-xs font-medium text-sos-fonce" role="alert">{Array.isArray(erreur) ? erreur[0] : erreur}</p>}
     </div>
   );
 }
@@ -282,7 +297,7 @@ export function FournisseurToasts({ children }) {
       <div className="pointer-events-none fixed bottom-4 right-4 z-[1100] flex w-[min(92vw,380px)] flex-col gap-2" aria-live="polite">
         {toasts.map((t) => (
           <div key={t.id} className={clsx('pointer-events-auto flex animate-apparition items-start gap-2.5 rounded-2xl px-4 py-3 text-sm font-medium text-white shadow-flottant',
-            t.type === 'erreur' ? 'bg-red-700' : t.type === 'info' ? 'bg-marque-800' : 'bg-emerald-700')}>
+            t.type === 'erreur' ? 'bg-sos-fonce' : 'bg-marque-800')}>
             {t.type === 'erreur' ? <XCircle className="mt-0.5 h-4 w-4 shrink-0" /> : <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />}
             <span>{t.message}</span>
           </div>
@@ -298,10 +313,10 @@ export const useToast = () => useContext(ContexteToast);
 
 export function Onglets({ onglets, actif, onChange }) {
   return (
-    <div role="tablist" className="inline-flex rounded-xl bg-surface p-1 ring-1 ring-surface-bord">
+    <div role="tablist" className="inline-flex max-w-full overflow-x-auto rounded-xl bg-surface p-1 ring-1 ring-surface-bord">
       {onglets.map((o) => (
         <button key={o.code} role="tab" type="button" aria-selected={actif === o.code} onClick={() => onChange(o.code)}
-          className={clsx('rounded-lg px-3 py-1.5 text-[13px] font-semibold transition', actif === o.code ? 'bg-marque-800 text-white' : 'text-texte-doux hover:text-texte')}>
+          className={clsx('whitespace-nowrap rounded-lg px-3 py-1.5 text-[13px] font-semibold transition', actif === o.code ? 'bg-marque-800 text-white' : 'text-texte-doux hover:text-texte')}>
           {o.libelle}{o.compte != null && <span className="ml-1.5 opacity-70">{o.compte}</span>}
         </button>
       ))}

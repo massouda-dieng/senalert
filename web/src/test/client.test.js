@@ -26,6 +26,13 @@ describe('client API', () => {
     expect(sessionStorage.getItem('senalert.refresh')).toBe('R2');
   });
 
+  it('conserve le jeton d’accès pour le rechargement, et l’efface à la déconnexion', () => {
+    enregistrerJetons({ access: 'A1', refresh: 'R1' });
+    expect(sessionStorage.getItem('senalert.access')).toBe('A1');
+    effacerJetons();
+    expect(sessionStorage.getItem('senalert.access')).toBeNull();
+  });
+
   it('signale l’expiration quand le renouvellement échoue', async () => {
     enregistrerJetons({ access: 'expire', refresh: 'R1' });
     const ecouteur = vi.fn();

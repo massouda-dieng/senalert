@@ -12,6 +12,7 @@ from rest_framework.throttling import ScopedRateThrottle
 
 from core.constants import RESOLU, ROLE_AGENT, STATUTS_ACTIFS
 from core.models import Categorie, Parametre
+from core.params import entier
 from core.permissions import est_citoyen, est_superadmin
 
 from . import workflow
@@ -99,6 +100,7 @@ class IncidentViewSet(ActionsDossierMixin, mixins.ListModelMixin, mixins.Retriev
         incident = self.get_object()
         message = (request.data.get('message') or '').strip()
         fichiers = request.FILES.getlist('photos')
+        photos = []
         if fichiers:
             if incident.citoyen_id != request.user.pk:
                 raise PermissionDenied('Ce dossier ne vous appartient pas.')
@@ -128,7 +130,7 @@ class IncidentViewSet(ActionsDossierMixin, mixins.ListModelMixin, mixins.Retriev
         """Incidents récents pour la carte citoyenne : données minimales, position arrondie."""
         if not (Parametre.get('fonctionnalites') or {}).get('carte_publique', True) and not est_superadmin(request.user):
             return Response({'resultats': [], 'desactivee': True})
-        jours = min(int(request.query_params.get('jours', 30) or 30), 90)
+        jours = entier(request.query_params.get('jours'), 30, 1, 90, 'jours')
         qs = Incident.objects.filter(
             latitude__isnull=False,
             date_creation__gte=timezone.now() - timezone.timedelta(days=jours),

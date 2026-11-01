@@ -1,7 +1,8 @@
 # Analyse statique dans l'IDE. Django n'a pas de stubs installés : les erreurs
 # d'attributs dynamiques (objects, status_code…) sont des faux positifs.
-python-interpreter-path = "env/bin/python"
-project-excludes = ["env/**", "**/migrations/**"]
+# L'interpréteur n'est pas fixé ici : il dépend du système (venv\Scripts sous Windows,
+# env/bin sous macOS). Pyrefly utilise celui sélectionné dans VS Code.
+project-excludes = ["env/**", "venv/**", "**/migrations/**"]
 
 [errors]
 missing-attribute = false
@@ -10,3 +11,9 @@ bad-override-mutable-attribute = false
 no-matching-overload = false
 unsupported-operation = false
 bad-argument-type = false
+bad-context-manager = false
+bad-override = false
+bad-specialization = false
+bad-argument-count = false
+unexpected-keyword = false
+bad-assignment = false

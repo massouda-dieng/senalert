@@ -17,16 +17,12 @@ class BienvenueScreen extends StatelessWidget {
     final contenu = Padding(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
-        Text.rich(TextSpan(children: [
-          const TextSpan(text: 'De l’alerte à l’intervention, suivez '),
-          TextSpan(text: 'chaque étape', style: titre(31, couleur: AppColors.vert600)),
-          const TextSpan(text: '.'),
-        ]), style: titre(31)),
+        Text('Ensemble, protégeons des vies', style: titre(31)),
         const SizedBox(height: 10),
-        Text('Un SOS ou un signalement part vers le service de votre zone.', style: TextStyle(color: AppColors.textGrey, fontSize: 15.5, height: 1.4)),
+        Text('Un SOS ou un signalement part vers le service de votre zone, et vous suivez chaque étape.', style: TextStyle(color: AppColors.textGrey, fontSize: 15.5, height: 1.4)),
         const SizedBox(height: 22),
         FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: AppColors.vert800, foregroundColor: Colors.white, minimumSize: const Size.fromHeight(56)),
+          style: FilledButton.styleFrom(backgroundColor: AppColors.marine800, foregroundColor: Colors.white, minimumSize: const Size.fromHeight(56)),
           onPressed: () => context.push('/inscription'), child: const Text('Créer mon compte'),
         ),
         const SizedBox(height: 10),
@@ -52,9 +48,9 @@ class BienvenueScreen extends StatelessWidget {
               Align(alignment: Alignment.topLeft, child: SafeArea(child: Padding(padding: const EdgeInsets.all(14), child: DecoratedBox(
                 decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
                 child: Padding(padding: const EdgeInsets.fromLTRB(6, 6, 14, 6), child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Image.asset('assets/images/senalert_icone.png', width: 30, height: 30, errorBuilder: (_, __, ___) => const Icon(Icons.shield, color: AppColors.vert600)),
+                  Image.asset('assets/images/senalert_icone.png', width: 30, height: 30, errorBuilder: (_, __, ___) => const Icon(Icons.shield, color: AppColors.marine800)),
                   const SizedBox(width: 8),
-                  Text('SenAlert', style: titre(18, couleur: AppColors.vert800)),
+                  Text('SenAlert', style: titre(18, couleur: AppColors.marine800)),
                 ])),
               )))),
             ]),

@@ -64,7 +64,7 @@ class _PremiersSecoursScreenState extends State<PremiersSecoursScreen> {
           child: Carte(
             onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => _FicheScreen(f))),
             child: Row(children: [
-              const Icon(Icons.healing_rounded, color: AppColors.crimson),
+              const Icon(Icons.healing_rounded, color: AppColors.rouge),
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(f['titre'], style: const TextStyle(fontWeight: FontWeight.w700)),
@@ -96,7 +96,7 @@ class _FicheScreen extends StatelessWidget {
         for (var i = 0; i < etapes.length; i++) Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            CircleAvatar(radius: 14, backgroundColor: AppColors.vert800, child: Text('${i + 1}', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700))),
+            CircleAvatar(radius: 14, backgroundColor: AppColors.marine800, child: Text('${i + 1}', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700))),
             const SizedBox(width: 12),
             Expanded(child: Text(etapes[i], style: const TextStyle(fontSize: 15.5, height: 1.4))),
           ]),
@@ -104,8 +104,8 @@ class _FicheScreen extends StatelessWidget {
         for (final a in List<String>.from(f['a_eviter'] ?? const [])) Padding(padding: const EdgeInsets.only(bottom: 8), child: Bandeau.alerte(a)),
         if ((f['appeler_si'] ?? '').toString().isNotEmpty) ...[
           const SizedBox(height: 8),
-          Carte(couleur: const Color(0xFFFFE4E9), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Appelez les secours : ${f['appeler_si']}', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.crimsonDeep)),
+          Carte(couleur: Jetons.rougeClair, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Appelez les secours : ${f['appeler_si']}', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.rougeFonce)),
             const SizedBox(height: 8),
             NumerosUrgence(numeros),
           ])),

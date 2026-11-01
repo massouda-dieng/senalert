@@ -1,5 +1,27 @@
 # Bilan de la refonte v3
 
+## Version 3.6 (01/11/2026) : identité institutionnelle bleu marine
+
+* **Palette** : bleu marine `#102A43`, bleu professionnel `#1D4E89`, rouge `#E63946` (urgences et SOS uniquement), orange `#F59E0B` (vigilance), vert `#16A36A` (réussite), gris clair `#F1F5F9`, gris foncé `#334155`.
+* **Système centralisé** : `design/couleurs.json` est la source unique. Le web le lit directement ; `node scripts/appliquer_couleurs.mjs` le propage à Flutter (`jetons.g.dart`), au favicon et aux manifestes.
+* **Contraste** : le blanc n'atteint pas 4,5:1 sur le rouge et le vert de la palette. Le bouton SOS garde `#E63946` (grand texte) ; les petits textes et boutons utilisent `#C81E2C` et `#0E7C50`. Les graphiques utilisent `#2F6DB5`, `#1D4E89` étant hors de la plage de lisibilité d'un tracé.
+* **Sens des couleurs** : statuts sans violet ni bleu ciel, boutons non urgents retirés du rouge, notifications colorées selon leur importance (web et mobile), missions classées par gravité avec liseré, répartition par niveau d'urgence en supervision.
+* **Conservé** : API, authentification, données et fonctionnalités. Seul changement backend d'identité : la couleur des tableaux du rapport PDF.
+* **Non modifié** : les couleurs des catégories d'incident, stockées en base et modifiables dans « Services et catégories ».
+
+## Version 3.5 (31/10/2026) : refonte professionnelle
+
+* **Identité** : vert profond `#075B45`, vert secondaire `#12805C`, rouge urgence `#DC2626`, orange vigilance `#F59E0B`, gris clair `#F5F7FA`, sur le web, le mobile, les icônes et les rapports PDF. Slogan « Ensemble, protégeons des vies ».
+* **Accueil public** refait : en-tête fixe et menu mobile, héros, présentation, fonctionnalités, fonctionnement, trois espaces, pied de page complet.
+* **Citoyen** : tableau de bord à deux colonnes, suivi par étapes, carte de la région, alertes de proximité, notifications, services ; barre d'onglets sur téléphone.
+* **Agent** : colonnes Nouvelles alertes / En attente / En cours, actions directes (prendre en charge, accepter, décliner, démarrer, clôturer), carte, historique.
+* **Superviseur** : indicateurs comparés à la période précédente, délai moyen global, agents mobilisés, grande carte, file à traiter, évolution des interventions, comparaison des périodes, activité récente, accès à l'administration, exports.
+* **Assistant** : conseils de prévention adaptés au Sénégal et orientation vers le bon écran, aussi en mode secours.
+* **Mobile** : écran de démarrage animé, connexion, accueils citoyen et agent, icônes natives.
+* **Données de démonstration** : tout le cycle de vie, avec des délais plausibles, étiquetées et supprimables.
+* **Corrigé** : injection de formules dans l'export CSV, images tronquées (erreur 500), paramètres invalides (erreurs 500), date sans fuseau sur le flux temps réel, signalement hors zone sans destinataire, session perdue par un rechargement, documentation de l'API publique en production, comptes de test possibles en production, compatibilité avec Flutter 3.41.
+* **Tests** : 159 backend, 20 web, 18 Flutter, et un parcours à trois rôles joué dans Chrome avec un contrôle sur ordinateur, tablette et téléphone.
+
 ## Version 3.2 (30/10/2026)
 
 * **Démonstration guidée** (`/app/supervision/demo`) : parcours SOS → signalement → affectation → acceptation → intervention → clôture, joué avec les comptes de test et la vraie machine à états, narration pour le jury, lecture automatique. Données « [DÉMO] » supprimables. Désactivée hors développement (`DEMO_GUIDEE`).

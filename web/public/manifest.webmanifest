@@ -7,8 +7,8 @@
   "scope": "/app/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0B110E",
-  "theme_color": "#00853F",
+  "background_color": "#102A43",
+  "theme_color": "#102A43",
   "categories": ["utilities", "lifestyle"],
   "icons": [
     { "src": "/static/icone-192.png", "sizes": "192x192", "type": "image/png" },

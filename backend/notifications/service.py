@@ -153,7 +153,10 @@ def notifier_nouveau_dossier(dossier):
         sos = not isinstance(dossier, Incident)
         titre = 'Nouvelle alerte SOS' if sos else f'Nouveau signalement : {dossier.type_incident}'
         zone = dossier.get_region_display() if dossier.region else 'zone inconnue'
-        destinataires = agents_concernes(dossier) + (superadmins() if sos else [])
+        agents = agents_concernes(dossier)
+        # Le superviseur reçoit tous les SOS, et tout signalement qu'aucun agent ne couvre :
+        # sans cela, ce dossier resterait sans destinataire.
+        destinataires = agents + (superadmins() if sos or not agents else [])
         notifier(destinataires, 'nouvelle_alerte', titre, f'{dossier.reference} — {zone}', dossier, f'nouveau:{dossier.reference}')
     except Exception:
         logger.exception('Notification de nouveau dossier impossible')

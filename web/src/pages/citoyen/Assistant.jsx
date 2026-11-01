@@ -11,6 +11,8 @@ const SUGGESTIONS = [
   'Que faire en cas de brûlure ?',
   'Comment me protéger pendant un incendie ?',
   'Comment suivre mon signalement ?',
+  'Comment me préparer à l’hivernage ?',
+  'Où trouver une pharmacie proche ?',
 ];
 
 /** Assistant : historique conservé sur cet appareil uniquement (pas sur le serveur). */
@@ -32,7 +34,7 @@ export default function Assistant() {
     setEnvoi(true);
     try {
       const r = await api('/analyse/assistant/', { methode: 'POST', corps: { message, historique } });
-      setMessages((m) => [...m, { role: 'assistant', content: r.reponse, source: r.source, alerte: r.alerte_urgence, fiches: r.fiches }]);
+      setMessages((m) => [...m, { role: 'assistant', content: r.reponse, source: r.source, alerte: r.alerte_urgence, fiches: r.fiches, actions: r.actions, avertissement: r.avertissement }]);
     } catch (e) {
       setMessages((m) => [...m, { role: 'assistant', content: e.detail, erreur: true }]);
     } finally { setEnvoi(false); }
@@ -54,11 +56,16 @@ export default function Assistant() {
         )}
         {messages.map((m, i) => (
           <div key={i} className={clsx('flex', m.role === 'user' ? 'justify-end' : 'justify-start')}>
-            <div className={clsx('max-w-[85%] space-y-2 rounded-2xl px-4 py-3 text-sm', m.role === 'user' ? 'bg-marque-800 text-white' : m.erreur ? 'bg-red-50 text-red-900' : 'bg-surface-douce')}>
-              {m.alerte && <p className="flex gap-2 rounded-xl bg-sos px-3 py-2 font-semibold text-white"><Siren className="h-4 w-4 shrink-0" />{m.alerte}</p>}
+            <div className={clsx('max-w-[85%] space-y-2 rounded-2xl px-4 py-3 text-sm', m.role === 'user' ? 'bg-marque-800 text-white' : m.erreur ? 'bg-sos-clair text-sos-fonce' : 'bg-surface-douce')}>
+              {m.alerte && <p className="flex gap-2 rounded-xl bg-sos-fonce px-3 py-2 font-semibold text-white"><Siren className="h-4 w-4 shrink-0" />{m.alerte}</p>}
               <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
               {m.fiches?.length > 0 && <p className="text-xs">Fiches utiles : {m.fiches.map((f, j) => <span key={f.slug}>{j > 0 && ', '}<Link className="lien" to="/citoyen/secours">{f.titre}</Link></span>)}</p>}
-              {m.source && <p className="text-[11px] text-texte-pale">{m.source === 'groq' ? 'Réponse générée par IA — indicative' : 'Mode secours (sans IA) — d’après les fiches SenAlert'}</p>}
+              {m.actions?.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {m.actions.map((a) => <Link key={a.cible} to={a.cible} className="rounded-full bg-marque-800 px-3 py-1 text-xs font-semibold text-white hover:bg-marque-700">{a.libelle}</Link>)}
+                </div>
+              )}
+              {m.source && <p className="text-[11px] text-texte-doux">{m.source === 'groq' ? 'Réponse générée par IA, indicative.' : 'Mode secours (sans IA), d’après les fiches SenAlert.'} {m.avertissement}</p>}
             </div>
           </div>
         ))}

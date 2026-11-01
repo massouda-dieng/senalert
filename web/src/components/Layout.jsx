@@ -13,7 +13,7 @@ import { useInstallation } from '../lib/installation';
 import { useLangue } from '../lib/langue';
 import { appliquerTheme, choisirTheme, themeChoisi } from '../lib/theme';
 import AlertesTempsReel from './AlertesTempsReel';
-import { BandeDrapeau, Logo } from './Logo';
+import { Logo } from './Logo';
 
 export const NAVIGATION = {
   citoyen: [
@@ -133,18 +133,13 @@ export default function Layout() {
     <div className="flex min-h-screen">
       <a href="#contenu" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[2000] focus:rounded-lg focus:bg-surface focus:px-3 focus:py-2">Aller au contenu</a>
 
-      <aside className={clsx('fixed inset-y-0 left-0 z-[900] flex flex-col overflow-hidden bg-gradient-to-b from-[#0B1F15] to-[#040B07] text-white transition-all duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0',
+      <aside className={clsx('fixed inset-y-0 left-0 z-[900] flex flex-col overflow-hidden bg-marque-800 text-white transition-all duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0',
         replie ? 'lg:w-[78px]' : 'lg:w-64', mobileOuvert ? 'w-72 translate-x-0' : 'w-72 -translate-x-full')}>
-        {/* Étoile du drapeau en filigrane */}
-        <svg viewBox="0 0 100 100" className="pointer-events-none absolute -bottom-10 -right-14 h-64 w-64 text-or opacity-[.04]" aria-hidden>
-          <path fill="currentColor" d="m50 5 11 34h36L68 60l11 35-29-21-29 21 11-35L3 39h36z" />
-        </svg>
-        <BandeDrapeau className="h-1 shrink-0" />
         <Link to="/" className={clsx('flex h-16 items-center gap-2.5 px-5', replie && 'lg:justify-center lg:px-0')}>
           <Logo className="h-9 w-9 shrink-0" clair />
           <div className={clsx(replie && 'lg:hidden')}>
             <p className="font-titre text-lg font-extrabold leading-none">SenAlert</p>
-            <p className="text-[11px] text-or/80">{utilisateur.role_libelle}</p>
+            <p className="text-[11px] text-white/65">{utilisateur.role_libelle}</p>
           </div>
         </Link>
         <nav className="relative flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 py-2" aria-label="Navigation principale">
@@ -153,7 +148,7 @@ export default function Layout() {
           ) : (
             <NavLink key={l.a} to={l.a} end={l.fin} title={replie ? l.libelle : undefined}
               className={({ isActive }) => clsx('group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition',
-                isActive ? 'bg-marque-600 text-white shadow-[0_8px_24px_rgba(0,133,63,.35)]' : 'text-white/70 hover:bg-white/[.06] hover:text-white')}>
+                isActive ? 'bg-white text-marque-800 shadow-sm' : 'text-white/75 hover:bg-white/10 hover:text-white')}>
               <l.icone className="h-[18px] w-[18px] shrink-0" aria-hidden />
               <span className={clsx('truncate', replie && 'lg:sr-only')}>{traduit ? t(l.libelle) : l.libelle}</span>
               {compteurs[l.compteur] > 0 && <span className={clsx('ml-auto rounded-full bg-or px-2 py-0.5 text-[11px] font-bold text-black', replie && 'lg:hidden')} aria-label={`${compteurs[l.compteur]} en attente`}>{compteurs[l.compteur]}</span>}
@@ -182,7 +177,7 @@ export default function Layout() {
             <div className="ml-auto flex items-center gap-1.5">
               {!enLigne && <span className="mr-2 inline-flex items-center gap-1.5 rounded-full bg-alerte-clair px-3 py-1 text-xs font-semibold text-alerte"><WifiOff className="h-3.5 w-3.5" /> Hors connexion</span>}
               {utilisateur.role === 'citoyen' && lieu.pathname !== '/citoyen' && (
-                <NavLink to="/citoyen" className="mr-1 hidden items-center gap-1.5 rounded-full bg-sos px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-sos-fonce sm:inline-flex">
+                <NavLink to="/citoyen" className="mr-1 inline-flex items-center gap-1.5 rounded-full bg-sos-fonce px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-sos-sombre">
                   <Siren className="h-4 w-4" /> SOS
                 </NavLink>
               )}
@@ -201,7 +196,7 @@ export default function Layout() {
               </button>
               <NavLink to="/notifications" className="relative rounded-xl p-2.5 text-texte-doux hover:bg-surface-douce" aria-label={`Notifications${nonLues ? ` (${nonLues} non lues)` : ''}`}>
                 <Bell className="h-5 w-5" />
-                {nonLues > 0 && <span className="absolute right-1 top-1 min-w-[18px] rounded-full bg-sos px-1 text-center text-[10px] font-bold leading-[18px] text-white">{nonLues > 99 ? '99+' : nonLues}</span>}
+                {nonLues > 0 && <span className="absolute right-1 top-1 min-w-[18px] rounded-full bg-sos-fonce px-1 text-center text-[10px] font-bold leading-[18px] text-white">{nonLues > 99 ? '99+' : nonLues}</span>}
               </NavLink>
               <MenuProfil utilisateur={utilisateur} onDeconnexion={async () => { const role = utilisateur.role; await deconnexion(); navigate(role === 'citoyen' ? '/connexion' : `/connexion?espace=${role}`); }} />
             </div>
@@ -214,17 +209,40 @@ export default function Layout() {
             Votre compte utilise un mot de passe initial. <NavLink className="lien" to="/profil">Choisissez un mot de passe personnel</NavLink>.
           </div>
         )}
-        {config?.erreur && <div className="bg-red-50 px-6 py-2 text-sm text-red-800">Configuration indisponible : certaines listes peuvent être vides. {config.erreur.detail}</div>}
+        {config?.erreur && <div className="bg-sos-clair px-6 py-2 text-sm text-sos-fonce">Configuration indisponible : certaines listes peuvent être vides. {config.erreur.detail}</div>}
 
         <main id="contenu" className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6 lg:px-8" tabIndex={-1}>
           <Outlet />
         </main>
-        <footer className="px-6 pb-6 text-center text-xs text-texte-pale">
+        <footer className="px-6 pb-24 text-center text-xs text-texte-pale lg:pb-6">
           SenAlert ne remplace pas les services officiels de secours. En cas de danger immédiat, appelez directement {config?.numeros_urgence?.map((n) => `${n.service} ${n.numero}`).join(' · ') || 'les secours'}.
           {' '}<Link to="/credits" className="underline">Crédits photos</Link>
         </footer>
+        <BarreMobile role={utilisateur.role} traduire={traduit ? t : (x) => x} onMenu={() => setMobileOuvert(true)} />
       </div>
     </div>
+  );
+}
+
+const BARRE_MOBILE = {
+  citoyen: [['/citoyen', 'Accueil', Home, true], ['/citoyen/signaler', 'Signaler', ShieldAlert], ['/citoyen/dossiers', 'Dossiers', FolderOpen], ['/citoyen/carte', 'Carte', Map]],
+  agent: [['/agent', 'Tableau', Gauge, true], ['/agent/interventions', 'Missions', ClipboardList], ['/agent/carte', 'Carte', Map], ['/notifications', 'Alertes', Bell]],
+  superadmin: [['/supervision', 'Vue d’ensemble', Gauge, true], ['/supervision/incidents', 'Incidents', ClipboardList], ['/supervision/sos', 'SOS', Siren], ['/supervision/carte', 'Carte', Map]],
+};
+
+/** Barre d'onglets du téléphone : les écrans clés restent à portée de pouce, le reste est dans « Menu ». */
+function BarreMobile({ role, traduire, onMenu }) {
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-[700] grid grid-cols-5 border-t border-surface-bord bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden" aria-label="Navigation rapide">
+      {(BARRE_MOBILE[role] || []).map(([a, libelle, Icone, fin]) => (
+        <NavLink key={a} to={a} end={fin} className={({ isActive }) => clsx('flex flex-col items-center gap-0.5 py-2 text-[11px] font-semibold', isActive ? 'text-marque-800' : 'text-texte-doux')}>
+          <Icone className="h-5 w-5" aria-hidden /><span className="max-w-full truncate px-1">{traduire(libelle)}</span>
+        </NavLink>
+      ))}
+      <button type="button" onClick={onMenu} className="flex flex-col items-center gap-0.5 py-2 text-[11px] font-semibold text-texte-doux">
+        <Menu className="h-5 w-5" aria-hidden />Menu
+      </button>
+    </nav>
   );
 }
 
@@ -242,7 +260,7 @@ function MenuProfil({ utilisateur, onDeconnexion }) {
     <div className="relative">
       <button type="button" onClick={() => setOuvert((o) => !o)} aria-expanded={ouvert} aria-haspopup="menu"
         className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2.5 hover:bg-surface-douce">
-        <span className="grid h-8 w-8 place-items-center rounded-full bg-marque-600 text-sm font-bold text-white ring-2 ring-or">{initiale}</span>
+        <span className="grid h-8 w-8 place-items-center rounded-full bg-marque-600 text-sm font-bold text-white ">{initiale}</span>
         <span className="hidden max-w-[140px] truncate text-sm font-semibold md:block">{utilisateur.first_name || utilisateur.username}</span>
       </button>
       {ouvert && (
@@ -258,7 +276,7 @@ function MenuProfil({ utilisateur, onDeconnexion }) {
             <NavLink role="menuitem" to="/simulateur" onClick={() => setOuvert(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-surface-douce"><Smartphone className="h-4 w-4" /> Simulateur mobile</NavLink>
             {utilisateur.role === 'superadmin' && <a role="menuitem" href="/admin/" className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-surface-douce"><Settings2 className="h-4 w-4" /> Administration technique</a>}
             {utilisateur.role === 'superadmin' && <a role="menuitem" href="/api/docs/" target="_blank" rel="noreferrer" className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-surface-douce"><Building2 className="h-4 w-4" /> Documentation API</a>}
-            <button role="menuitem" type="button" onClick={onDeconnexion} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-red-700 hover:bg-red-50"><LogOut className="h-4 w-4" /> Se déconnecter</button>
+            <button role="menuitem" type="button" onClick={onDeconnexion} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-sos-fonce hover:bg-sos-clair"><LogOut className="h-4 w-4" /> Se déconnecter</button>
           </div>
         </>
       )}

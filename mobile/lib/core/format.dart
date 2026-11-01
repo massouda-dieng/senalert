@@ -12,19 +12,27 @@ class StatutInfo {
 }
 
 const statuts = <String, StatutInfo>{
-  'nouveau': StatutInfo('Nouveau', Color(0xFF1D4ED8), Color(0xFFEEF3FF), Icons.fiber_new_rounded),
-  'affecte': StatutInfo('Affecté', Color(0xFF6D28D9), Color(0xFFF3E8FF), Icons.assignment_ind_rounded),
-  'accepte': StatutInfo('Pris en charge', Color(0xFF0369A1), Color(0xFFE0F2FE), Icons.how_to_reg_rounded),
-  'en_cours': StatutInfo('En cours', Color(0xFFB45309), Color(0xFFFEF3C7), Icons.directions_run_rounded),
-  'resolu': StatutInfo('Résolu', Color(0xFF047857), Color(0xFFD1FAE5), Icons.check_circle_rounded),
-  'refuse': StatutInfo('Rejeté', Color(0xFF475569), Color(0xFFE2E8F0), Icons.block_rounded),
-  'annule': StatutInfo('Annulé', Color(0xFF64748B), Color(0xFFF1F5F9), Icons.cancel_rounded),
+  'nouveau': StatutInfo('Nouveau', Jetons.statutNouveau, Jetons.statutNouveauFond, Icons.fiber_new_rounded),
+  'affecte': StatutInfo('Affecté', Jetons.statutAffecte, Jetons.statutAffecteFond, Icons.assignment_ind_rounded),
+  'accepte': StatutInfo('Pris en charge', Jetons.statutAccepte, Jetons.statutAccepteFond, Icons.how_to_reg_rounded),
+  'en_cours': StatutInfo('En cours', Jetons.statutEnCours, Jetons.statutEnCoursFond, Icons.directions_run_rounded),
+  'resolu': StatutInfo('Résolu', Jetons.statutResolu, Jetons.statutResoluFond, Icons.check_circle_rounded),
+  'refuse': StatutInfo('Rejeté', Jetons.statutRefuse, Jetons.statutRefuseFond, Icons.block_rounded),
+  'annule': StatutInfo('Annulé', Jetons.statutAnnule, Jetons.statutAnnuleFond, Icons.cancel_rounded),
 };
 
 StatutInfo statut(String code) =>
     statuts[code] ?? StatutInfo(code, AppColors.textGrey, AppColors.surfaceSubtle, Icons.info_outline);
 
 const gravites = {'faible': 'Faible', 'moyenne': 'Moyenne', 'elevee': 'Élevée', 'critique': 'Critique'};
+
+/// Du plus urgent au moins urgent : ordre d'affichage des missions.
+const ordreGravite = ['critique', 'elevee', 'moyenne', 'faible'];
+int rangGravite(String? g) { final i = ordreGravite.indexOf(g ?? ''); return i < 0 ? ordreGravite.length : i; }
+
+const couleursGravite = <String, Color>{
+  'critique': Jetons.graviteCritique, 'elevee': Jetons.graviteElevee, 'moyenne': Jetons.graviteMoyenne, 'faible': Jetons.graviteFaible,
+};
 
 const iconesCategories = <String, IconData>{
   'accident': Icons.car_crash_rounded,
@@ -37,7 +45,7 @@ const iconesCategories = <String, IconData>{
   'autre': Icons.more_horiz_rounded,
 };
 
-Color couleurHex(String? hex, [Color defaut = const Color(0xFF475569)]) {
+Color couleurHex(String? hex, [Color defaut = Jetons.gris]) {
   if (hex == null || !hex.startsWith('#') || hex.length != 7) return defaut;
   return Color(int.parse('FF${hex.substring(1)}', radix: 16));
 }

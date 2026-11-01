@@ -7,6 +7,7 @@ import CarteSenAlert, { CENTRE_SENEGAL } from '../../components/Carte';
 import { Bandeau, Bouton, Champ, EnTetePage, Selecteur } from '../../components/ui';
 import { useConfig } from '../../lib/config';
 import { lirePosition } from './Accueil';
+import { COULEURS } from '../../lib/couleurs';
 
 const CLE_BROUILLON = 'senalert.brouillon-signalement';
 const ETAPES = ['Catégorie', 'Lieu', 'Détails', 'Vérification'];
@@ -128,11 +129,11 @@ export default function Signaler() {
             </div>
             {gps?.erreur && <Bandeau type="alerte">{gps.erreur}</Bandeau>}
             {f.latitude != null && (
-              <p className="text-sm text-emerald-700">Position retenue : {f.latitude.toFixed(5)}, {f.longitude.toFixed(5)}{f.precision_gps ? ` · ± ${f.precision_gps} m` : ' · choisie sur la carte'}</p>
+              <p className="text-sm text-succes">Position retenue : {f.latitude.toFixed(5)}, {f.longitude.toFixed(5)}{f.precision_gps ? ` · ± ${f.precision_gps} m` : ' · choisie sur la carte'}</p>
             )}
             <CarteSenAlert hauteur={320} regrouper={false} cadrer={f.latitude != null} zoom={f.latitude != null ? 15 : 7}
               centre={f.latitude != null ? [f.latitude, f.longitude] : CENTRE_SENEGAL}
-              points={f.latitude != null ? [{ id: 'p', lat: f.latitude, lng: f.longitude, couleur: categorie?.couleur || '#006E33' }] : []}
+              points={f.latitude != null ? [{ id: 'p', lat: f.latitude, lng: f.longitude, couleur: categorie?.couleur || COULEURS.marine }] : []}
               onClic={(ll) => setF((x) => ({ ...x, latitude: ll.lat, longitude: ll.lng, precision_gps: null }))} />
             <div className="grid gap-4 sm:grid-cols-2">
               <Champ libelle="Région" aide="Déduite de la position si vous la laissez vide.">{(id) => <Selecteur id={id} valeur={f.region} onChange={(v) => maj('region', v)} vide="Automatique" options={config.regions} />}</Champ>
@@ -156,7 +157,7 @@ export default function Signaler() {
                 {apercus.map((u, i) => (
                   <div key={u} className="relative">
                     <img src={u} alt={`Photo ${i + 1}`} className="h-20 w-20 rounded-xl object-cover" />
-                    <button type="button" onClick={() => setPhotos((x) => x.filter((_, j) => j !== i))} className="absolute -right-1.5 -top-1.5 rounded-full bg-surface p-1 shadow" aria-label={`Retirer la photo ${i + 1}`}><Trash2 className="h-3.5 w-3.5 text-red-700" /></button>
+                    <button type="button" onClick={() => setPhotos((x) => x.filter((_, j) => j !== i))} className="absolute -right-1.5 -top-1.5 rounded-full bg-surface p-1 shadow" aria-label={`Retirer la photo ${i + 1}`}><Trash2 className="h-3.5 w-3.5 text-sos-fonce" /></button>
                   </div>
                 ))}
                 {photos.length < 5 && (

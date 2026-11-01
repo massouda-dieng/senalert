@@ -29,12 +29,13 @@ def nettoyer_image(fichier):
         image.verify()
         fichier.seek(0)
         image = ImageOps.exif_transpose(Image.open(fichier))
+        # verify() ne décode pas les pixels : un fichier tronqué n'échoue qu'ici.
+        image = image.convert('RGB')
     except ValidationError:
         raise
-    except (UnidentifiedImageError, OSError, Image.DecompressionBombError):
+    except (UnidentifiedImageError, OSError, SyntaxError, ValueError, Image.DecompressionBombError):
         raise ValidationError({'photos': f'« {fichier.name} » n’est pas une image valide.'})
 
-    image = image.convert('RGB')
     image.thumbnail((COTE_MAX, COTE_MAX))
     sortie = io.BytesIO()
     image.save(sortie, format='JPEG', quality=85, optimize=True)

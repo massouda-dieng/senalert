@@ -58,6 +58,8 @@ class FluxView(APIView):
             depuis = datetime.fromisoformat(brut.replace('Z', '+00:00'))
         except ValueError:
             return Response({'detail': 'Paramètre depuis invalide.', 'code': 'invalide'}, status=400)
+        if timezone.is_naive(depuis):
+            depuis = timezone.make_aware(depuis)
         depuis = max(depuis, maintenant - timezone.timedelta(minutes=10))  # jamais de rafale après une longue coupure
         ctx = {'request': request}
         sos = AlerteSOS.objects.filter(filtre_visibilite(request.user, True), date_creation__gt=depuis).distinct()[:20]
@@ -96,6 +98,14 @@ def lignes_export(request):
         ]
 
 
+def cellule_sure(valeur):
+    """Neutralise l'injection de formules : l'adresse est saisie par le citoyen, et Excel
+    exécuterait une cellule commençant par = + - @ ouverte par un superviseur."""
+    if isinstance(valeur, str) and valeur[:1] in ('=', '+', '-', '@', '\t', '\r'):
+        return f"'{valeur}"
+    return valeur
+
+
 class ExportCSVView(APIView):
     """Export CSV des incidents filtrés (mêmes filtres que la liste). Journalisé."""
 
@@ -109,7 +119,7 @@ class ExportCSVView(APIView):
         ecrivain.writerow(COLONNES)
         nb = 0
         for ligne in lignes_export(request):
-            ecrivain.writerow(ligne)
+            ecrivain.writerow([cellule_sure(c) for c in ligne])
             nb += 1
         journaliser(request, 'export.csv', details={'lignes': nb, 'filtres': dict(request.query_params)})
         reponse = HttpResponse(tampon.getvalue(), content_type='text/csv; charset=utf-8')
@@ -134,7 +144,7 @@ class ExportPDFView(APIView):
         debut, fin = s['periode']['debut'], s['periode']['fin']
         zones, _ = calculer(debut, fin)
         styles = getSampleStyleSheet()
-        nuit = colors.HexColor('#0B1F4D')
+        nuit = colors.HexColor('#102A43')
 
         def tableau(entete, lignes, largeurs):
             t = Table([entete, *lignes], colWidths=largeurs, repeatRows=1)
@@ -203,6 +213,8 @@ def application_web(request, chemin=''):
     reponse = HttpResponse(index.read_bytes(), content_type='text/html; charset=utf-8')
     # Jamais en cache : après chaque `npm run build`, le navigateur charge la nouvelle version.
     reponse['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    # Politique minimale compatible avec les tuiles et polices externes : pas de plugin ni de détournement de <base>.
+    reponse['Content-Security-Policy'] = "object-src 'none'; base-uri 'self'; form-action 'self'"
     return reponse
 
 

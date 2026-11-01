@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
 import { useRessource } from '../../api/hooks';
 import { useAuth } from '../../auth/AuthContext';
-import { Bouton, Chargement, EnTetePage, EtatErreur, EtatVide, Pagination } from '../../components/ui';
+import { Bouton, Chargement, EnTetePage, EtatErreur, EtatVide, IconeNotification, Pagination } from '../../components/ui';
 import { dateHeure, ilYa } from '../../lib/format';
 
 const PUSH = {
@@ -36,9 +36,9 @@ export default function Notifications() {
             {donnees.results.map((n) => (
               <li key={n.id}>
                 <button type="button" onClick={() => ouvrir(n)} className={clsx('flex w-full gap-3 px-5 py-4 text-left hover:bg-surface-douce', !n.lue && 'bg-marque-50/50')}>
-                  <span className={clsx('mt-1.5 h-2 w-2 shrink-0 rounded-full', n.lue ? 'bg-transparent' : 'bg-marque-600')} aria-label={n.lue ? undefined : 'Non lue'} />
+                  <IconeNotification type={n.type} />
                   <span className="min-w-0 flex-1">
-                    <span className="block font-semibold">{n.titre}</span>
+                    <span className="flex items-center gap-2 font-semibold">{n.titre}{!n.lue && <span className="h-2 w-2 shrink-0 rounded-full bg-marque-600" role="img" aria-label="Non lue" />}</span>
                     <span className="block text-sm text-texte-doux">{n.message}</span>
                     <span className="mt-1 block text-xs text-texte-pale" title={dateHeure(n.date_creation)}>{ilYa(n.date_creation)}{utilisateur.role === 'superadmin' && ` · ${PUSH[n.statut_push] || n.statut_push}`}</span>
                   </span>

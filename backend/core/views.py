@@ -17,6 +17,7 @@ from .constants import GRAVITE_CHOICES, REGIONS, ROLE_CHOICES, STATUT_CHOICES
 from .exceptions import ServiceIndisponible
 from .geo import distance_m
 from .models import Categorie, FicheSecours, JournalAudit, Parametre, Service
+from .params import coordonnees, entier
 from .permissions import EstSuperAdmin
 
 logger = logging.getLogger('senalert')
@@ -226,12 +227,8 @@ class ServicesProximiteView(APIView):
 
     @extend_schema(responses=OpenApiTypes.OBJECT)
     def get(self, request):
-        try:
-            lat = float(request.query_params['lat'])
-            lng = float(request.query_params['lng'])
-        except (KeyError, ValueError):
-            raise serializers.ValidationError({'lat': 'Paramètres lat et lng requis.'})
-        rayon = max(500, min(int(request.query_params.get('rayon', 5000) or 5000), 20000))
+        lat, lng = coordonnees(request.query_params.get('lat'), request.query_params.get('lng'))
+        rayon = entier(request.query_params.get('rayon'), 5000, 500, 20000, 'rayon')
         types = [t for t in request.query_params.getlist('type') if t in TYPES_OSM] or list(TYPES_OSM)
 
         # Arrondi (~1 km) : améliore le cache et évite d'envoyer la position exacte à un tiers.

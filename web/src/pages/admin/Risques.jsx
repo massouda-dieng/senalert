@@ -56,7 +56,7 @@ export default function Risques() {
                   <td className="px-4 py-2 text-right font-semibold tabular-nums">{z.score}</td>
                   <td className="px-4 py-2"><span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full" style={{ background: NIVEAUX_RISQUE[z.niveau].couleur }} />{NIVEAUX_RISQUE[z.niveau].libelle}</span>{z.donnees_insuffisantes && <p className="text-[11px]">données insuffisantes</p>}</td>
                   <td className="px-4 py-2 text-right tabular-nums">{z.total_incidents} ({z.incidents_recents})</td>
-                  {comparer && <td className={`px-4 py-2 text-right tabular-nums ${z.evolution > 0 ? 'text-red-700' : z.evolution < 0 ? 'text-emerald-700' : ''}`}>{z.evolution > 0 ? '+' : ''}{z.evolution}</td>}
+                  {comparer && <td className={`px-4 py-2 text-right tabular-nums ${z.evolution > 0 ? 'text-sos-fonce' : z.evolution < 0 ? 'text-succes' : ''}`}>{z.evolution > 0 ? '+' : ''}{z.evolution}</td>}
                 </tr>
               ))}
             </tbody>

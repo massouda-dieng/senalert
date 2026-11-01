@@ -14,6 +14,7 @@ import { useConfig } from '../lib/config';
 import { NIVEAUX_RISQUE, STATUTS, dateHeure } from '../lib/format';
 import { BORNES_SENEGAL, CENTRE_SENEGAL, echapper, icone } from './Carte';
 import { IndicateurSynchro, Selecteur } from './ui';
+import { COULEURS } from '../lib/couleurs';
 
 const FONDS = {
   plan: { libelle: 'Plan', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', attribution: 'Fond &copy; Esri, HERE, Garmin, &copy; contributeurs OpenStreetMap' },
@@ -21,7 +22,7 @@ const FONDS = {
   satellite: { libelle: 'Satellite', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attribution: 'Imagerie &copy; Esri, Maxar, Earthstar Geographics' },
 };
 
-const COULEUR_ALERTE = { danger: '#E31B23', vigilance: '#F5D90A', info: '#006E33' };
+const COULEUR_ALERTE = { danger: COULEURS.sos, vigilance: COULEURS.or, info: COULEURS.bleu };
 
 function Marqueurs({ points, regrouper = true }) {
   const map = useMap();
@@ -43,7 +44,7 @@ function CoucheChaleur({ points }) {
   useEffect(() => {
     if (!points.length) return undefined;
     const couche = L.heatLayer(points.map((p) => [p.lat, p.lng, p.poids || 0.6]), {
-      radius: 38, blur: 26, maxZoom: 11, max: 0.5, minOpacity: 0.4, gradient: { 0.2: '#16A152', 0.5: '#F5D90A', 0.8: '#EA580C', 1: '#E31B23' },
+      radius: 38, blur: 26, maxZoom: 11, max: 0.5, minOpacity: 0.4, gradient: { 0.2: COULEURS.bleuVif, 0.6: COULEURS.or, 1: COULEURS.sos },
     });
     couche.addTo(map);
     return () => { map.removeLayer(couche); };
@@ -83,7 +84,7 @@ function RechercheAdresse({ onChoix }) {
       {(resultats.length > 0 || (etat && etat !== 'chargement')) && (
         <ul className="absolute left-0 right-0 top-full mt-1 max-h-64 overflow-y-auto rounded-2xl bg-surface p-1 text-sm shadow-flottant">
           {etat === 'vide' && <li className="px-3 py-2 text-texte-doux">Aucun lieu trouvé.</li>}
-          {etat && !['vide', 'chargement'].includes(etat) && <li className="px-3 py-2 text-red-700">{etat}</li>}
+          {etat && !['vide', 'chargement'].includes(etat) && <li className="px-3 py-2 text-sos-fonce">{etat}</li>}
           {resultats.map((r) => (
             <li key={`${r.latitude}${r.longitude}`}>
               <button type="button" className="flex w-full gap-2 rounded-xl px-3 py-2 text-left hover:bg-surface-douce" onClick={() => { onChoix(r); setResultats([]); }}>
@@ -101,7 +102,7 @@ function RechercheAdresse({ onChoix }) {
  * Carte plein écran à couches. `role` détermine les couches disponibles
  * (les données restent filtrées par le serveur selon les droits).
  */
-export default function CarteAvancee({ role = 'citoyen', hauteur = 'calc(100vh - 11rem)' }) {
+export default function CarteAvancee({ role = 'citoyen', hauteur = 'calc(100vh - 11rem)', panneauOuvert = true }) {
   const config = useConfig();
   const [params] = useSearchParams();
   const operationnel = role !== 'citoyen';
@@ -109,7 +110,8 @@ export default function CarteAvancee({ role = 'citoyen', hauteur = 'calc(100vh -
   const [jours, setJours] = useState('30');
   const [categorie, setCategorie] = useState('');
   const [couches, setCouches] = useState({ incidents: true, chaleur: false, risque: params.get('couche') === 'risque', alertes: true, dossiers: operationnel, sos: operationnel });
-  const [panneau, setPanneau] = useState(true);
+  // Sur téléphone, le panneau masquerait toute la carte : il s'ouvre à la demande.
+  const [panneau, setPanneau] = useState(() => panneauOuvert && window.innerWidth >= 768);
   const [cible, setCible] = useState(null);
   const [lieu, setLieu] = useState(null);
   const [message, setMessage] = useState(null);
@@ -131,7 +133,7 @@ export default function CarteAvancee({ role = 'citoyen', hauteur = 'calc(100vh -
     if (couches.incidents) {
       incidentsRecents.forEach((p) => {
         const c = config.categorie(p.type_incident);
-        pts.push({ id: `c${p.id}`, lat: p.latitude, lng: p.longitude, couleur: c?.couleur || '#475569', titre: c?.libelle,
+        pts.push({ id: `c${p.id}`, lat: p.latitude, lng: p.longitude, couleur: c?.couleur || COULEURS.gris, titre: c?.libelle,
           popup: `<b>${echapper(c?.libelle || p.type_incident)}</b><br/>${echapper(STATUTS[p.statut]?.libelle)} · ${echapper(dateHeure(p.date_creation))}<br/><small>Position arrondie (~100 m)</small>` });
       });
     }
@@ -143,11 +145,11 @@ export default function CarteAvancee({ role = 'citoyen', hauteur = 'calc(100vh -
     }
     if (operationnel && couches.sos) {
       (sos.donnees?.results || []).filter((d) => d.latitude != null).forEach((d) => pts.push({
-        id: `s${d.id}`, lat: d.latitude, lng: d.longitude, couleur: '#E31B23', sos: true, taille: 20,
+        id: `s${d.id}`, lat: d.latitude, lng: d.longitude, couleur: COULEURS.sos, sos: true, taille: 20,
         popup: `<b>${echapper(d.reference)}</b><br/>Alerte SOS · ${echapper(STATUTS[d.statut].libelle)}<br/><a href="/app/${role === 'agent' ? 'agent/interventions?type=sos&' : 'supervision/sos?'}dossier=${d.id}">Ouvrir</a> · <a target="_blank" rel="noreferrer" href="https://www.google.com/maps/dir/?api=1&destination=${d.latitude},${d.longitude}">Itinéraire</a>`,
       }));
     }
-    if (lieu) pts.push({ id: 'lieu', lat: lieu.lat, lng: lieu.lng, couleur: '#10231A', taille: 18, popup: echapper(lieu.nom) });
+    if (lieu) pts.push({ id: 'lieu', lat: lieu.lat, lng: lieu.lng, couleur: COULEURS.marine, taille: 18, popup: echapper(lieu.nom) });
     return pts;
   }, [couches, incidentsRecents, dossiers.donnees, sos.donnees, lieu, config, operationnel, role]);
 
@@ -217,12 +219,12 @@ export default function CarteAvancee({ role = 'citoyen', hauteur = 'calc(100vh -
                 className={clsx('rounded-lg py-1.5 text-xs font-semibold', fond === k ? 'bg-surface text-marque-700 shadow-sm' : 'text-texte-doux')}>{f.libelle}</button>
             ))}
           </div>
-          <Interrupteur cle="incidents" libelle={`${operationnel ? 'Autres incidents récents' : 'Incidents récents'} (${carte.donnees ? incidentsRecents.length : '…'})`} couleur="#006E33" />
-          <Interrupteur cle="chaleur" libelle="Carte de chaleur" couleur="#EA580C" />
-          <Interrupteur cle="risque" libelle="Zones à risque" couleur="#E31B23" />
-          <Interrupteur cle="alertes" libelle={`Alertes de zone (${alertes.donnees?.count ?? 0})`} couleur="#F5D90A" />
-          {operationnel && <Interrupteur cle="dossiers" libelle={`Dossiers ouverts (${dossiers.donnees?.count ?? '…'})`} couleur="#1D4ED8" />}
-          {operationnel && <Interrupteur cle="sos" libelle={`SOS actifs (${sos.donnees?.count ?? '…'})`} couleur="#E31B23" />}
+          <Interrupteur cle="incidents" libelle={`${operationnel ? 'Autres incidents récents' : 'Incidents récents'} (${carte.donnees ? incidentsRecents.length : '…'})`} couleur={COULEURS.marine} />
+          <Interrupteur cle="chaleur" libelle="Carte de chaleur" couleur={COULEURS.or} />
+          <Interrupteur cle="risque" libelle="Zones à risque" couleur={COULEURS.sos} />
+          <Interrupteur cle="alertes" libelle={`Alertes de zone (${alertes.donnees?.count ?? 0})`} couleur={COULEURS.or} />
+          {operationnel && <Interrupteur cle="dossiers" libelle={`Dossiers ouverts (${dossiers.donnees?.count ?? '…'})`} couleur={COULEURS.bleuVif} />}
+          {operationnel && <Interrupteur cle="sos" libelle={`SOS actifs (${sos.donnees?.count ?? '…'})`} couleur={COULEURS.sos} />}
           {message && <p className="mt-1 text-[11px] text-texte-doux">{message}</p>}
           <hr className="my-3 border-surface-bord" />
           <div className="grid grid-cols-2 gap-2">

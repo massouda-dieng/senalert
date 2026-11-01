@@ -91,7 +91,7 @@ export default function AlertesTempsReel({ role }) {
       {createPortal(<div className="pointer-events-none fixed right-4 top-20 z-[1050] flex w-[min(92vw,380px)] flex-col gap-2" aria-live="assertive">
         {alertes.map((d) => (
           <div key={d.cle} className={clsx('pointer-events-auto animate-apparition overflow-hidden rounded-2xl shadow-flottant ring-1',
-            d.sos ? 'bg-sos text-white ring-sos-fonce' : 'bg-surface text-texte ring-surface-bord')}>
+            d.sos ? 'bg-sos-fonce text-white ring-sos-fonce' : 'bg-surface text-texte ring-surface-bord')}>
             <div className="flex items-start gap-3 p-4">
               <span className={clsx('grid h-10 w-10 shrink-0 place-items-center rounded-xl', d.sos ? 'animate-pulsation bg-white/15' : 'bg-marque-50 text-marque-700')}>
                 {d.sos ? <Siren className="h-5 w-5" /> : <ShieldAlert className="h-5 w-5" />}

@@ -46,11 +46,11 @@ export default function Guide() {
         </Carte>
         {fiche.a_eviter?.length > 0 && (
           <Carte className="mt-4" titre="À éviter">
-            <ul className="space-y-2">{fiche.a_eviter.map((e) => <li key={e} className="flex gap-2"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />{e}</li>)}</ul>
+            <ul className="space-y-2">{fiche.a_eviter.map((e) => <li key={e} className="flex gap-2"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-alerte" />{e}</li>)}</ul>
           </Carte>
         )}
         {fiche.appeler_si && (
-          <div className="mt-4 rounded-2xl bg-sos p-4 text-white">
+          <div className="mt-4 rounded-2xl bg-sos-fonce p-4 text-white">
             <p className="font-bold">Appelez les secours : {fiche.appeler_si}</p>
             <div className="mt-2 flex flex-wrap gap-2">{config.numeros_urgence.map((n) => <a key={n.numero} href={`tel:${n.numero}`} className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-sm font-semibold"><Phone className="h-3.5 w-3.5" />{n.service} {n.numero}</a>)}</div>
           </div>
@@ -74,7 +74,7 @@ export default function Guide() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {liste.map((f) => (
               <button key={f.slug} type="button" onClick={() => setChoix(f.slug)} className="carte p-4 text-left transition hover:-translate-y-0.5 hover:shadow-flottant">
-                <BookOpenCheck className="mb-2 h-5 w-5 text-sos" />
+                <BookOpenCheck className="mb-2 h-5 w-5 text-sos-fonce" />
                 <p className="font-semibold">{f.titre}</p>
                 <p className="mt-1 text-sm text-texte-doux">{f.resume}</p>
               </button>

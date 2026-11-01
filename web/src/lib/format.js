@@ -1,25 +1,33 @@
+import { COULEURS } from './couleurs';
+
+const { statuts: S, gravites: G } = COULEURS;
+
 export const STATUTS = {
-  nouveau: { libelle: 'Nouveau', classe: 'bg-blue-50 text-blue-700 ring-blue-600/20', point: '#1D4ED8' },
-  affecte: { libelle: 'Affecté', classe: 'bg-violet-50 text-violet-700 ring-violet-600/20', point: '#7C3AED' },
-  accepte: { libelle: 'Pris en charge', classe: 'bg-sky-50 text-sky-700 ring-sky-600/20', point: '#0284C7' },
-  en_cours: { libelle: 'En cours', classe: 'bg-alerte-clair text-amber-800 ring-amber-600/20', point: '#D97706' },
-  resolu: { libelle: 'Résolu', classe: 'bg-succes-clair text-emerald-800 ring-emerald-600/20', point: '#059669' },
-  refuse: { libelle: 'Rejeté', classe: 'bg-slate-100 text-slate-600 ring-slate-500/20', point: '#64748B' },
-  annule: { libelle: 'Annulé', classe: 'bg-slate-100 text-slate-600 ring-slate-500/20', point: '#94A3B8' },
+  nouveau: { libelle: 'Nouveau', classe: 'bg-statut-nouveau-fond text-statut-nouveau ring-statut-nouveau/20', point: S.nouveau.point },
+  affecte: { libelle: 'Affecté', classe: 'bg-statut-affecte-fond text-statut-affecte ring-statut-affecte/20', point: S.affecte.point },
+  accepte: { libelle: 'Pris en charge', classe: 'bg-statut-accepte-fond text-statut-accepte ring-statut-accepte/20', point: S.accepte.point },
+  en_cours: { libelle: 'En cours', classe: 'bg-statut-en_cours-fond text-statut-en_cours ring-statut-en_cours/20', point: S.en_cours.point },
+  resolu: { libelle: 'Résolu', classe: 'bg-statut-resolu-fond text-statut-resolu ring-statut-resolu/20', point: S.resolu.point },
+  refuse: { libelle: 'Rejeté', classe: 'bg-statut-refuse-fond text-statut-refuse ring-statut-refuse/20', point: S.refuse.point },
+  annule: { libelle: 'Annulé', classe: 'bg-statut-annule-fond text-statut-annule ring-statut-annule/20', point: S.annule.point },
 };
 
 export const GRAVITES = {
-  faible: { libelle: 'Faible', classe: 'text-slate-600 bg-slate-100' },
-  moyenne: { libelle: 'Moyenne', classe: 'text-marque-700 bg-marque-50' },
-  elevee: { libelle: 'Élevée', classe: 'text-amber-800 bg-alerte-clair' },
-  critique: { libelle: 'Critique', classe: 'text-white bg-sos' },
+  faible: { libelle: 'Faible', classe: 'text-slate-600 bg-slate-100', couleur: G.faible },
+  moyenne: { libelle: 'Moyenne', classe: 'text-marque-700 bg-marque-50', couleur: G.moyenne },
+  elevee: { libelle: 'Élevée', classe: 'text-alerte bg-alerte-clair', couleur: G.elevee },
+  critique: { libelle: 'Critique', classe: 'text-white bg-sos-fonce', couleur: G.critique },
 };
 
+/** Du plus urgent au moins urgent : ordre d'affichage des files de travail. */
+export const ORDRE_GRAVITE = ['critique', 'elevee', 'moyenne', 'faible'];
+export const rangGravite = (g) => { const i = ORDRE_GRAVITE.indexOf(g); return i < 0 ? ORDRE_GRAVITE.length : i; };
+
 export const NIVEAUX_RISQUE = {
-  critique: { libelle: 'Critique', couleur: '#E31B23' },
-  eleve: { libelle: 'Élevé', couleur: '#F97316' },
-  moyen: { libelle: 'Moyen', couleur: '#D97706' },
-  faible: { libelle: 'Faible', couleur: '#059669' },
+  critique: { libelle: 'Critique', couleur: COULEURS.sos },
+  eleve: { libelle: 'Élevé', couleur: COULEURS.or },
+  moyen: { libelle: 'Moyen', couleur: COULEURS.bleuVif },
+  faible: { libelle: 'Faible', couleur: COULEURS.succes },
 };
 
 const dtf = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'short' });

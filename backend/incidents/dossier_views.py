@@ -13,6 +13,7 @@ from accounts.models import User
 from core.audit import journaliser
 from core.constants import GRAVITE_CHOICES, REGION_CHOICES, ROLE_AGENT, STATUT_CHOICES
 from core.models import Service
+from core.params import motif as lire_motif
 from core.permissions import est_agent, est_superadmin
 
 from . import workflow
@@ -99,7 +100,7 @@ class ActionsDossierMixin:
     @action(detail=True, methods=['post'])
     def decliner(self, request, pk=None):
         self._exiger(est_agent(request.user), 'Action réservée aux agents.')
-        return self._repondre(workflow.decliner(self.get_object(), request.user, request.data.get('motif', '').strip()))
+        return self._repondre(workflow.decliner(self.get_object(), request.user, lire_motif(request.data)))
 
     @action(detail=True, methods=['post'])
     def demarrer(self, request, pk=None):
@@ -117,7 +118,7 @@ class ActionsDossierMixin:
     @extend_schema(request=MotifSerializer)
     @action(detail=True, methods=['post'])
     def annuler(self, request, pk=None):
-        dossier = workflow.annuler(self.get_object(), request.user, request.data.get('motif', '').strip())
+        dossier = workflow.annuler(self.get_object(), request.user, lire_motif(request.data))
         journaliser(request, 'dossier.annulation', dossier, {'motif': dossier.motif_cloture})
         return self._repondre(dossier)
 
@@ -125,7 +126,7 @@ class ActionsDossierMixin:
     @action(detail=True, methods=['post'])
     def rejeter(self, request, pk=None):
         self._exiger(est_superadmin(request.user), 'Action réservée au superadministrateur.')
-        dossier = workflow.rejeter(self.get_object(), request.user, request.data.get('motif', '').strip())
+        dossier = workflow.rejeter(self.get_object(), request.user, lire_motif(request.data))
         journaliser(request, 'dossier.rejet', dossier, {'motif': dossier.motif_cloture})
         return self._repondre(dossier)
 

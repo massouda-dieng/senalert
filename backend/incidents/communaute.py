@@ -20,6 +20,7 @@ from core.audit import journaliser
 from core.constants import ANNULE, REFUSE, REGIONS
 from core.geo import boite_englobante, distance_m
 from core.models import Categorie
+from core.params import coordonnees, decimal, entier
 from core.permissions import EstSuperAdmin, est_citoyen, est_superadmin
 
 from .models import Commentaire, Confirmation, Incident
@@ -92,7 +93,7 @@ class CommunauteViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         return super().get_throttles()
 
     def base(self):
-        jours = min(int(self.request.query_params.get('jours', 7) or 7), 30)
+        jours = entier(self.request.query_params.get('jours'), 7, 1, 30, 'jours')
         return (Incident.objects
                 .filter(latitude__isnull=False, date_creation__gte=timezone.now() - timezone.timedelta(days=jours))
                 .exclude(statut__in=[REFUSE, ANNULE]))
@@ -116,12 +117,9 @@ class CommunauteViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     def list(self, request, *args, **kwargs):
         qs = self.get_queryset()
         p = request.query_params
-        try:
-            lat, lng = float(p['lat']), float(p['lng'])
-        except (KeyError, ValueError):
-            lat = lng = None
+        lat, lng = coordonnees(p['lat'], p['lng']) if p.get('lat') and p.get('lng') else (None, None)
         if lat is not None:
-            rayon = max(1, min(float(p.get('rayon_km', 10) or 10), 100)) * 1000
+            rayon = decimal(p.get('rayon_km'), 10, 1, 100, 'rayon_km') * 1000
             a, b, c, d = boite_englobante(lat, lng, rayon)
             elements = []
             for inc in qs.filter(latitude__range=(a, b), longitude__range=(c, d)):
@@ -159,7 +157,8 @@ class CommunauteViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     def commentaires(self, request, pk=None):
         incident = self._incident(pk)
         if request.method == 'POST':
-            texte = (request.data.get('texte') or '').strip()
+            texte = request.data.get('texte')
+            texte = texte.strip() if isinstance(texte, str) else ''
             if len(texte) < 3:
                 raise ValidationError({'texte': 'Message trop court.'})
             if len(texte) > 500:

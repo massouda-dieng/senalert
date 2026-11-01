@@ -298,13 +298,13 @@ class _DossierScreenState extends State<DossierScreen> {
     final note = d.intervention!['note_satisfaction'] as int?;
     if (note != null) {
       final com = (d.intervention!['commentaire_satisfaction'] ?? '').toString();
-      return Carte(couleur: AppColors.jaune.withOpacity(.18), child: Row(children: [
+      return Carte(couleur: AppColors.orange.withOpacity(.18), child: Row(children: [
         _Etoiles(note),
         const SizedBox(width: 10),
         Expanded(child: Text('${tr(libellesNote[note]!)}${com.isEmpty ? '' : ' · « $com »'}', style: const TextStyle(fontWeight: FontWeight.w600))),
       ]));
     }
-    return Carte(couleur: AppColors.jaune.withOpacity(.18), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    return Carte(couleur: AppColors.orange.withOpacity(.18), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(tr('Comment s’est passée l’intervention ?'), style: titre(16)),
       const SizedBox(height: 2),
       Text(tr('Votre avis aide à améliorer les services de secours.'), style: TextStyle(color: AppColors.textGrey, fontSize: 13)),
@@ -312,7 +312,7 @@ class _DossierScreenState extends State<DossierScreen> {
       Row(children: [
         for (var n = 1; n <= 5; n++)
           IconButton(tooltip: '$n sur 5', visualDensity: VisualDensity.compact, onPressed: () => setState(() => _note = n),
-              icon: Icon(n <= _note ? Icons.star_rounded : Icons.star_border_rounded, size: 32, color: n <= _note ? const Color(0xFFF5B400) : AppColors.textGrey)),
+              icon: Icon(n <= _note ? Icons.star_rounded : Icons.star_border_rounded, size: 32, color: n <= _note ? Jetons.orange : AppColors.textGrey)),
       ]),
       if (_note > 0) ...[
         Text(tr(libellesNote[_note]!), style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -397,10 +397,10 @@ class _DossierScreenState extends State<DossierScreen> {
                           TileLayer(urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', userAgentPackageName: 'sn.senalert.mobile'),
                           MarkerLayer(markers: [
                             Marker(point: LatLng(d.lat!, d.lng!), width: 36, height: 36,
-                                child: Icon(Icons.location_on, size: 36, color: d.estSos ? AppColors.crimson : AppColors.vert700)),
+                                child: Icon(Icons.location_on, size: 36, color: d.estSos ? AppColors.rouge : AppColors.marine700)),
                             if (_enIntervention && d.intervention?['position_agent'] != null)
                               Marker(point: LatLng((d.intervention!['position_agent']['lat'] as num).toDouble(), (d.intervention!['position_agent']['lng'] as num).toDouble()),
-                                  width: 34, height: 34, child: const CircleAvatar(backgroundColor: Color(0xFF1E3A8A), child: Icon(Icons.local_shipping, size: 18, color: Colors.white))),
+                                  width: 34, height: 34, child: const CircleAvatar(backgroundColor: Jetons.marine600, child: Icon(Icons.local_shipping, size: 18, color: Colors.white))),
                           ]),
                           const RichAttributionWidget(attributions: [TextSourceAttribution('Fond © Esri · © contributeurs OpenStreetMap')]),
                         ],
@@ -425,7 +425,7 @@ class _Etoiles extends StatelessWidget {
   const _Etoiles(this.note);
   @override
   Widget build(BuildContext context) => Row(mainAxisSize: MainAxisSize.min, children: [
-        for (var n = 1; n <= 5; n++) Icon(n <= note ? Icons.star_rounded : Icons.star_border_rounded, size: 20, color: const Color(0xFFF5B400)),
+        for (var n = 1; n <= 5; n++) Icon(n <= note ? Icons.star_rounded : Icons.star_border_rounded, size: 20, color: Jetons.orange),
       ]);
 }
 
@@ -436,9 +436,9 @@ class _CartePartage extends StatelessWidget {
   const _CartePartage({required this.actif, required this.info, required this.onBasculer});
   @override
   Widget build(BuildContext context) => Carte(
-        couleur: actif ? const Color(0xFF1E3A8A).withOpacity(.1) : AppColors.surfaceSubtle,
+        couleur: actif ? Jetons.marine600.withOpacity(.1) : AppColors.surfaceSubtle,
         child: Row(children: [
-          Icon(Icons.my_location, color: actif ? const Color(0xFF1E3A8A) : AppColors.textGrey),
+          Icon(Icons.my_location, color: actif ? Jetons.marine600 : AppColors.textGrey),
           const SizedBox(width: 10),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(actif ? 'Position partagée avec le déclarant' : 'Partager ma position en direct', style: const TextStyle(fontWeight: FontWeight.w700)),
@@ -456,9 +456,9 @@ class _AgentEnRoute extends StatelessWidget {
   Widget build(BuildContext context) {
     final dist = position['distance_m'] as num?;
     return Carte(
-      couleur: const Color(0xFF1E3A8A).withOpacity(.1),
+      couleur: Jetons.marine600.withOpacity(.1),
       child: Row(children: [
-        const CircleAvatar(radius: 22, backgroundColor: Color(0xFF1E3A8A), child: Icon(Icons.local_shipping, color: Colors.white)),
+        const CircleAvatar(radius: 22, backgroundColor: Jetons.marine600, child: Icon(Icons.local_shipping, color: Colors.white)),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(tr('Les secours sont en route'), style: titre(16)),

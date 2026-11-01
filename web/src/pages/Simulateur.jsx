@@ -53,7 +53,7 @@ export default function Simulateur() {
   }, [largeur, hauteur, cadre, a.bouton, paysage]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#0B1210] text-white">
+    <div className="flex min-h-screen flex-col bg-marque-950 text-white">
       <BandeDrapeau className="h-1" />
       <header className="flex flex-wrap items-center gap-3 border-b border-white/10 px-4 py-3 sm:px-6">
         <Link to="/" className="flex items-center gap-2"><Logo className="h-8 w-8" clair /><span className="font-titre text-lg font-extrabold">SenAlert</span></Link>
@@ -86,11 +86,11 @@ export default function Simulateur() {
           </div>
         ) : (
           <div style={{ transform: `scale(${echelle})`, transformOrigin: 'top center' }} className="transition-transform duration-300">
-            <div className={clsx('relative bg-gradient-to-b from-[#2A2F2C] to-[#141716] shadow-[0_30px_80px_rgba(0,0,0,.6)] ring-1 ring-white/15',
+            <div className={clsx('relative bg-gradient-to-b from-marque-800 to-marque-950 shadow-[0_30px_80px_rgba(0,0,0,.6)] ring-1 ring-white/15',
               a.ios ? 'rounded-[3.2rem]' : 'rounded-[2.4rem]')} style={{ padding: cadre }}>
               {/* Boutons latéraux */}
-              <span className="absolute -left-[3px] top-28 h-14 w-[3px] rounded-l bg-[#3a3f3c]" aria-hidden />
-              <span className="absolute -right-[3px] top-36 h-20 w-[3px] rounded-r bg-[#3a3f3c]" aria-hidden />
+              <span className="absolute -left-[3px] top-28 h-14 w-[3px] rounded-l bg-marque-700" aria-hidden />
+              <span className="absolute -right-[3px] top-36 h-20 w-[3px] rounded-r bg-marque-700" aria-hidden />
               <div className={clsx('relative overflow-hidden bg-black', a.ios ? 'rounded-[2.6rem]' : 'rounded-[1.9rem]')} style={{ width: largeur, height: hauteur }}>
                 <div className="flex h-full flex-col">
                   {/* Barre d'état : l'application ne passe jamais sous l'encoche */}

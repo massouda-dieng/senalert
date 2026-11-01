@@ -70,7 +70,7 @@ class _CommunauteScreenState extends State<CommunauteScreen> {
             child: SizedBox(
               height: 190 + MediaQuery.of(context).padding.top,
               child: PhotoIllustration('croix-rouge-equipe', credit: false, superposition: DecoratedBox(
-                decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xD9000000), Color(0x40000000)])),
+                decoration: const BoxDecoration(gradient: LinearGradient(colors: [Jetons.voileFort, Jetons.voileLeger])),
                 child: SafeArea(child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.end, children: [
@@ -117,7 +117,7 @@ class _CommunauteScreenState extends State<CommunauteScreen> {
                   Row(children: [
                     if (u.estCitoyen && i['est_mien'] != true)
                       FilledButton.tonalIcon(
-                        style: FilledButton.styleFrom(minimumSize: const Size(0, 40), backgroundColor: i['je_confirme'] == true ? AppColors.vert100 : AppColors.surfaceSubtle),
+                        style: FilledButton.styleFrom(minimumSize: const Size(0, 40), backgroundColor: i['je_confirme'] == true ? AppColors.marine100 : AppColors.surfaceSubtle),
                         onPressed: () => _confirmer(i), icon: const Icon(Icons.thumb_up_alt_outlined, size: 18),
                         label: Text('${i['je_confirme'] == true ? 'Confirmé' : 'Je le vois aussi'} · ${i['nb_confirmations']}'))
                     else Chip(avatar: const Icon(Icons.thumb_up_alt_outlined, size: 16), label: Text('${i['nb_confirmations']}')),

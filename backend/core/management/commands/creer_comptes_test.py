@@ -4,7 +4,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from accounts.models import AgentProfil, DemandeCompteAgent, User
 from core.constants import ROLE_AGENT, ROLE_CITOYEN, ROLE_SUPERADMIN
@@ -41,6 +41,8 @@ class Command(BaseCommand):
             "Les identifiants sont écrits dans backups/comptes_test.txt (hors Git, lecture propriétaire seulement).")
 
     def handle(self, **opts):
+        if not (settings.DEBUG or settings.TESTING):
+            raise CommandError('Comptes de test interdits en production (DEBUG=False).')
         lignes = ['# Comptes de TEST SenAlert — ne pas utiliser en production', '']
         for email, role, prenom, nom, region, service in COMPTES:
             mdp = mot_de_passe()

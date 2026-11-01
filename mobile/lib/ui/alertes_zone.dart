@@ -32,9 +32,9 @@ class _BandeauAlertesZoneState extends State<BandeauAlertesZone> {
           margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
           padding: const EdgeInsets.fromLTRB(14, 10, 4, 10),
           decoration: BoxDecoration(
-            color: a['niveau'] == 'danger' ? const Color(0xFFFDE3E4) : a['niveau'] == 'vigilance' ? AppColors.jauneClair : AppColors.vert50,
+            color: a['niveau'] == 'danger' ? Jetons.rougeClair : a['niveau'] == 'vigilance' ? AppColors.orangeClair : AppColors.marine50,
             borderRadius: BorderRadius.circular(16),
-            border: Border(left: BorderSide(width: 4, color: a['niveau'] == 'danger' ? AppColors.crimson : a['niveau'] == 'vigilance' ? const Color(0xFFF5D90A) : AppColors.vert600)),
+            border: Border(left: BorderSide(width: 4, color: a['niveau'] == 'danger' ? AppColors.rouge : a['niveau'] == 'vigilance' ? Jetons.orange : AppColors.marine600)),
           ),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Icon(Icons.campaign_rounded, color: AppColors.textDark),

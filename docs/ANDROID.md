@@ -27,20 +27,20 @@ Le téléphone et le Mac doivent être sur le **même Wi-Fi**.
 
 ```bash
 # Terminal 1 — serveur accessible depuis le réseau local
-cd ~/Documents/PFF/senalert/backend
+cd senalert/backend
 IP=$(ipconfig getifaddr en0); echo "IP du Mac : $IP"
 # ajouter l'IP aux hôtes autorisés (une fois) : ALLOWED_HOSTS=127.0.0.1,localhost,10.0.2.2,<IP> dans backend/.env
 python manage.py runserver 0.0.0.0:8000
 
 # Terminal 2 — application
-cd ~/Documents/PFF/senalert/mobile
+cd senalert/mobile
 flutter run -d <id-du-téléphone> --dart-define=API_BASE_URL=http://$(ipconfig getifaddr en0):8000/api
 ```
 
 ## 4. Fichier APK à partager (installer sans câble)
 
 ```bash
-cd ~/Documents/PFF/senalert/mobile
+cd senalert/mobile
 flutter build apk --release --dart-define=API_BASE_URL=http://<IP-du-Mac>:8000/api
 # → build/app/outputs/flutter-apk/app-release.apk (à envoyer par WhatsApp / e-mail, « sources inconnues » à autoriser)
 ```

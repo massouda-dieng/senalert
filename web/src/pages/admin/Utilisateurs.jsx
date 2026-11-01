@@ -46,7 +46,7 @@ function FormulaireAgent({ onFermer, onFait, services }) {
         <Champ libelle="Matricule">{(id) => <input id={id} className="champ" value={f.matricule} onChange={maj('matricule')} />}</Champ>
         <Champ libelle="Fonction">{(id) => <input id={id} className="champ" value={f.fonction} onChange={maj('fonction')} />}</Champ>
       </div>
-      <div className="mt-4"><p className="etiquette">Zones de couverture <span className="text-sos">*</span></p><ChoixZones valeur={f.zones} onChange={maj('zones')} />{erreurs.zones && <p className="mt-1 text-xs text-red-700">{erreurs.zones}</p>}</div>
+      <div className="mt-4"><p className="etiquette">Zones de couverture <span className="text-sos-fonce">*</span></p><ChoixZones valeur={f.zones} onChange={maj('zones')} />{erreurs.zones && <p className="mt-1 text-xs text-sos-fonce">{erreurs.zones}</p>}</div>
       {erreur && <Bandeau type="danger" className="mt-4">{erreur}</Bandeau>}
     </Fenetre>
   );

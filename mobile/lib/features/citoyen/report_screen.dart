@@ -170,7 +170,7 @@ class _SignalerScreenState extends State<SignalerScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 3),
                   child: Column(children: [
                     AnimatedContainer(duration: const Duration(milliseconds: 250), height: 5,
-                        decoration: BoxDecoration(color: i <= _etape ? AppColors.vert800 : AppColors.border, borderRadius: BorderRadius.circular(4))),
+                        decoration: BoxDecoration(color: i <= _etape ? AppColors.marine800 : AppColors.border, borderRadius: BorderRadius.circular(4))),
                     const SizedBox(height: 4),
                     Text(etapes[i], style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: i == _etape ? AppColors.textDark : AppColors.textMuted)),
                   ]),
@@ -187,7 +187,7 @@ class _SignalerScreenState extends State<SignalerScreen> {
                 children: [
                   for (final c in config.categories)
                     Carte(
-                      couleur: _type == c.code ? AppColors.vert50 : null,
+                      couleur: _type == c.code ? AppColors.marine50 : null,
                       onTap: () { setState(() { _type = c.code; _etape = 1; }); _sauver(); },
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       child: Row(children: [
@@ -221,7 +221,7 @@ class _SignalerScreenState extends State<SignalerScreen> {
                   children: [
                     TileLayer(urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', userAgentPackageName: 'sn.senalert.mobile'),
                     if (_lat != null) MarkerLayer(markers: [Marker(point: LatLng(_lat!, _lng!), width: 40, height: 40,
-                        child: const Icon(Icons.location_on, color: AppColors.crimson, size: 40))]),
+                        child: const Icon(Icons.location_on, color: AppColors.rouge, size: 40))]),
                     const RichAttributionWidget(attributions: [TextSourceAttribution('Fond © Esri · © contributeurs OpenStreetMap')]),
                   ],
                 )),

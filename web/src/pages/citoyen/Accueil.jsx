@@ -1,15 +1,19 @@
 import clsx from 'clsx';
-import { ChevronRight, Crosshair, Phone, RotateCcw, ShieldAlert, Siren, X } from 'lucide-react';
+import {
+  BookOpenCheck, Bot, ChevronRight, Crosshair, Map, MapPinned, Phone, RotateCcw, ShieldAlert, ShieldCheck, Siren, X,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, nouvelleCle } from '../../api/client';
 import { useRessource } from '../../api/hooks';
 import { useAuth } from '../../auth/AuthContext';
+import CarteSenAlert, { CENTRE_SENEGAL } from '../../components/Carte';
 import Photo from '../../components/Photo';
-import { BadgeStatut, Bandeau, Bouton, Carte, Chargement, Fenetre } from '../../components/ui';
+import { BadgeStatut, Bandeau, Bouton, Carte, Chargement, Fenetre, IconeNotification } from '../../components/ui';
 import { useConfig } from '../../lib/config';
 import { ilYa } from '../../lib/format';
 import { libelleCategorie, useLangue } from '../../lib/langue';
+import { COULEURS } from '../../lib/couleurs';
 
 const COMPTE_A_REBOURS = 5;
 
@@ -81,10 +85,10 @@ function SOS() {
     <>
       <div className="relative overflow-hidden rounded-3xl text-white">
         <Photo nom="dakar-vue" className="absolute inset-0 h-full w-full" alt="" credit={false} />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-black/5" aria-hidden />
+        <div className="absolute inset-0 bg-gradient-to-r from-marque-950/95 via-marque-900/80 to-marque-900/40" aria-hidden />
         <div className="relative flex flex-col items-center gap-6 p-6 sm:flex-row sm:justify-between sm:p-8">
           <div className="max-w-md text-center sm:text-left">
-            <p className="text-sm font-semibold uppercase tracking-widest text-or">{t('Urgence')}</p>
+            <p className="text-sm font-semibold uppercase tracking-widest text-white/75">{t('Urgence')}</p>
             <h2 className="mt-1 font-titre text-3xl font-extrabold">{t('Besoin d’aide immédiate ?')}</h2>
             <p className="mt-2 text-sm text-white/80">{t('Le SOS enregistre votre position et prévient les agents SenAlert de votre zone. Pour un danger vital, appelez aussi directement les secours.')}</p>
             <div className="mt-4 flex flex-wrap justify-center gap-2 sm:justify-start">
@@ -96,7 +100,7 @@ function SOS() {
             </div>
           </div>
           <button type="button" onClick={demarrer} disabled={etape === 'envoi'}
-            className="grid h-40 w-40 shrink-0 animate-pulsation place-items-center rounded-full bg-gradient-to-br from-red-500 to-sos-fonce font-titre text-4xl font-extrabold tracking-wider shadow-[0_10px_40px_rgba(227,27,35,.55)] ring-8 ring-white/10 transition hover:scale-[1.03] focus-visible:ring-white"
+            className="grid h-40 w-40 shrink-0 animate-pulsation place-items-center rounded-full bg-sos font-titre text-4xl font-extrabold tracking-wider shadow-[0_10px_40px_rgba(230,57,70,.55)] ring-8 ring-white/10 transition hover:scale-[1.03] hover:bg-sos-fonce focus-visible:ring-white"
             aria-label={t('Déclencher une alerte SOS')}>
             <span className="flex flex-col items-center gap-1"><Siren className="h-9 w-9" />SOS</span>
           </button>
@@ -107,7 +111,7 @@ function SOS() {
         {etape === 'decompte' && (
           <div className="text-center">
             <p className="text-sm text-texte-doux">{t('Envoi automatique dans')}</p>
-            <p className="my-2 font-titre text-7xl font-extrabold text-sos tabular-nums" aria-live="assertive">{reste}</p>
+            <p className="my-2 font-titre text-7xl font-extrabold text-sos-fonce tabular-nums" aria-live="assertive">{reste}</p>
             <PositionInfo position={position} />
             <div className="mt-6 grid grid-cols-2 gap-3">
               <Bouton variante="secondaire" taille="lg" icone={X} onClick={fermer}>{t('Annuler')}</Bouton>
@@ -134,7 +138,7 @@ function SOS() {
             <Bandeau type="danger" titre={t('L’alerte n’a PAS été transmise')}>{erreur?.detail}</Bandeau>
             <p className="text-sm">{t('Appelez immédiatement les secours :')}</p>
             <div className="grid grid-cols-2 gap-2">
-              {config.numeros_urgence.map((n) => <a key={n.numero} href={`tel:${n.numero}`} className="rounded-xl bg-sos px-3 py-3 text-center font-bold text-white">{n.service} · {n.numero}</a>)}
+              {config.numeros_urgence.map((n) => <a key={n.numero} href={`tel:${n.numero}`} className="rounded-xl bg-sos-fonce px-3 py-3 text-center font-bold text-white">{n.service} · {n.numero}</a>)}
             </div>
             <Bouton variante="secondaire" className="w-full" icone={RotateCcw} onClick={() => envoyer(position?.enCours ? null : position)}>{t('Réessayer l’envoi')}</Bouton>
             {config.sms_secours && (
@@ -153,52 +157,150 @@ function SOS() {
 function PositionInfo({ position }) {
   const { t } = useLangue();
   if (!position || position.enCours) return <p className="text-sm text-texte-doux"><Crosshair className="mr-1 inline h-4 w-4 animate-spin" /> {t('Recherche de votre position…')}</p>;
-  if (position.erreur) return <p className="text-sm text-amber-800">{t(position.erreur)} {t('L’alerte sera envoyée sans position.')}</p>;
+  if (position.erreur) return <p className="text-sm text-alerte">{t(position.erreur)} {t('L’alerte sera envoyée sans position.')}</p>;
   return (
-    <p className={clsx('text-sm', position.precision > 100 ? 'text-amber-800' : 'text-emerald-700')}>
+    <p className={clsx('text-sm', position.precision > 100 ? 'text-alerte' : 'text-succes')}>
       {t('Position obtenue · précision ± {m} m', { m: Math.round(position.precision) })}{position.precision > 100 && ' (approximative)'}
     </p>
   );
 }
 
+const ACTIONS = [
+  { a: '/citoyen/signaler', titre: 'Signaler un incident', texte: 'Accident, incendie, inondation…', icone: ShieldAlert, principal: true },
+  { a: '/citoyen/carte', titre: 'Carte interactive', texte: 'Incidents et alertes', icone: Map },
+  { a: '/citoyen/services', titre: 'Services proches', texte: 'Hôpitaux, pharmacies…', icone: MapPinned },
+  { a: '/citoyen/assistant', titre: 'Assistant', texte: 'Questions, prévention', icone: Bot },
+];
+
+const ETAPES_SUIVI = [['nouveau', 'Reçu'], ['affecte', 'Affecté'], ['accepte', 'Pris en charge'], ['en_cours', 'En cours'], ['resolu', 'Résolu']];
+
+/** Progression d'un dossier ; un dossier rejeté ou annulé garde son badge, sans fausse progression. */
+function Progression({ statut }) {
+  const { t } = useLangue();
+  const rang = ETAPES_SUIVI.findIndex(([code]) => code === statut);
+  if (rang < 0) return null;
+  return (
+    <ol className="mt-2 flex items-center gap-1" aria-label={`${t('Étape')} ${rang + 1} / ${ETAPES_SUIVI.length} : ${t(ETAPES_SUIVI[rang][1])}`}>
+      {ETAPES_SUIVI.map(([code], i) => <li key={code} className={clsx('h-1.5 flex-1 rounded-full', i > rang ? 'bg-surface-bord' : statut === 'resolu' ? 'bg-succes-vif' : 'bg-marque-600')} />)}
+    </ol>
+  );
+}
+
+const STYLE_ALERTE = { danger: 'border-sos', vigilance: 'border-or', info: 'border-marque-600' };
+
 export default function Accueil() {
   const { utilisateur } = useAuth();
+  const config = useConfig();
   const { t, langue } = useLangue();
-  const incidents = useRessource('/incidents/', { taille: 3, actifs: true });
-  const sos = useRessource('/alertes/sos/', { taille: 3, actifs: true });
-  const enCours = [...(sos.donnees?.results || []).map((d) => ({ ...d, sos: true })), ...(incidents.donnees?.results || [])].slice(0, 3);
+  const opts = { intervalle: 30000 };
+  const region = utilisateur.region || undefined;
+  const incidents = useRessource('/incidents/', { taille: 5 }, opts);
+  const sos = useRessource('/alertes/sos/', { taille: 5 }, opts);
+  const alertes = useRessource('/alertes/zones/', { region, en_cours: 1 }, { intervalle: 120000 });
+  const autour = useRessource('/incidents/carte/', { region, jours: 30 });
+  const notifications = useRessource('/notifications/', { taille: 4 }, opts);
+  const dossiers = [...(sos.donnees?.results || []).map((d) => ({ ...d, sos: true })), ...(incidents.donnees?.results || [])]
+    .sort((a, b) => new Date(b.date_creation) - new Date(a.date_creation)).slice(0, 4);
+  const points = (autour.donnees?.resultats || []).map((p) => ({
+    id: p.id, lat: p.latitude, lng: p.longitude, couleur: config.categorie(p.type_incident)?.couleur || COULEURS.gris,
+    titre: config.categorie(p.type_incident)?.libelle,
+  }));
+  const zone = config.region(utilisateur.region);
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold">{t('Bonjour {nom}', { nom: utilisateur.first_name || '' })} 👋</h1>
+        <h1 className="text-2xl font-extrabold sm:text-[28px]">{t('Bonjour {nom}', { nom: utilisateur.first_name || '' })}</h1>
         <p className="text-sm text-texte-doux">{t('Que souhaitez-vous faire ?')}</p>
       </div>
-      <SOS />
-      <Link to="/citoyen/signaler" className="carte group flex items-center gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-flottant">
-        <div className="rounded-2xl bg-or-clair p-3 text-or-fonce"><ShieldAlert className="h-6 w-6" /></div>
-        <div className="min-w-0"><p className="font-semibold">{t('Signaler un incident')}</p><p className="truncate text-sm text-texte-doux">{t('Accident, incendie, inondation…')}</p></div>
-        <ChevronRight className="ml-auto h-5 w-5 text-texte-pale transition group-hover:translate-x-0.5" />
-      </Link>
-      <Carte titre={t('Mes dossiers en cours')} action={<Link to="/citoyen/dossiers" className="lien text-sm">{t('Tout voir')}</Link>} corpsClassName="p-0">
-        {incidents.chargement && !incidents.donnees ? <Chargement /> : enCours.length === 0 ? (
-          <p className="p-5 text-sm text-texte-doux">{t('Aucun signalement pour l’instant.')}</p>
-        ) : (
-          <ul className="divide-y divide-surface-bord">
-            {enCours.map((d) => (
-              <li key={`${d.sos ? 's' : 'i'}${d.id}`}>
-                <Link to={`/citoyen/dossiers?${d.sos ? 'type=sos&' : ''}dossier=${d.id}`} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-surface-douce">
-                  <div className="min-w-0">
-                    <p className="font-mono text-[13px] font-semibold text-marque-700">{d.reference}</p>
-                    <p className="truncate text-sm">{d.sos ? t('Alerte SOS') : libelleCategorie(langue, d.type_incident, d.categorie_libelle)} · {ilYa(d.date_creation)}</p>
-                  </div>
-                  <BadgeStatut statut={d.statut} />
-                </Link>
-              </li>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,1fr)]">
+        <div className="min-w-0 space-y-6">
+          <SOS />
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {ACTIONS.map((c) => (
+              <Link key={c.a} to={c.a} className={clsx('group rounded-2xl border p-4 transition hover:-translate-y-0.5 hover:shadow-carte', c.principal ? 'border-marque-800 bg-marque-800 text-white' : 'border-surface-bord bg-surface')}>
+                <c.icone className={clsx('h-6 w-6', c.principal ? 'text-white' : 'text-marque-600')} aria-hidden />
+                <p className="mt-3 font-bold leading-tight">{t(c.titre)}</p>
+                <p className={clsx('mt-0.5 truncate text-xs', c.principal ? 'text-white/80' : 'text-texte-doux')}>{t(c.texte)}</p>
+              </Link>
             ))}
-          </ul>
-        )}
-      </Carte>
+          </div>
+          <Carte titre={t('Mes derniers signalements')} action={<Link to="/citoyen/dossiers" className="lien text-sm">{t('Tout voir')}</Link>} corpsClassName="p-0">
+            {incidents.chargement && !incidents.donnees ? <Chargement /> : dossiers.length === 0 ? (
+              <p className="p-5 text-sm text-texte-doux">{t('Aucun signalement pour l’instant.')}</p>
+            ) : (
+              <ul className="divide-y divide-surface-bord">
+                {dossiers.map((d) => (
+                  <li key={`${d.sos ? 's' : 'i'}${d.id}`}>
+                    <Link to={`/citoyen/dossiers?${d.sos ? 'type=sos&' : ''}dossier=${d.id}`} className="block px-5 py-3.5 hover:bg-surface-douce">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold">{d.sos ? t('Alerte SOS') : libelleCategorie(langue, d.type_incident, d.categorie_libelle)}</p>
+                          <p className="truncate text-xs text-texte-doux"><span className="font-mono">{d.reference}</span> · {ilYa(d.date_creation)}</p>
+                        </div>
+                        <BadgeStatut statut={d.statut} />
+                      </div>
+                      <Progression statut={d.statut} />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Carte>
+          <Carte titre={zone ? `${t('Autour de moi')} · ${zone.libelle}` : t('Carte des incidents')} action={<Link to="/citoyen/carte" className="lien text-sm">{t('Ouvrir la carte')}</Link>} corpsClassName="p-3">
+            <CarteSenAlert points={points} hauteur={280} zoom={zone ? 10 : 6} centre={zone ? [zone.lat, zone.lng] : CENTRE_SENEGAL} />
+            <p className="mt-2 px-1 text-xs text-texte-doux">{t('30 derniers jours. Positions arrondies à environ 100 m.')}</p>
+          </Carte>
+        </div>
+
+        <div className="min-w-0 space-y-6">
+          <Carte titre={t('Alertes de proximité')}>
+            {!alertes.donnees?.results?.length ? (
+              <p className="flex items-start gap-2 text-sm text-texte-doux"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-succes" />{t('Aucune alerte officielle en cours pour votre région.')}</p>
+            ) : (
+              <ul className="space-y-3">
+                {alertes.donnees.results.slice(0, 3).map((a) => (
+                  <li key={a.id} className={clsx('border-l-4 pl-3', STYLE_ALERTE[a.niveau])}>
+                    <p className="text-sm font-bold">{a.titre}</p>
+                    <p className="text-sm text-texte-doux">{a.message}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Carte>
+          <Carte titre={t('Notifications')} action={<Link to="/notifications" className="lien text-sm">{t('Tout voir')}</Link>} corpsClassName="p-0">
+            {!notifications.donnees?.results?.length ? <p className="p-5 text-sm text-texte-doux">{t('Aucune notification.')}</p> : (
+              <ul className="divide-y divide-surface-bord">
+                {notifications.donnees.results.slice(0, 4).map((n) => (
+                  <li key={n.id} className="flex gap-3 px-5 py-3">
+                    <IconeNotification type={n.type} />
+                    <div className="min-w-0">
+                      <p className={clsx('truncate text-sm', !n.lue && 'font-semibold')}>{n.titre}</p>
+                      <p className="truncate text-xs text-texte-doux">{n.message}</p>
+                      <p className="text-xs text-texte-pale">{ilYa(n.date_creation)}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Carte>
+          <Carte titre={t('Services de secours')} action={<Link to="/citoyen/services" className="lien text-sm">{t('Proches de moi')}</Link>}>
+            <div className="grid gap-2">
+              {config.numeros_urgence.map((n) => (
+                <a key={n.numero} href={`tel:${n.numero}`} className="flex items-center justify-between rounded-xl bg-surface-douce px-3.5 py-2.5 text-sm font-semibold hover:bg-marque-50">
+                  <span className="inline-flex items-center gap-2"><Phone className="h-4 w-4 text-marque-600" aria-hidden />{n.service}</span>
+                  <span className="font-mono text-base font-bold">{n.numero}</span>
+                </a>
+              ))}
+            </div>
+            <Link to="/citoyen/secours" className="mt-3 flex items-center justify-between rounded-xl border border-surface-bord px-3.5 py-2.5 text-sm font-semibold hover:bg-surface-douce">
+              <span className="inline-flex items-center gap-2"><BookOpenCheck className="h-4 w-4 text-marque-600" aria-hidden />{t('Premiers secours')}</span>
+              <ChevronRight className="h-4 w-4 text-texte-pale" aria-hidden />
+            </Link>
+          </Carte>
+        </div>
+      </div>
     </div>
   );
 }

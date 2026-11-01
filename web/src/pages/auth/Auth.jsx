@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../api/client';
 import { ESPACE_PAR_ROLE, useAuth } from '../../auth/AuthContext';
-import { BandeDrapeau, Logo } from '../../components/Logo';
+import { Logo } from '../../components/Logo';
 import Photo from '../../components/Photo';
 import { Bandeau, Bouton, Champ, Onglets, Selecteur } from '../../components/ui';
 import { useConfig } from '../../lib/config';
@@ -14,11 +14,10 @@ function Cadre({ titre, sousTitre, children }) {
     <div className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
       <div className="relative hidden overflow-hidden lg:flex lg:flex-col">
         <Photo nom="pompiers-bnsp" className="absolute inset-0 h-full w-full" alt="Brigade nationale des sapeurs-pompiers" priorite />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/10" aria-hidden />
-        <BandeDrapeau className="relative h-1.5" />
+        <div className="absolute inset-0 bg-gradient-to-t from-marque-950/95 via-marque-900/60 to-marque-900/20" aria-hidden />
         <div className="relative flex items-center gap-3 p-12 text-white"><Logo className="h-11 w-11" clair /><span className="font-titre text-2xl font-extrabold">SenAlert</span></div>
         <div className="relative mt-auto max-w-lg p-12 text-white">
-          <h2 className="font-titre text-4xl font-extrabold leading-tight">Signaler. Coordonner.<br /><span className="text-or">Protéger.</span></h2>
+          <h2 className="font-titre text-4xl font-extrabold leading-tight">Ensemble, protégeons des vies</h2>
           <p className="mt-4 text-white/80">Citoyens, agents de secours et superviseurs réunis sur un même canal, partout au Sénégal.</p>
           <div className="mt-8 flex flex-wrap gap-2">
             {config?.numeros_urgence?.map((n) => (
@@ -83,7 +82,7 @@ function BoutonGoogle({ onJeton }) {
   }, [config?.pret, config?.google_actif, clientId]);
 
   if (etat === 'non_configure') return <p className="rounded-xl bg-surface-douce px-3 py-2.5 text-center text-xs text-texte-doux">Connexion Google non configurée sur ce serveur (voir la documentation).</p>;
-  if (etat === 'erreur') return <p className="text-center text-xs text-red-700">Le service Google est injoignable. Utilisez votre e-mail et votre mot de passe.</p>;
+  if (etat === 'erreur') return <p className="text-center text-xs text-sos-fonce">Le service Google est injoignable. Utilisez votre e-mail et votre mot de passe.</p>;
   return <div ref={ref} className="flex min-h-[44px] justify-center" />;
 }
 
@@ -317,13 +316,13 @@ export function DemandeAgent() {
           <Champ libelle="Téléphone" erreur={erreurs.telephone}>{(id) => <input id={id} type="tel" className="champ" value={f.telephone} onChange={maj('telephone')} autoComplete="tel" />}</Champ>
         </div>
         <fieldset>
-          <legend className="etiquette">Zones d’intervention <span className="text-sos">*</span></legend>
+          <legend className="etiquette">Zones d’intervention <span className="text-sos-fonce">*</span></legend>
           <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
             {(config.regions || []).map((r) => (
               <label key={r.code} className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={f.zones.includes(r.code)} onChange={() => basculerZone(r.code)} />{r.libelle}</label>
             ))}
           </div>
-          {erreurs.zones && <p className="mt-1 text-xs text-red-700">{erreurs.zones}</p>}
+          {erreurs.zones && <p className="mt-1 text-xs text-sos-fonce">{erreurs.zones}</p>}
         </fieldset>
         <Champ libelle="Message au superviseur" aide="Facultatif : nom de votre chef de service, précisions utiles." erreur={erreurs.message}>{(id) => <textarea id={id} rows={2} maxLength={1000} className="champ" value={f.message} onChange={maj('message')} />}</Champ>
         <Champ libelle="Mot de passe" requis aide="Vous le choisissez maintenant ; il est stocké chiffré et le superviseur ne le voit jamais." erreur={erreurs.mot_de_passe}>{(id) => <ChampMotDePasse id={id} valeur={f.mot_de_passe} onChange={maj('mot_de_passe')} autoComplete="new-password" />}</Champ>

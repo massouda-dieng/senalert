@@ -62,18 +62,22 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           itemBuilder: (_, i) {
                             final n = _liste![i];
                             return Carte(
-                              couleur: n['lue'] == true ? null : AppColors.vert50,
+                              couleur: n['lue'] == true ? null : AppColors.marine50,
                               onTap: () async {
                                 if (n['lue'] != true) Api.instance.post('/notifications/${n['id']}/lire/').then((_) {}, onError: (_) {});
                                 final d = n['dossier'];
                                 if (d != null) await context.push('/dossier/${d['type']}/${d['id']}');
                                 _charger();
                               },
-                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Text(n['titre'], style: const TextStyle(fontWeight: FontWeight.w700)),
-                                Text(n['message'], style: TextStyle(color: AppColors.textGrey)),
-                                const SizedBox(height: 4),
-                                Text(ilYa(lireDate(n['date_creation'])), style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                PastilleNotification(n['type']?.toString()),
+                                const SizedBox(width: 12),
+                                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                  Text(n['titre'], style: const TextStyle(fontWeight: FontWeight.w700)),
+                                  Text(n['message'], style: TextStyle(color: AppColors.textGrey)),
+                                  const SizedBox(height: 4),
+                                  Text(ilYa(lireDate(n['date_creation'])), style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                                ])),
                               ]),
                             );
                           },
@@ -132,7 +136,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
         if (u.aMotDePasse) TextField(controller: mdp, obscureText: true, decoration: const InputDecoration(labelText: 'Mot de passe')),
       ]),
       actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Annuler')),
-        FilledButton(style: FilledButton.styleFrom(backgroundColor: AppColors.crimson), onPressed: () => Navigator.pop(c, true), child: const Text('Supprimer'))],
+        FilledButton(style: FilledButton.styleFrom(backgroundColor: AppColors.rougeFonce), onPressed: () => Navigator.pop(c, true), child: const Text('Supprimer'))],
     ));
     if (ok != true || !mounted) return;
     try {
@@ -152,14 +156,14 @@ class _ProfilScreenState extends State<ProfilScreen> {
       appBar: AppBar(title: const Text('Profil')),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         Carte(child: Row(children: [
-          CircleAvatar(radius: 28, backgroundColor: AppColors.vert800,
+          CircleAvatar(radius: 28, backgroundColor: AppColors.marine800,
               child: Text(u.nomAffiche.isEmpty ? '?' : u.nomAffiche[0].toUpperCase(), style: titre(22, couleur: Colors.white))),
           const SizedBox(width: 14),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(u.nomAffiche, style: titre(18)),
             Text(u.email, style: TextStyle(color: AppColors.textGrey)),
             const SizedBox(height: 4),
-            Text('${u.roleLibelle}${u.serviceNom != null ? ' · ${u.serviceNom}' : ''}', style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.vert700)),
+            Text('${u.roleLibelle}${u.serviceNom != null ? ' · ${u.serviceNom}' : ''}', style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.marine700)),
           ])),
         ])),
         if (u.doitChangerMotDePasse) const Padding(padding: EdgeInsets.only(top: 12), child: Bandeau.alerte('Votre compte utilise un mot de passe initial : remplacez-le.')),
@@ -199,8 +203,8 @@ class _ProfilScreenState extends State<ProfilScreen> {
         ListTile(leading: const Icon(Icons.devices_outlined), title: const Text('Se déconnecter de tous les appareils'),
             onTap: () => context.read<Session>().deconnexion(partout: true)),
         ListTile(leading: const Icon(Icons.logout), title: const Text('Se déconnecter'), onTap: () => context.read<Session>().deconnexion()),
-        if (!u.estSuperadmin) ListTile(leading: const Icon(Icons.delete_forever_outlined, color: AppColors.crimson),
-            title: const Text('Supprimer mon compte', style: TextStyle(color: AppColors.crimson)), onTap: _supprimer),
+        if (!u.estSuperadmin) ListTile(leading: const Icon(Icons.delete_forever_outlined, color: AppColors.rouge),
+            title: const Text('Supprimer mon compte', style: TextStyle(color: AppColors.rougeFonce)), onTap: _supprimer),
         const SizedBox(height: 16),
         Text('Confidentialité : vos données sont traitées conformément à la loi n° 2008-12. Votre position n’est transmise qu’à l’envoi d’un SOS ou d’un signalement. ${config.avertissement}',
             style: TextStyle(fontSize: 12, color: AppColors.textMuted)),

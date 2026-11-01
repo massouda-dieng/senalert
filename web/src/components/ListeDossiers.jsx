@@ -131,7 +131,7 @@ export default function ListeDossiers({ type = 'incident', filtresVisibles = FIL
             <>
               <div className="hidden overflow-x-auto md:block">
               <table className="w-full min-w-[600px] text-sm">
-                <thead className="bg-surface-douce text-left text-xs uppercase tracking-wide text-texte-doux">
+                <thead className="border-b border-surface-bord bg-surface-douce text-left text-xs uppercase tracking-wide text-texte-doux">
                   <tr>
                     <th className="px-4 py-2.5 font-semibold">Dossier</th>
                     <th className="px-4 py-2.5 font-semibold">Région</th>
@@ -148,19 +148,19 @@ export default function ListeDossiers({ type = 'incident', filtresVisibles = FIL
                   {lignes.map((d) => (
                     <tr key={d.id} onClick={() => ouvrir(d.id)} onKeyDown={(e) => e.key === 'Enter' && ouvrir(d.id)} tabIndex={0}
                       className={clsx('cursor-pointer transition hover:bg-marque-50/60 focus:bg-marque-50', String(d.id) === selection && 'bg-marque-50')}>
-                      <td className="px-4 py-3">
+                      <td className="border-l-4 px-4 py-3" style={{ borderLeftColor: GRAVITES[d.gravite]?.couleur }}>
                         <p className="font-semibold">{type === 'sos' ? 'Alerte SOS' : d.categorie_libelle}</p>
                         <p className="whitespace-nowrap font-mono text-xs text-marque-700">{d.reference}</p>
                       </td>
                       <td className="px-4 py-3 text-texte-doux">
                         {d.region_libelle || '—'}
-                        {d.latitude == null && <p className="whitespace-nowrap text-xs text-amber-700">GPS indisponible</p>}
+                        {d.latitude == null && <p className="whitespace-nowrap text-xs text-alerte">GPS indisponible</p>}
                       </td>
                       <td className="px-4 py-3"><BadgeStatut statut={d.statut} /></td>
                       <td className="px-4 py-3"><BadgeGravite gravite={d.gravite} /></td>
                       <td className="whitespace-nowrap px-4 py-3 text-texte-doux" title={dateHeure(d.date_creation)}>
                         {ilYa(d.date_creation)}
-                        {d.en_retard && <p className="flex items-center gap-1 text-xs font-semibold text-amber-700"><Clock className="h-3 w-3" aria-hidden /> En retard</p>}
+                        {d.en_retard && <p className="flex items-center gap-1 text-xs font-semibold text-alerte"><Clock className="h-3 w-3" aria-hidden /> En retard</p>}
                       </td>
                     </tr>
                   ))}
@@ -176,7 +176,7 @@ export default function ListeDossiers({ type = 'incident', filtresVisibles = FIL
                         <BadgeStatut statut={d.statut} />
                       </div>
                       <p className="mt-1 text-sm font-medium">{type === 'sos' ? 'Alerte SOS' : d.categorie_libelle} · {d.region_libelle || '—'}</p>
-                      <p className="text-xs text-texte-pale">{ilYa(d.date_creation)}{d.en_retard && <span className="font-semibold text-amber-700"> · En retard</span>}</p>
+                      <p className="text-xs text-texte-pale">{ilYa(d.date_creation)}{d.en_retard && <span className="font-semibold text-alerte"> · En retard</span>}</p>
                     </button>
                   </li>
                 ))}

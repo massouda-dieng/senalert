@@ -76,7 +76,7 @@ export default function Profil() {
           <p className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-succes" /> Connexion Google : {utilisateur.google_lie ? 'liée à ce compte' : 'non liée'}.</p>
           <div className="flex flex-wrap gap-2">
             <Bouton variante="secondaire" icone={LogOut} onClick={async () => { await deconnexion(true); navigate('/connexion'); }}>Se déconnecter de tous les appareils</Bouton>
-            {utilisateur.role !== 'superadmin' && <Bouton variante="secondaire" className="text-red-700" icone={Trash2} onClick={() => setSuppression(true)}>Supprimer mon compte</Bouton>}
+            {utilisateur.role !== 'superadmin' && <Bouton variante="secondaire" className="text-sos-fonce" icone={Trash2} onClick={() => setSuppression(true)}>Supprimer mon compte</Bouton>}
           </div>
           <p className="text-xs text-texte-pale">Vos données personnelles sont traitées conformément à la loi sénégalaise n° 2008-12. La suppression anonymise votre compte ; les dossiers restent dans les statistiques sans lien avec votre identité.</p>
         </div>

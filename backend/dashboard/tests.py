@@ -98,14 +98,21 @@ class SimulateurMobileTests(SenAlertTestCase):
                 (Path(d) / 'index.html').write_text('<html>flutter</html>')
                 (Path(d) / 'main.dart.js').write_text('// js')
                 r = self.client.get('/mobile/')
+                self.addCleanup(r.close)
                 self.assertEqual(r.status_code, 200)
                 self.assertEqual(r['X-Frame-Options'], 'SAMEORIGIN')
-                self.assertEqual(self.client.get('/mobile/main.dart.js').status_code, 200)
-                self.assertEqual(self.client.get('/mobile/route/inconnue').status_code, 200, 'repli sur index.html')
+                r.close()  # FileResponse garde le fichier ouvert : Windows refuserait de le supprimer
+                r = self.client.get('/mobile/main.dart.js')
+                self.assertEqual(r.status_code, 200)
+                r.close()
+                r = self.client.get('/mobile/route/inconnue')
+                self.assertEqual(r.status_code, 200, 'repli sur index.html')
+                r.close()
                 (Path(d).parent / 'secret.txt').write_text('SECRET')
                 try:
                     r = self.client.get('/mobile/../secret.txt')
                     self.assertNotIn(b'SECRET', b''.join(r.streaming_content) if r.streaming else r.content)
+                    r.close()
                 finally:
                     (Path(d).parent / 'secret.txt').unlink()
 

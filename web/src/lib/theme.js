@@ -1,3 +1,5 @@
+import { COULEURS } from './couleurs';
+
 /** Thème clair / sombre / système, mémorisé sur l'appareil. */
 const CLE = 'senalert.theme';
 const media = () => window.matchMedia?.('(prefers-color-scheme: dark)');
@@ -9,7 +11,7 @@ export function themeChoisi() {
 export function appliquerTheme(choix = themeChoisi()) {
   const sombre = choix === 'sombre' || (choix === 'systeme' && media()?.matches);
   document.documentElement.classList.toggle('dark', Boolean(sombre));
-  document.querySelector('meta[name=theme-color]')?.setAttribute('content', sombre ? '#0B110E' : '#00853F');
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', sombre ? COULEURS.fondSombre : COULEURS.marine);
   return sombre;
 }
 

@@ -1,45 +1,47 @@
 import 'package:flutter/material.dart';
 
-/// Palette SenAlert « Sénégal vibrant » — mêmes jetons que le web (tailwind.config.js).
-/// Vert du drapeau : identité ; jaune : accents ; rouge : réservé au SOS et à l'urgence.
+import 'jetons.g.dart';
+
+export 'jetons.g.dart';
+
+/// Couleurs de l'application. Les valeurs viennent de design/couleurs.json (voir jetons.g.dart), partagé avec le web.
+/// Bleu marine : identité ; orange : vigilance ; rouge : urgence et SOS uniquement ; vert : réussite.
 class AppColors {
-  // Vert (identité, navigation, actions principales)
-  static const Color vert950 = Color(0xFF00210F);
-  static const Color vert900 = Color(0xFF003A1B);
-  static const Color vert800 = Color(0xFF005527);
-  static const Color vert700 = Color(0xFF006E33);
-  static const Color vert600 = Color(0xFF00853F);
-  static const Color vert100 = Color(0xFFD3F0DF);
-  static const Color vert50 = Color(0xFFECF8F1);
+  static const Color marine950 = Jetons.marine950;
+  static const Color marine900 = Jetons.marine900;
+  static const Color marine800 = Jetons.marine800;
+  static const Color marine700 = Jetons.marine700;
+  static const Color marine600 = Jetons.marine600;
+  static const Color marine500 = Jetons.marine500;
+  static const Color marine100 = Jetons.marine100;
+  static const Color marine50 = Jetons.marine50;
 
-  // Jaune
-  static const Color jaune = Color(0xFFFDEF42);
-  static const Color jauneFonce = Color(0xFF8A6D00);
-  static const Color jauneClair = Color(0xFFFFF9D1);
+  static const Color orange = Jetons.orange;
+  static const Color orangeFonce = Jetons.orangeFonce;
+  static const Color orangeClair = Jetons.orangeClair;
 
-  // Rouge (SOS uniquement)
-  static const Color crimson = Color(0xFFE31B23);
-  static const Color crimsonDeep = Color(0xFFB5121A);
+  static const Color rouge = Jetons.rouge;
+  static const Color rougeFonce = Jetons.rougeFonce; // petit texte blanc sur rouge : contraste AA
 
   /// Mode sombre actif (piloté par state/apparence.dart ; l'application est reconstruite au changement).
   static bool sombre = false;
 
   // Surfaces et texte : dépendent du thème clair / sombre
-  static Color get background => sombre ? const Color(0xFF0B110E) : const Color(0xFFF8F7F1);
-  static Color get white => sombre ? const Color(0xFF141C18) : const Color(0xFFFFFFFF);
-  static Color get surfaceSubtle => sombre ? const Color(0xFF1C2620) : const Color(0xFFF1EFE6);
-  static Color get border => sombre ? const Color(0xFF2A362F) : const Color(0xFFE7E4D8);
-  static Color get textDark => sombre ? const Color(0xFFE8EEEA) : const Color(0xFF10231A);
-  static Color get textGrey => sombre ? const Color(0xFFA8B6AE) : const Color(0xFF53645B);
-  static Color get textMuted => sombre ? const Color(0xFF7D8B83) : const Color(0xFF8A978F);
+  static Color get background => sombre ? Jetons.douceSombre : Jetons.douceClair;
+  static Color get white => sombre ? Jetons.surfaceSombre : Jetons.surfaceClair;
+  static Color get surfaceSubtle => sombre ? Jetons.subtileSombre : Jetons.subtileClair;
+  static Color get border => sombre ? Jetons.bordSombre : Jetons.bordClair;
+  static Color get textDark => sombre ? Jetons.texteSombre : Jetons.texteClair;
+  static Color get textGrey => sombre ? Jetons.texteDouxSombre : Jetons.texteDouxClair;
+  static Color get textMuted => sombre ? Jetons.textePaleSombre : Jetons.textePaleClair;
 
   // États
-  static const Color success = Color(0xFF047857);
-  static const Color warning = Color(0xFFC2410C);
-  static const Color info = Color(0xFF1D4ED8);
+  static const Color success = Jetons.vertFonce;
+  static const Color warning = Jetons.orangeFonce;
+  static const Color info = Jetons.marine600;
 
   static const LinearGradient headerGradient = LinearGradient(
-    begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [vert950, vert800, vert700]);
+    begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [marine900, marine800, marine700]);
   static const LinearGradient sosGradient = LinearGradient(
-    begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFF2434A), crimson, crimsonDeep]);
+    begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [rouge, rougeFonce]);
 }

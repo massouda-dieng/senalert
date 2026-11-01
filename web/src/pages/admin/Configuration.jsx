@@ -5,6 +5,7 @@ import { useRessource } from '../../api/hooks';
 import { Bandeau, Bouton, Carte, Champ, Chargement, EnTetePage, EtatErreur, Fenetre, Pagination, Selecteur, useToast } from '../../components/ui';
 import { useConfig } from '../../lib/config';
 import { GRAVITES, dateHeure } from '../../lib/format';
+import { COULEURS } from '../../lib/couleurs';
 
 /* ---------------------------------------------------------- Services & catégories */
 
@@ -69,7 +70,7 @@ export function Referentiels() {
             ))}
           </ul>
         </Carte>
-        <Carte titre="Catégories d’incident" action={<Bouton taille="sm" icone={Plus} onClick={() => setEdition({ type: 'categorie', initial: { code: '', libelle: '', service_defaut: null, gravite_defaut: 'moyenne', couleur: '#475569', ordre: 50, actif: true } })}>Ajouter</Bouton>} corpsClassName="p-0">
+        <Carte titre="Catégories d’incident" action={<Bouton taille="sm" icone={Plus} onClick={() => setEdition({ type: 'categorie', initial: { code: '', libelle: '', service_defaut: null, gravite_defaut: 'moyenne', couleur: COULEURS.gris, ordre: 50, actif: true } })}>Ajouter</Bouton>} corpsClassName="p-0">
           <ul className="divide-y divide-surface-bord">
             {(categories.donnees || []).map((c) => (
               <li key={c.id} className="flex items-center justify-between gap-3 px-5 py-3">

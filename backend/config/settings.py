@@ -106,7 +106,8 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            # SQLITE_PATH : base séparée pour les tests de bout en bout, sans toucher à la base de travail.
+            'NAME': config('SQLITE_PATH', default=str(BASE_DIR / 'db.sqlite3')),
         }
     }
 
@@ -204,7 +205,8 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': "API REST de la plateforme SenAlert (signalement et suivi des urgences au Sénégal).",
     'VERSION': '3.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
-    'SERVE_PERMISSIONS': ['rest_framework.permissions.AllowAny'],
+    # Documentation ouverte en développement ; en production, réservée aux comptes staff.
+    'SERVE_PERMISSIONS': ['rest_framework.permissions.AllowAny' if DEBUG else 'rest_framework.permissions.IsAdminUser'],
     'COMPONENT_SPLIT_REQUEST': True,
     'ENUM_NAME_OVERRIDES': {
         'GraviteEnum': 'core.constants.GRAVITE_CHOICES',

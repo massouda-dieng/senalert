@@ -100,7 +100,7 @@ class _SosScreenState extends State<SosScreen> {
     return PopScope(
       canPop: _etape != _Etape.envoi,
       child: Scaffold(
-        backgroundColor: AppColors.vert900,
+        backgroundColor: AppColors.marine900,
         appBar: AppBar(backgroundColor: Colors.transparent, foregroundColor: Colors.white, title: Text(tr('Alerte SOS'), style: titre(19, couleur: Colors.white))),
         body: SafeArea(
           child: ListView(padding: const EdgeInsets.all(24), children: [
@@ -116,14 +116,14 @@ class _SosScreenState extends State<SosScreen> {
                   key: ValueKey(_reste),
                   builder: (_, v, __) => SizedBox.expand(child: CircularProgressIndicator(
                       value: v.clamp(0, 1), strokeWidth: 10, strokeCap: StrokeCap.round,
-                      color: const Color(0xFFFB7185), backgroundColor: Colors.white12)),
+                      color: Jetons.surSombreRouge, backgroundColor: Colors.white12)),
                 ),
                 Semantics(liveRegion: true, child: Text('$_reste', style: titre(88, couleur: Colors.white))),
               ]))),
               const SizedBox(height: 16),
               _infoPosition(),
               const SizedBox(height: 32),
-              FilledButton(style: FilledButton.styleFrom(backgroundColor: AppColors.crimson, minimumSize: const Size.fromHeight(60)),
+              FilledButton(style: FilledButton.styleFrom(backgroundColor: AppColors.rougeFonce, minimumSize: const Size.fromHeight(60)),
                   onPressed: _envoyer, child: Text(tr('Envoyer maintenant'))),
               const SizedBox(height: 12),
               OutlinedButton(style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38), minimumSize: const Size.fromHeight(56)),
@@ -135,7 +135,7 @@ class _SosScreenState extends State<SosScreen> {
               Text(tr('Transmission au serveur SenAlert…'), style: const TextStyle(color: Colors.white70)),
             ])),
             if (_etape == _Etape.succes && _dossier != null) ...[
-              const Icon(Icons.check_circle_rounded, color: Color(0xFF34D399), size: 72),
+              const Icon(Icons.check_circle_rounded, color: Jetons.surSombreVert, size: 72),
               const SizedBox(height: 12),
               Text(tr('Alerte enregistrée'), textAlign: TextAlign.center, style: titre(24, couleur: Colors.white)),
               const SizedBox(height: 6),
@@ -160,7 +160,7 @@ class _SosScreenState extends State<SosScreen> {
               FilledButton(onPressed: () => context.go('/dossier/sos/${_dossier!.id}'), child: Text(tr('Suivre le dossier'))),
             ],
             if (_etape == _Etape.echec) ...[
-              const Icon(Icons.error_rounded, color: Color(0xFFFB7185), size: 72),
+              const Icon(Icons.error_rounded, color: Jetons.surSombreRouge, size: 72),
               const SizedBox(height: 12),
               Text(tr('L’alerte n’a PAS été transmise'), textAlign: TextAlign.center, style: titre(22, couleur: Colors.white)),
               const SizedBox(height: 8),
@@ -170,7 +170,7 @@ class _SosScreenState extends State<SosScreen> {
               const SizedBox(height: 10),
               for (final n in numeros) Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: FilledButton.icon(style: FilledButton.styleFrom(backgroundColor: AppColors.crimson, minimumSize: const Size.fromHeight(58)),
+                child: FilledButton.icon(style: FilledButton.styleFrom(backgroundColor: AppColors.rougeFonce, minimumSize: const Size.fromHeight(58)),
                     onPressed: () => appeler(n.numero), icon: const Icon(Icons.call), label: Text('${n.service} · ${n.numero}')),
               ),
               OutlinedButton.icon(style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38)),
@@ -194,10 +194,10 @@ class _SosScreenState extends State<SosScreen> {
     }
     if (_position?.ok != true) {
       return Text('${tr(_position?.erreur ?? 'Position indisponible.')} ${tr('L’alerte sera envoyée sans position.')}',
-          textAlign: TextAlign.center, style: const TextStyle(color: Color(0xFFFCD34D)));
+          textAlign: TextAlign.center, style: const TextStyle(color: Jetons.surSombreOrange));
     }
     final p = _position!.precision ?? 0;
     return Text('${tr('Position obtenue · précision ± {m} m', {'m': p.round()})}${p > 100 ? ' (approximative)' : ''}',
-        textAlign: TextAlign.center, style: TextStyle(color: p > 100 ? const Color(0xFFFCD34D) : const Color(0xFF6EE7B7)));
+        textAlign: TextAlign.center, style: TextStyle(color: p > 100 ? Jetons.surSombreOrange : Jetons.surSombreVertPale));
   }
 }

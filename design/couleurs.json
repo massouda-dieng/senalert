@@ -1,0 +1,28 @@
+{
+  "_lisezmoi": "Source unique des couleurs SenAlert. Après modification : node scripts/appliquer_couleurs.mjs (met à jour Flutter, icônes SVG, manifeste). Le web lit ce fichier directement.",
+  "marque": {
+    "950": "#0A1C2E", "900": "#0D2338", "800": "#102A43", "700": "#163A5F", "600": "#1D4E89", "500": "#2F6DB5", "100": "#D9E6F5", "50": "#EEF4FB"
+  },
+  "sos": { "DEFAULT": "#E63946", "fonce": "#C81E2C", "sombre": "#A91824", "clair": "#FDE8EA" },
+  "or": { "DEFAULT": "#F59E0B", "vif": "#F59E0B", "fonce": "#92400E", "clair": "#FEF3C7" },
+  "alerte": { "DEFAULT": "#92400E", "vif": "#F59E0B", "clair": "#FEF3C7" },
+  "succes": { "DEFAULT": "#0E7C50", "fonce": "#0B6641", "vif": "#16A36A", "clair": "#DCF5EA" },
+  "neutre": { "gris": "#64748B", "grisClair": "#94A3B8", "grisFonce": "#334155" },
+  "surfaces": {
+    "clair": { "surface": "#FFFFFF", "douce": "#F1F5F9", "subtile": "#E9EEF4", "bord": "#E2E8F0", "texte": "#102A43", "texteDoux": "#334155", "textePale": "#5A6B80" },
+    "sombre": { "surface": "#111E2E", "douce": "#0A1522", "subtile": "#1A2A3D", "bord": "#24344A", "texte": "#E8EEF5", "texteDoux": "#A9B8CA", "textePale": "#7A8CA2" }
+  },
+  "statuts": {
+    "nouveau": { "DEFAULT": "#92400E", "fond": "#FEF3C7", "point": "#F59E0B" },
+    "affecte": { "DEFAULT": "#334155", "fond": "#E9EEF4", "point": "#64748B" },
+    "accepte": { "DEFAULT": "#1D4E89", "fond": "#EEF4FB", "point": "#2F6DB5" },
+    "en_cours": { "DEFAULT": "#102A43", "fond": "#D9E6F5", "point": "#1D4E89" },
+    "resolu": { "DEFAULT": "#0E7C50", "fond": "#DCF5EA", "point": "#16A36A" },
+    "refuse": { "DEFAULT": "#475569", "fond": "#F1F5F9", "point": "#64748B" },
+    "annule": { "DEFAULT": "#475569", "fond": "#F1F5F9", "point": "#94A3B8" }
+  },
+  "gravites": { "critique": "#E63946", "elevee": "#F59E0B", "moyenne": "#2F6DB5", "faible": "#94A3B8" },
+  "services": { "hopital": "#E63946", "clinique": "#F59E0B", "pharmacie": "#16A36A", "police": "#1D4E89", "pompiers": "#102A43" },
+  "surSombre": { "rouge": "#FB7185", "vert": "#34D399", "orange": "#FCD34D", "vertPale": "#6EE7B7" },
+  "graphiques": { "principal": "#2F6DB5", "sos": "#E63946", "succes": "#16A36A", "precedente": "#94A3B8" }
+}

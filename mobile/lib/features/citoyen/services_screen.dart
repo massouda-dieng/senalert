@@ -7,11 +7,11 @@ import '../../core/location.dart';
 import '../../ui/kit.dart';
 
 const _types = {
-  'hopital': ('Hôpitaux', Icons.local_hospital_rounded, Color(0xFFE11D48)),
-  'clinique': ('Cliniques', Icons.medical_services_rounded, Color(0xFFEA580C)),
-  'pharmacie': ('Pharmacies', Icons.local_pharmacy_rounded, Color(0xFF059669)),
-  'police': ('Police', Icons.local_police_rounded, Color(0xFF1D4ED8)),
-  'pompiers': ('Pompiers', Icons.fire_truck_rounded, Color(0xFFB45309)),
+  'hopital': ('Hôpitaux', Icons.local_hospital_rounded, Jetons.serviceHopital),
+  'clinique': ('Cliniques', Icons.medical_services_rounded, Jetons.serviceClinique),
+  'pharmacie': ('Pharmacies', Icons.local_pharmacy_rounded, Jetons.servicePharmacie),
+  'police': ('Police', Icons.local_police_rounded, Jetons.servicePolice),
+  'pompiers': ('Pompiers', Icons.fire_truck_rounded, Jetons.servicePompiers),
 };
 
 /// Établissements réels issus d'OpenStreetMap (via le backend). Aucune donnée inventée.
@@ -77,7 +77,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     style: TextStyle(fontSize: 12.5, color: AppColors.textGrey)),
               ])),
               if (s['telephone'] != null) IconButton(tooltip: 'Appeler', onPressed: () => appeler(s['telephone']), icon: const Icon(Icons.call_rounded, color: AppColors.success)),
-              IconButton(tooltip: 'Itinéraire', onPressed: () => itineraire(s['latitude'], s['longitude']), icon: const Icon(Icons.directions_rounded, color: AppColors.vert600)),
+              IconButton(tooltip: 'Itinéraire', onPressed: () => itineraire(s['latitude'], s['longitude']), icon: const Icon(Icons.directions_rounded, color: AppColors.marine600)),
             ])),
           ),
           Text('${_donnees!['source']} · données du ${dateHeure(lireDate(_donnees!['donnees_du']))}${_donnees!['donnees_anciennes'] == true ? ' (serveurs OpenStreetMap saturés : derniers résultats connus)' : ''}. ${_donnees!['avertissement']}',

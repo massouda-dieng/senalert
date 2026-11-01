@@ -8,18 +8,33 @@ Plateforme de prévention, de signalement et de suivi des urgences au Sénégal 
 |---|---|---|
 | `backend/` | Python 3.13, Django 6, Django REST Framework, JWT, PostgreSQL / SQLite | API commune |
 | `web/` | React 18, Vite, Tailwind CSS, Leaflet, Recharts | citoyens, agents, **superadministrateurs** |
-| `mobile/` | Flutter 3.24 | **citoyens** et **agents de secours** |
+| `mobile/` | Flutter 3.24 ou plus récent | **citoyens** et **agents de secours** |
+
+## Démarrage rapide (Windows)
+
+Première installation (dans `backend\`), une seule fois : `venv\Scripts\python -m pip install -r requirements.txt`
+
+**Serveur** (terminal 1) :
+```bat
+cd backend
+py manage.py runserver
+```
+**Application mobile** (terminal 2) :
+```bat
+cd mobile
+flutter run -d chrome
+```
 
 ## Démarrage rapide (macOS)
 
 **Serveur** (terminal 1) — aucune activation d'environnement nécessaire :
 ```bash
-cd ~/Documents/PFF/senalert/backend
+cd senalert/backend
 python manage.py runserver          # → http://127.0.0.1:8000/app/
 ```
 **Application mobile** (terminal 2) :
 ```bash
-cd ~/Documents/PFF/senalert/mobile
+cd senalert/mobile
 flutter run                         # s'ouvre dans Chrome
 ```
 **Simulateur mobile** (téléphone iPhone / Android affiché dans le navigateur) : `./run.sh simulateur` une fois, puis http://127.0.0.1:8000/app/simulateur (serveur lancé).
@@ -29,7 +44,7 @@ flutter run                         # s'ouvre dans Chrome
 Autre méthode, tout-en-un :
 
 ```bash
-cd ~/Documents/PFF/senalert
+cd senalert
 ./run.sh backend                 # installe, migre, compile le web si besoin, lance http://127.0.0.1:8000/app/
 ```
 Dans un autre terminal (une seule fois) :
@@ -42,9 +57,13 @@ Application mobile dans Chrome : `./run.sh mobile` · tests : `./run.sh tests`.
 
 Détails : [docs/EXPLOITATION.md](docs/EXPLOITATION.md).
 
+## Couleurs
+
+Toutes les couleurs sont dans [design/couleurs.json](design/couleurs.json), partagé par le web et Flutter. Après une modification : `node scripts/appliquer_couleurs.mjs`.
+
 ## Fonctionnalités
 
-* **Vitrine publique** illustrée de photos réelles sous licence libre (crédits affichés), aux couleurs du Sénégal, avec les chiffres réels de la plateforme.
+* **Vitrine publique** illustrée de photos réelles sous licence libre (crédits affichés), avec les chiffres réels de la plateforme.
 * **Alertes de zone**, **communauté « Autour de moi »** et **carte avancée** (satellite, carte de chaleur, zones à risque, recherche d'adresse) pour tous les rôles.
 
 * **Citoyen** : SOS géolocalisé (5 s pour annuler, précision GPS, confirmation réelle), signalement en 4 étapes avec photos et brouillon, suivi des dossiers et historique, carte des incidents, services de proximité (OpenStreetMap), fiches de premiers secours hors ligne, assistant IA avec mode secours, notifications, profil et confidentialité, connexion Google.
@@ -64,4 +83,4 @@ Détails : [docs/EXPLOITATION.md](docs/EXPLOITATION.md).
 | [docs/GUIDE_UTILISATEUR.md](docs/GUIDE_UTILISATEUR.md) | Guide par rôle |
 | [docs/EXPLOITATION.md](docs/EXPLOITATION.md) | Démarrage, tests et résultats, sauvegarde/restauration |
 | [docs/BILAN.md](docs/BILAN.md) | Conservé / ajouté / corrigé / fusionné / supprimé, limites, suites |
-| [docs/DEMO_SOUTENANCE.md](docs/DEMO_SOUTENANCE.md) | Script de démonstration |
+| [docs/DEMO_SOUTENANCE.md](docs/DEMO_SOUTENANCE.md) | Guide de soutenance : lancement, accès, comptes, scénario |

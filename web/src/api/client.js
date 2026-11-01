@@ -1,14 +1,21 @@
 /**
  * Client HTTP de SenAlert.
- *  - jeton d'accès en mémoire, jeton de rafraîchissement en sessionStorage (fermé avec l'onglet) ;
+ *  - jetons en sessionStorage (effacés à la fermeture de l'onglet). Le jeton d'accès y figure aussi :
+ *    sans lui, chaque rechargement ferait tourner le jeton de rafraîchissement, et un rechargement
+ *    interrompu perdrait la réponse, donc la session ;
  *  - renouvellement automatique sur 401 puis une seule nouvelle tentative ;
  *  - erreurs normalisées { status, detail, champs } en français ;
  *  - nouvelle tentative automatique uniquement pour les lectures (GET) en cas de coupure réseau.
  */
 const BASE = '/api';
 const CLE_REFRESH = 'senalert.refresh';
+const CLE_ACCES = 'senalert.access';
 
-let accessToken = null;
+function lireAcces() {
+  try { return sessionStorage.getItem(CLE_ACCES); } catch { return null; }
+}
+
+let accessToken = lireAcces();
 let refreshEnCours = null;
 const ecouteurs = new Set();
 
@@ -30,12 +37,13 @@ export function enregistrerJetons({ access, refresh }) {
   accessToken = access || null;
   try {
     if (refresh) sessionStorage.setItem(CLE_REFRESH, refresh);
+    if (access) sessionStorage.setItem(CLE_ACCES, access);
   } catch { /* stockage indisponible : la session ne survivra pas au rechargement */ }
 }
 
 export function effacerJetons() {
   accessToken = null;
-  try { sessionStorage.removeItem(CLE_REFRESH); } catch { /* rien */ }
+  try { sessionStorage.removeItem(CLE_REFRESH); sessionStorage.removeItem(CLE_ACCES); } catch { /* rien */ }
 }
 
 export const aUneSession = () => Boolean(accessToken || lireRefresh());

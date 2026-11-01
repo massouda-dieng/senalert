@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/constants/app_colors.dart';
 
 import 'credits_photos.dart';
 
@@ -13,7 +14,7 @@ class PhotoIllustration extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Stack(fit: StackFit.expand, children: [
         Image.asset('assets/images/photos/$nom.jpg', fit: BoxFit.cover, alignment: alignement, excludeFromSemantics: true,
-            errorBuilder: (_, __, ___) => const ColoredBox(color: Color(0xFF005527))),
+            errorBuilder: (_, __, ___) => const ColoredBox(color: Jetons.marine800)),
         if (superposition != null) superposition!,
         if (credit && creditsPhotos[nom] != null)
           Positioned(

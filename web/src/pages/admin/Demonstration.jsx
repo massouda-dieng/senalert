@@ -7,6 +7,7 @@ import CarteSenAlert from '../../components/Carte';
 import { Chronologie } from '../../components/DossierDetail';
 import Photo from '../../components/Photo';
 import { BadgeStatut, Bandeau, Bouton, Carte, Chargement, EtatErreur } from '../../components/ui';
+import { COULEURS } from '../../lib/couleurs';
 
 const DELAI_AUTO = 7000;
 
@@ -47,8 +48,8 @@ export default function Demonstration() {
   const recommencer = () => { setFaite(0); setIds({}); setDossiers({ sos: null, incident: null }); setEvenements([]); setErreur(null); setAuto(false); };
 
   const points = useMemo(() => [
-    dossiers.sos && { id: 's', lat: dossiers.sos.latitude, lng: dossiers.sos.longitude, couleur: '#E31B23', sos: true, taille: 22 },
-    dossiers.incident && { id: 'i', lat: dossiers.incident.latitude, lng: dossiers.incident.longitude, couleur: '#DC2626', taille: 18 },
+    dossiers.sos && { id: 's', lat: dossiers.sos.latitude, lng: dossiers.sos.longitude, couleur: COULEURS.sos, sos: true, taille: 22 },
+    dossiers.incident && { id: 'i', lat: dossiers.incident.latitude, lng: dossiers.incident.longitude, couleur: COULEURS.sos, taille: 18 },
     dossiers.incident?.intervention?.position_agent && {
       id: 'agent', lat: dossiers.incident.intervention.position_agent.lat, lng: dossiers.incident.intervention.position_agent.lng, agent: true, titre: 'Agent de secours',
     },
@@ -63,10 +64,10 @@ export default function Demonstration() {
     <>
       <div className="relative mb-6 overflow-hidden rounded-3xl text-white">
         <Photo nom="ambulance-pompiers" className="absolute inset-0 h-full w-full" alt="" credit={false} />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/10" aria-hidden />
+        <div className="absolute inset-0 bg-gradient-to-r from-marque-950/95 via-marque-800/80 to-marque-600/30" aria-hidden />
         <div className="relative flex flex-wrap items-end justify-between gap-4 px-6 py-8 sm:px-8">
           <div>
-            <p className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-or"><Presentation className="h-4 w-4" /> Soutenance</p>
+            <p className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-marque-100"><Presentation className="h-4 w-4" /> Soutenance</p>
             <h1 className="font-titre text-3xl font-extrabold">Démonstration guidée</h1>
             <p className="mt-1 max-w-xl text-white/80">Un parcours complet, du SOS à la résolution, joué en direct avec les comptes de test. Les alertes en temps réel s’affichent comme en conditions réelles.</p>
           </div>
@@ -117,7 +118,7 @@ export default function Demonstration() {
           <div className="grid gap-5 lg:grid-cols-2">
             <div className="space-y-2">
               <CarteSenAlert points={points} hauteur={380} zoom={14} centre={[14.6795, -17.4410]} regrouper={false} />
-              {position && <p className="text-sm font-semibold text-blue-700">Agent à {position.distance_m} m du lieu (vu par la citoyenne)</p>}
+              {position && <p className="text-sm font-semibold text-marque-700">Agent à {position.distance_m} m du lieu (vu par la citoyenne)</p>}
               {note != null && <p className="flex items-center gap-1 text-sm font-semibold">Note de la citoyenne : <span className="text-or-vif" aria-label={`${note} sur 5`}>{'★'.repeat(note)}</span><span className="text-texte-pale" aria-hidden>{'★'.repeat(5 - note)}</span></p>}
             </div>
             <Carte titre="Historique du signalement" corpsClassName="max-h-[380px] overflow-y-auto p-5">

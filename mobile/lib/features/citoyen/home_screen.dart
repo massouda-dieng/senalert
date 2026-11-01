@@ -50,10 +50,10 @@ class _AccueilCitoyenState extends State<AccueilCitoyen> {
     final u = context.watch<Session>().utilisateur!;
     final config = context.watch<Configuration>();
     final actions = [
-      (tr('Signaler'), tr('Accident, incendie…'), Icons.report_rounded, AppColors.jauneFonce, '/signaler'),
-      (tr('Premiers secours'), tr('Fiches hors ligne'), Icons.healing_rounded, AppColors.crimson, '/secours'),
-      (tr('Services proches'), tr('Hôpitaux, pharmacies…'), Icons.local_hospital_rounded, const Color(0xFF047857), '/services'),
-      (tr('Assistant'), tr('Questions, prévention'), Icons.smart_toy_rounded, const Color(0xFF6D28D9), '/assistant'),
+      (tr('Signaler'), tr('Accident, incendie…'), Icons.report_rounded, AppColors.marine800, '/signaler'),
+      (tr('Premiers secours'), tr('Fiches hors ligne'), Icons.healing_rounded, AppColors.marine600, '/secours'),
+      (tr('Services proches'), tr('Hôpitaux, pharmacies…'), Icons.local_hospital_rounded, AppColors.marine600, '/services'),
+      (tr('Assistant'), tr('Questions, prévention'), Icons.smart_toy_rounded, AppColors.marine600, '/assistant'),
     ];
     return Scaffold(
       body: RefreshIndicator(
@@ -65,14 +65,14 @@ class _AccueilCitoyenState extends State<AccueilCitoyen> {
               child: Stack(children: [
                 const Positioned.fill(child: PhotoIllustration('dakar-vue', credit: false)),
                 const Positioned.fill(child: DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(
-                    begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xD9000000), Color(0x99000000), Color(0x33000000)])))),
+                    begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Jetons.voileFort, Jetons.voileMoyen, Jetons.voileLeger])))),
                 Padding(
                   padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 16, 20, 28),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(children: [
                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text(tr('Bonjour {nom}', {'nom': u.prenom}).trim(), style: titre(24, couleur: Colors.white)),
-                        Text(tr('Besoin d’aide immédiate ?'), style: const TextStyle(color: AppColors.jaune, fontWeight: FontWeight.w600)),
+                        Text(tr('Besoin d’aide immédiate ?'), style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600)),
                       ])),
                       const ClocheNotifications(),
                     ]),
@@ -87,7 +87,7 @@ class _AccueilCitoyenState extends State<AccueilCitoyen> {
                             width: 168, height: 168,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle, gradient: AppColors.sosGradient,
-                              boxShadow: [BoxShadow(color: AppColors.crimson.withOpacity(0.5), blurRadius: 36, spreadRadius: 4)],
+                              boxShadow: [BoxShadow(color: AppColors.rouge.withOpacity(0.5), blurRadius: 36, spreadRadius: 4)],
                               border: Border.all(color: Colors.white30, width: 8),
                             ),
                             child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [

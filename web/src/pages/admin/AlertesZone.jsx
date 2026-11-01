@@ -7,7 +7,7 @@ import { useConfig } from '../../lib/config';
 import { dateHeure } from '../../lib/format';
 
 const NIVEAUX = [{ code: 'info', libelle: 'Information' }, { code: 'vigilance', libelle: 'Vigilance' }, { code: 'danger', libelle: 'Danger' }];
-const STYLE = { danger: 'bg-sos text-white', vigilance: 'bg-or text-texte', info: 'bg-marque-700 text-white' };
+const STYLE = { danger: 'bg-sos-fonce text-white', vigilance: 'bg-or text-texte', info: 'bg-marque-700 text-white' };
 
 function Formulaire({ onFermer, onFait }) {
   const config = useConfig();

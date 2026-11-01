@@ -48,7 +48,8 @@ class _AccueilAgentState extends State<AccueilAgent> {
       final n = await Future.wait([_nombreNouveaux('/alertes/sos/'), _nombreNouveaux('/incidents/')]);
       final a = await Api.instance.get<Map<String, dynamic>>('/tableau-de-bord/activite-agent/');
       setState(() {
-        _miens = [...r[0], ...r[1]];
+        // Les missions les plus urgentes d'abord
+        _miens = [...r[0], ...r[1]]..sort((a, b) => rangGravite(a.gravite).compareTo(rangGravite(b.gravite)));
         _nouveaux = n[0] + n[1];
         _activite = a;
         _erreur = null;
@@ -78,12 +79,12 @@ class _AccueilAgentState extends State<AccueilAgent> {
                 SizedBox(
                   height: 170 + MediaQuery.of(context).padding.top,
                   child: PhotoIllustration('pompiers-bnsp', credit: false, superposition: DecoratedBox(
-                    decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xD9000000), Color(0x40000000)])),
+                    decoration: const BoxDecoration(gradient: LinearGradient(colors: [Jetons.voileFort, Jetons.voileLeger])),
                     child: SafeArea(child: Stack(children: [
                       const Positioned(top: 4, right: 4, child: ClocheNotifications()),
                       Positioned.fill(child: Padding(padding: const EdgeInsets.all(20), child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.end, children: [
-                        const Text('ESPACE AGENT', style: TextStyle(color: AppColors.jaune, fontWeight: FontWeight.w700, letterSpacing: 1.5, fontSize: 12)),
+                        const Text('ESPACE AGENT', style: TextStyle(color: AppColors.marine100, fontWeight: FontWeight.w700, letterSpacing: 1.5, fontSize: 12)),
                         Text('Bonjour ${u.prenom}'.trim(), style: titre(26, couleur: Colors.white)),
                         Text('${u.serviceNom ?? 'Service non défini'} · ${zones.isEmpty ? 'aucune zone' : zones}', style: const TextStyle(color: Colors.white70)),
                       ]))),
@@ -97,11 +98,13 @@ class _AccueilAgentState extends State<AccueilAgent> {
                 if (_erreur != null) Padding(padding: const EdgeInsets.only(top: 10), child: Bandeau.erreur(_erreur!.message)),
                 const SizedBox(height: 14),
                 Row(children: [
-                  kpi('Nouvelles', '$_nouveaux', Icons.notification_important_rounded, AppColors.crimson, onTap: () => context.go('/interventions')),
+                  kpi('Nouvelles', '$_nouveaux', Icons.notification_important_rounded, AppColors.rouge, onTap: () => context.go('/interventions')),
                   const SizedBox(width: 10),
-                  kpi('En cours', '${_miens.length}', Icons.assignment_outlined, AppColors.warning),
+                  kpi('À accepter', '${_miens.where((d) => d.statut == 'affecte').length}', Icons.hourglass_top_rounded, AppColors.warning, onTap: () => context.go('/interventions')),
                   const SizedBox(width: 10),
-                  kpi('Résolues 7 j', '${_activite?['resolus_7j'] ?? 0}', Icons.check_circle_rounded, AppColors.success),
+                  kpi('En cours', '${_miens.where((d) => d.statut == 'accepte' || d.statut == 'en_cours').length}', Icons.assignment_outlined, AppColors.marine600),
+                  const SizedBox(width: 10),
+                  kpi('Finies 7 j', '${_activite?['resolus_7j'] ?? 0}', Icons.check_circle_rounded, AppColors.success),
                 ]),
                 Padding(padding: const EdgeInsets.only(top: 20, bottom: 8), child: Row(children: [
                   Expanded(child: Text('Mes interventions en cours', style: titre(17))),

@@ -5,13 +5,14 @@ import CarteSenAlert, { Legende, echapper } from '../../components/Carte';
 import { Bandeau, Bouton, Carte, EnTetePage, EtatVide, Selecteur } from '../../components/ui';
 import { dateHeure, distance } from '../../lib/format';
 import { lirePosition } from './Accueil';
+import { COULEURS } from '../../lib/couleurs';
 
 const TYPES = {
-  hopital: { libelle: 'Hôpitaux', couleur: '#E31B23' },
-  clinique: { libelle: 'Cliniques', couleur: '#F97316' },
-  pharmacie: { libelle: 'Pharmacies', couleur: '#059669' },
-  police: { libelle: 'Police / gendarmerie', couleur: '#1D4ED8' },
-  pompiers: { libelle: 'Sapeurs-pompiers', couleur: '#B45309' },
+  hopital: { libelle: 'Hôpitaux', couleur: COULEURS.services.hopital },
+  clinique: { libelle: 'Cliniques', couleur: COULEURS.services.clinique },
+  pharmacie: { libelle: 'Pharmacies', couleur: COULEURS.services.pharmacie },
+  police: { libelle: 'Police / gendarmerie', couleur: COULEURS.services.police },
+  pompiers: { libelle: 'Sapeurs-pompiers', couleur: COULEURS.services.pompiers },
 };
 
 export default function Services() {
@@ -37,7 +38,7 @@ export default function Services() {
     chercher(p);
   };
   const points = useMemo(() => [
-    ...(position ? [{ id: 'moi', lat: position.lat, lng: position.lng, couleur: '#006E33', titre: 'Ma position', popup: 'Ma position' }] : []),
+    ...(position ? [{ id: 'moi', lat: position.lat, lng: position.lng, couleur: COULEURS.marine, titre: 'Ma position', popup: 'Ma position' }] : []),
     ...(donnees?.resultats || []).map((s) => ({ id: s.id, lat: s.latitude, lng: s.longitude, couleur: TYPES[s.type].couleur, titre: s.nom,
       popup: `<b>${echapper(s.nom || 'Sans nom')}</b><br/>${echapper(TYPES[s.type].libelle)} · ${echapper(distance(s.distance_m))}` })),
   ], [position, donnees]);

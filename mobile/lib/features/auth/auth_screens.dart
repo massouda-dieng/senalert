@@ -20,16 +20,24 @@ class _Cadre extends StatelessWidget {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 440),
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                Row(children: [
-                  Image.asset('assets/images/senalert_icone.png', width: 40, height: 40, errorBuilder: (_, __, ___) => const Icon(Icons.shield, size: 40)),
-                  const SizedBox(width: 10),
-                  Text('SenAlert', style: titre(22)),
-                ]),
-                const SizedBox(height: 28),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(gradient: AppColors.headerGradient, borderRadius: BorderRadius.circular(22)),
+                  child: Row(children: [
+                    ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.asset('assets/images/senalert_icone.png', width: 44, height: 44,
+                        errorBuilder: (_, __, ___) => const Icon(Icons.shield, size: 44, color: Colors.white))),
+                    const SizedBox(width: 12),
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('SenAlert', style: titre(21, couleur: Colors.white)),
+                      const Text('Ensemble, protégeons des vies', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white, fontSize: 13)),
+                    ])),
+                  ]),
+                ),
+                const SizedBox(height: 26),
                 Text(titreEcran, style: titre(26)),
                 if (sousTitre != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(sousTitre!, style: TextStyle(color: AppColors.textGrey))),
                 const SizedBox(height: 24),
@@ -376,7 +384,7 @@ class _DemandeAgentScreenState extends State<DemandeAgentScreen> {
                 onSelected: (v) => setState(() => v ? _zones.add(r.code) : _zones.remove(r.code))),
         ]),
         if (_erreur?.erreurChamp('zones') != null)
-          Padding(padding: const EdgeInsets.only(top: 4), child: Text(_erreur!.erreurChamp('zones')!, style: const TextStyle(color: Colors.red, fontSize: 12))),
+          Padding(padding: const EdgeInsets.only(top: 4), child: Text(_erreur!.erreurChamp('zones')!, style: const TextStyle(color: Jetons.rougeFonce, fontSize: 12))),
         const SizedBox(height: 14),
         _champ('message', 'Message au superviseur (facultatif)', lignes: 2),
         _champ('mot_de_passe', 'Mot de passe', secret: true, aide: 'Choisi par vous, stocké chiffré : le superviseur ne le voit jamais.'),

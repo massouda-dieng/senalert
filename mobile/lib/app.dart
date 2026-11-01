@@ -100,18 +100,35 @@ class _Coquille extends StatelessWidget {
   }
 }
 
+/// Écran de démarrage : logo et slogan apparaissent en douceur pendant l'ouverture de la session.
 class _Demarrage extends StatelessWidget {
   const _Demarrage();
   @override
   Widget build(BuildContext context) => Scaffold(
-        backgroundColor: AppColors.vert800,
-        body: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Image.asset('assets/images/senalert_icone.png', width: 88, height: 88, errorBuilder: (_, __, ___) => const Icon(Icons.shield, size: 88, color: Colors.white)),
-          const SizedBox(height: 16),
-          Text('SenAlert', style: titre(30, couleur: Colors.white)),
-          const SizedBox(height: 24),
-          const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white70)),
-        ])),
+        body: DecoratedBox(
+          decoration: const BoxDecoration(gradient: AppColors.headerGradient),
+          child: SizedBox.expand(
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: 1),
+              duration: const Duration(milliseconds: 650),
+              curve: Curves.easeOutCubic,
+              builder: (_, v, enfant) => Opacity(opacity: v, child: Transform.translate(offset: Offset(0, 16 * (1 - v)), child: enfant)),
+              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(26),
+                  child: Image.asset('assets/images/senalert_icone.png', width: 104, height: 104,
+                      errorBuilder: (_, __, ___) => const Icon(Icons.shield, size: 104, color: Colors.white)),
+                ),
+                const SizedBox(height: 20),
+                Text('SenAlert', style: titre(34, couleur: Colors.white)),
+                const SizedBox(height: 6),
+                const Text('Ensemble, protégeons des vies', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
+                const SizedBox(height: 36),
+                const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white70)),
+              ]),
+            ),
+          ),
+        ),
       );
 }
 

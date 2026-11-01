@@ -17,8 +17,8 @@ const _fonds = {
   'satellite': ('Satellite', 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', 'Imagerie © Esri, Maxar'),
 };
 
-const _couleursNiveau = {'critique': AppColors.crimson, 'eleve': Color(0xFFEA580C), 'moyen': Color(0xFFD97706)};
-const _couleursAlerte = {'danger': AppColors.crimson, 'vigilance': Color(0xFFF5D90A), 'info': AppColors.vert700};
+const _couleursNiveau = {'critique': AppColors.rouge, 'eleve': Jetons.orange, 'moyen': Jetons.marine500};
+const _couleursAlerte = {'danger': AppColors.rouge, 'vigilance': Jetons.orange, 'info': AppColors.marine700};
 /// Cadre de la carte nationale : le Sénégal et ses frontières.
 final _bornes = LatLngBounds(const LatLng(9, -22), const LatLng(20, -7));
 
@@ -168,7 +168,7 @@ class _CarteScreenState extends State<CarteScreen> {
           _point(_ll(d), statut(d['statut']).couleur, taille: 26, label: d['reference'], onTap: () => context.push('/dossier/incident/${d['id']}')),
       if (widget.agent && _couches['sos']!)
         for (final d in _sos.where((d) => d['latitude'] != null))
-          _point(_ll(d), AppColors.crimson, taille: 30, label: 'SOS ${d['reference']}', onTap: () => context.push('/dossier/sos/${d['id']}')),
+          _point(_ll(d), AppColors.rouge, taille: 30, label: 'SOS ${d['reference']}', onTap: () => context.push('/dossier/sos/${d['id']}')),
       if (_moi != null) Marker(point: _moi!, width: 24, height: 24, child: Container(decoration: BoxDecoration(
           shape: BoxShape.circle, color: AppColors.info, border: Border.all(color: Colors.white, width: 3)))),
     ];
@@ -182,7 +182,7 @@ class _CarteScreenState extends State<CarteScreen> {
           for (final code in (a['regions'] as List).isEmpty ? config.regions.map((r) => r.code) : List<String>.from(a['regions']))
             if (config.region(code) != null)
               CircleMarker(point: LatLng(config.region(code)!.lat, config.region(code)!.lng), radius: 40000, useRadiusInMeter: true,
-                  color: (_couleursAlerte[a['niveau']] ?? AppColors.vert700).withOpacity(0.08), borderColor: _couleursAlerte[a['niveau']] ?? AppColors.vert700, borderStrokeWidth: 3),
+                  color: (_couleursAlerte[a['niveau']] ?? AppColors.marine700).withOpacity(0.08), borderColor: _couleursAlerte[a['niveau']] ?? AppColors.marine700, borderStrokeWidth: 3),
     ];
     return Scaffold(
       appBar: AppBar(title: Text(widget.agent ? 'Carte opérationnelle' : 'Carte interactive'), actions: [
@@ -205,7 +205,7 @@ class _CarteScreenState extends State<CarteScreen> {
         if (_chargement) const LinearProgressIndicator(),
         if (_erreur != null) Positioned(left: 12, right: 12, top: 12, child: Bandeau.erreur(_erreur!.message)),
         if (_alertes.isNotEmpty && _couches['alertes']!) Positioned(left: 12, right: 12, top: _erreur != null ? 90 : 12, child: Material(
-          color: AppColors.jaune, borderRadius: BorderRadius.circular(14),
+          color: AppColors.orange, borderRadius: BorderRadius.circular(14),
           child: Padding(padding: const EdgeInsets.all(10), child: Row(children: [
             const Icon(Icons.campaign_rounded),
             const SizedBox(width: 8),
@@ -219,7 +219,7 @@ class _CarteScreenState extends State<CarteScreen> {
         )),
       ]),
       floatingActionButton: FloatingActionButton(
-        heroTag: 'localiser', tooltip: 'Me localiser', backgroundColor: AppColors.white, foregroundColor: AppColors.vert700,
+        heroTag: 'localiser', tooltip: 'Me localiser', backgroundColor: AppColors.white, foregroundColor: AppColors.marine700,
         onPressed: _localiser, child: const Icon(Icons.my_location),
       ),
     );

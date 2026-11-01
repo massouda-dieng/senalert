@@ -19,6 +19,7 @@ from alerts.serializers import AlerteSOSSerializer
 from core.audit import journaliser
 from core.exceptions import Conflit
 from core.models import Categorie
+from core.params import entier
 from core.permissions import EstSuperAdmin
 from incidents import workflow
 from incidents.models import Incident
@@ -61,9 +62,11 @@ class DemoView(APIView):
         if not settings.DEMO_GUIDEE:
             raise PermissionDenied('La démonstration guidée est désactivée sur ce serveur.')
         citoyen, agent = self._comptes()
-        etape = int(request.data.get('etape', 0))
-        sos = AlerteSOS.objects.filter(pk=request.data.get('sos')).first() if request.data.get('sos') else None
-        inc = Incident.objects.filter(pk=request.data.get('incident')).first() if request.data.get('incident') else None
+        etape = entier(request.data.get('etape'), 0, 0, 99, 'etape')
+        sos_id = entier(request.data.get('sos'), None, 1, 2 ** 62, 'sos')
+        incident_id = entier(request.data.get('incident'), None, 1, 2 ** 62, 'incident')
+        sos = AlerteSOS.objects.filter(pk=sos_id).first() if sos_id else None
+        inc = Incident.objects.filter(pk=incident_id).first() if incident_id else None
         if etape not in ETAPES:
             raise Conflit('Étape inconnue.')
         if etape >= 3 and inc is None or etape >= 4 and sos is None:

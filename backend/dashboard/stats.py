@@ -31,6 +31,11 @@ DEFINITIONS = {
     'satisfaction': "Moyenne des notes (1 à 5) données par les citoyens après résolution ; taux de réponse = évalués ÷ résolus.",
     'citoyens': "Comptes citoyens actifs (indépendant de la période).",
     'agents': "Comptes agents actifs (indépendant de la période).",
+    'total_signalements': "Incidents et alertes SOS reçus pendant la période.",
+    'a_traiter': "Dossiers de la période non encore acceptés : nouveaux + affectés en attente d'acceptation.",
+    'agents_en_intervention': "Agents ayant au moins un dossier accepté ou en cours, à cet instant.",
+    'comparaison': "Mêmes indicateurs sur la période précédente de même durée.",
+    'interventions': "Dossiers pris en charge et dossiers clôturés « résolu », datés du jour de l'événement.",
 }
 
 
@@ -51,8 +56,8 @@ def periode(params):
     return debut, fin
 
 
-def filtrer(qs, params, debut, fin, est_incident):
-    qs = qs.filter(date_creation__date__gte=debut, date_creation__date__lte=fin)
+def filtrer(qs, params, debut, fin, est_incident, champ='date_creation'):
+    qs = qs.filter(**{f'{champ}__date__gte': debut, f'{champ}__date__lte': fin})
     if params.get('region'):
         qs = qs.filter(region=params['region'])
     if params.get('service'):
@@ -76,6 +81,7 @@ def compteurs(qs, delai_retard):
         resolus=Count('id', filter=Q(statut=RESOLU)),
         rejetes_annules=Count('id', filter=Q(statut__in=[REFUSE, ANNULE])),
         en_retard=Count('id', filter=Q(statut__in=[NOUVEAU, AFFECTE], date_creation__lt=limite)),
+        nb_pris_en_charge=Count('id', filter=Q(date_prise_en_charge__isnull=False)),
         delai_pec=Avg(ExpressionWrapper(F('date_prise_en_charge') - F('date_creation'), output_field=DurationField()),
                       filter=Q(date_prise_en_charge__isnull=False)),
         delai_res=Avg(ExpressionWrapper(F('date_cloture') - F('date_creation'), output_field=DurationField()),
@@ -96,10 +102,10 @@ def debut_periode(jour, granularite):
     return jour
 
 
-def serie(qs, granularite, debut, fin):
+def serie(qs, granularite, debut, fin, champ='date_creation'):
     """Nombre de dossiers par période, AVEC les périodes vides (0) pour ne pas fausser la courbe."""
     trunc = {'jour': TruncDate, 'semaine': TruncWeek, 'mois': TruncMonth}[granularite]
-    lignes = qs.annotate(p=trunc('date_creation')).values('p').annotate(n=Count('id')).order_by('p')
+    lignes = qs.annotate(p=trunc(champ)).values('p').annotate(n=Count('id')).order_by('p')
     valeurs = {(l['p'].date() if hasattr(l['p'], 'date') else l['p']): l['n'] for l in lignes if l['p']}
     resultat, courant = {}, debut_periode(debut, granularite)
     while courant <= fin:
@@ -152,6 +158,50 @@ def satisfaction(incidents, sos):
     }
 
 
+def delai_global(ci, cs):
+    """Délai moyen de prise en charge, incidents et SOS confondus (moyenne pondérée par le nombre de dossiers)."""
+    n = ci['nb_pris_en_charge'] + cs['nb_pris_en_charge']
+    if not n:
+        return None
+    somme = sum((c['delai_moyen_prise_en_charge_min'] or 0) * c['nb_pris_en_charge'] for c in (ci, cs))
+    return round(somme / n, 1)
+
+
+def additionner(a, b):
+    """Addition jour par jour de deux séries de mêmes clés."""
+    return {k: a.get(k, 0) + b.get(k, 0) for k in sorted({*a, *b})}
+
+
+def interventions(params, granularite, debut, fin):
+    """Prises en charge et clôtures, comptées le jour où elles ont eu lieu (pas le jour du signalement)."""
+    def evenements(champ, **filtre):
+        qi = filtrer(Incident.objects.filter(**filtre), params, debut, fin, True, champ)
+        qs = filtrer(AlerteSOS.objects.filter(**filtre), params, debut, fin, False, champ)
+        return additionner(serie(qi, granularite, debut, fin, champ), serie(qs, granularite, debut, fin, champ))
+
+    return {'prises_en_charge': evenements('date_prise_en_charge'), 'resolues': evenements('date_cloture', statut=RESOLU)}
+
+
+def comparaison(params, granularite, debut, fin, delais):
+    """Période précédente de même durée, avec une courbe alignée rang par rang sur la période courante."""
+    p_fin = debut - timedelta(days=1)
+    p_debut = p_fin - (fin - debut)
+    incidents = filtrer(Incident.objects.all(), params, p_debut, p_fin, True)
+    sos = filtrer(AlerteSOS.objects.all(), params, p_debut, p_fin, False)
+    ci = compteurs(incidents, delais.get('incident', 60))
+    cs = compteurs(sos, delais.get('sos', 10))
+    courbe = additionner(serie(incidents, granularite, p_debut, p_fin), serie(sos, granularite, p_debut, p_fin))
+    return {
+        'periode': {'debut': p_debut, 'fin': p_fin},
+        'total_signalements': ci['total'] + cs['total'],
+        'total_incidents': ci['total'],
+        'total_sos': cs['total'],
+        'resolus': ci['resolus'] + cs['resolus'],
+        'delai_moyen_prise_en_charge_min': delai_global(ci, cs),
+        'evolution': list(courbe.values()),
+    }
+
+
 def statistiques(params):
     debut, fin = periode(params)
     granularite = params.get('granularite', 'jour')
@@ -186,6 +236,13 @@ def statistiques(params):
                             if total - ci['rejetes_annules'] - cs['rejetes_annules'] else None),
         'citoyens': User.objects.filter(role=ROLE_CITOYEN, is_active=True).count(),
         'agents': User.objects.filter(role=ROLE_AGENT, is_active=True).count(),
+        'total_signalements': total,
+        'a_traiter': ci['nouveaux'] + cs['nouveaux'] + ci['en_attente'] + cs['en_attente'],
+        'delai_moyen_prise_en_charge_min': delai_global(ci, cs),
+        'agents_en_intervention': (Intervention.objects
+                                   .filter(Q(incident__statut__in=[ACCEPTE, EN_COURS]) | Q(alerte__statut__in=[ACCEPTE, EN_COURS]),
+                                           agent__isnull=False)
+                                   .values('agent').distinct().count()),
     }
     return {
         'periode': {'debut': debut, 'fin': fin, 'granularite': granularite},
@@ -197,6 +254,8 @@ def statistiques(params):
         'par_region': par_region,
         'par_gravite': dict(incidents.values_list('gravite').annotate(n=Count('id'))),
         'evolution': {'incidents': serie(incidents, granularite, debut, fin), 'sos': serie(sos, granularite, debut, fin)},
+        'interventions': interventions(params, granularite, debut, fin),
+        'comparaison': comparaison(params, granularite, debut, fin, delais),
         'qualite': qualite(incidents),
         'satisfaction': satisfaction(incidents, sos),
         'definitions': DEFINITIONS,
