@@ -21,7 +21,34 @@ git fetch origin
 git switch <ta-branche>        # voir le tableau ci-dessous
 ```
 
-Ensuite, `./run.sh backend` prépare et lance le serveur, puis `python manage.py creer_comptes_test` crée les comptes de test (voir `docs/EXPLOITATION.md`). Le fichier `.env`, la base de données et `firebase-adminsdk.json` ne sont pas sur GitHub : chacun garde les siens en local.
+### Première installation
+
+Prérequis : Python 3.13, Node.js, Flutter. Le fichier `.env`, la base de données et `firebase-adminsdk.json` ne sont pas sur GitHub : chacun crée les siens avec les étapes suivantes.
+
+Sur Mac ou Linux :
+
+```bash
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+python -c "import secrets; print('SECRET_KEY=' + secrets.token_urlsafe(50))" >> .env
+python manage.py migrate
+python manage.py creer_comptes_test
+cd ../web && npm ci && npm run build && cd ../backend
+python manage.py runserver
+```
+
+Sur Windows, dans l'invite de commandes (`cmd`, pas PowerShell), remplacer les lignes correspondantes par :
+
+```bat
+py -m venv venv
+venv\Scripts\activate
+copy .env.example .env
+```
+
+Le site s'ouvre sur http://127.0.0.1:8000/app/ et les comptes sont écrits dans `backups/comptes_test.txt`. L'application mobile se lance dans un second terminal : `cd mobile`, puis `flutter run -d chrome`.
 
 ## Répartition du travail
 
