@@ -1,5 +1,15 @@
 # Bilan de la refonte v3
 
+## Version 3.7 (02/11/2026) : carte, services proches, Android
+
+* **Carte** : ouverture sur la position du citoyen et de l'agent avec le repère « Vous êtes ici », nombre de signalements récents à moins de 5 km et distance du plus proche ; fond « Plan » par défaut (le fond clair n'a pas de détail partout au Sénégal).
+* **Déclarant** : sur la carte, le superviseur et l'agent affecté voient « Déclaré par … » ; le citoyen voit « Votre signalement » sur les siens, les autres restent anonymes (`est_le_mien`, sans donnée personnelle).
+* **Services proches** : extrait OpenStreetMap embarqué (1 600 établissements, `backend/core/data/services_osm.json`, script `scripts/extraire_services_osm.py`) utilisé quand Overpass est indisponible ; délai total limité à 8 s et pause de 10 min après une panne.
+* **Assistant** : la mise en forme Markdown du modèle (`**`, `#`, puces `*`) est retirée côté serveur.
+* **Mobile** : nouvel écran d'accueil (logo et anneaux sur le dégradé de la marque) ; simulateur compilé sans CDN (`--no-web-resources-cdn`).
+* **Android** : un seul jeu de fichiers Gradle (`.kts`), plugin Google Services pour les notifications, `geolocator_android` fixé à 4.6.1 (compatible Flutter 3.24). APK : `flutter build apk --release --target-platform android-arm64 --dart-define=API_BASE_URL=http://<IP-du-Mac>:8000/api`.
+* **Configuration** : connexion Google web (`GOOGLE_CLIENT_ID_WEB`) et SMS de secours activables sans code, dans `.env` et dans Paramètres.
+
 ## Version 3.6 (01/11/2026) : identité institutionnelle bleu marine
 
 * **Palette** : bleu marine `#102A43`, bleu professionnel `#1D4E89`, rouge `#E63946` (urgences et SOS uniquement), orange `#F59E0B` (vigilance), vert `#16A36A` (réussite), gris clair `#F1F5F9`, gris foncé `#334155`.

@@ -6,23 +6,27 @@ import 'leaflet.heat';
 import 'leaflet.markercluster';
 import { Layers, LocateFixed, MapPin, Navigation, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Circle, MapContainer, TileLayer, Tooltip as InfoBulle, useMap } from 'react-leaflet';
+import { Circle, MapContainer, Marker, TileLayer, Tooltip as InfoBulle, useMap } from 'react-leaflet';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { useRessource } from '../api/hooks';
 import { useConfig } from '../lib/config';
 import { NIVEAUX_RISQUE, STATUTS, dateHeure } from '../lib/format';
-import { BORNES_SENEGAL, CENTRE_SENEGAL, echapper, icone } from './Carte';
+import { BORNES_SENEGAL, CENTRE_SENEGAL, ICONE_MOI, distanceKm, echapper, icone } from './Carte';
 import { IndicateurSynchro, Selecteur } from './ui';
 import { COULEURS } from '../lib/couleurs';
 
 const FONDS = {
   plan: { libelle: 'Plan', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', attribution: 'Fond &copy; Esri, HERE, Garmin, &copy; contributeurs OpenStreetMap' },
-  clair: { libelle: 'Clair', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', attribution: 'Fond &copy; Esri, HERE, Garmin, &copy; contributeurs OpenStreetMap' },
+  // Le fond clair n'a pas de détail au-delà du niveau 12 dans une partie du pays : il est agrandi au lieu d'afficher « Map data not yet available ».
+  clair: { libelle: 'Clair', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', attribution: 'Fond &copy; Esri, HERE, Garmin, &copy; contributeurs OpenStreetMap', maxNativeZoom: 12 },
   satellite: { libelle: 'Satellite', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attribution: 'Imagerie &copy; Esri, Maxar, Earthstar Geographics' },
 };
 
 const COULEUR_ALERTE = { danger: COULEURS.sos, vigilance: COULEURS.or, info: COULEURS.bleu };
+const RAYON_PROCHE_KM = 5;
+// Le serveur ne fournit le déclarant qu'au superviseur et à l'agent affecté (minimisation des données).
+const declarant = (d) => (d.citoyen_contact ? `Déclaré par <b>${echapper(d.citoyen_contact.nom)}</b>${d.citoyen_contact.telephone ? ` · ${echapper(d.citoyen_contact.telephone)}` : ''}<br/>` : '');
 
 function Marqueurs({ points, regrouper = true }) {
   const map = useMap();
@@ -106,7 +110,7 @@ export default function CarteAvancee({ role = 'citoyen', hauteur = 'calc(100vh -
   const config = useConfig();
   const [params] = useSearchParams();
   const operationnel = role !== 'citoyen';
-  const [fond, setFond] = useState('clair');
+  const [fond, setFond] = useState('plan');
   const [jours, setJours] = useState('30');
   const [categorie, setCategorie] = useState('');
   const [couches, setCouches] = useState({ incidents: true, chaleur: false, risque: params.get('couche') === 'risque', alertes: true, dossiers: operationnel, sos: operationnel });
@@ -114,6 +118,7 @@ export default function CarteAvancee({ role = 'citoyen', hauteur = 'calc(100vh -
   const [panneau, setPanneau] = useState(() => panneauOuvert && window.innerWidth >= 768);
   const [cible, setCible] = useState(null);
   const [lieu, setLieu] = useState(null);
+  const [moi, setMoi] = useState(null);
   const [message, setMessage] = useState(null);
 
   const carte = useRessource('/incidents/carte/', { jours, type_incident: categorie }, { intervalle: 60000 });
@@ -133,20 +138,20 @@ export default function CarteAvancee({ role = 'citoyen', hauteur = 'calc(100vh -
     if (couches.incidents) {
       incidentsRecents.forEach((p) => {
         const c = config.categorie(p.type_incident);
-        pts.push({ id: `c${p.id}`, lat: p.latitude, lng: p.longitude, couleur: c?.couleur || COULEURS.gris, titre: c?.libelle,
-          popup: `<b>${echapper(c?.libelle || p.type_incident)}</b><br/>${echapper(STATUTS[p.statut]?.libelle)} · ${echapper(dateHeure(p.date_creation))}<br/><small>Position arrondie (~100 m)</small>` });
+        pts.push({ id: `c${p.id}`, lat: p.latitude, lng: p.longitude, couleur: c?.couleur || COULEURS.gris, titre: c?.libelle, taille: p.est_le_mien ? 20 : 16,
+          popup: `${p.est_le_mien ? '<b>Votre signalement</b><br/>' : ''}<b>${echapper(c?.libelle || p.type_incident)}</b><br/>${echapper(STATUTS[p.statut]?.libelle)} · ${echapper(dateHeure(p.date_creation))}<br/><small>${p.est_le_mien ? 'Suivi dans « Mes dossiers »' : 'Signalé par un citoyen · identité protégée'} · position arrondie (~100 m)</small>` });
       });
     }
     if (operationnel && couches.dossiers) {
       (dossiers.donnees?.results || []).filter((d) => d.latitude != null).forEach((d) => pts.push({
         id: `d${d.id}`, lat: d.latitude, lng: d.longitude, couleur: STATUTS[d.statut].point, taille: 18,
-        popup: `<b>${echapper(d.reference)}</b><br/>${echapper(d.categorie_libelle)} · ${echapper(STATUTS[d.statut].libelle)}<br/><a href="/app/${role === 'agent' ? 'agent/interventions' : 'supervision/incidents'}?dossier=${d.id}">Ouvrir le dossier</a> · <a target="_blank" rel="noreferrer" href="https://www.google.com/maps/dir/?api=1&destination=${d.latitude},${d.longitude}">Itinéraire</a>`,
+        popup: `<b>${echapper(d.reference)}</b><br/>${echapper(d.categorie_libelle)} · ${echapper(STATUTS[d.statut].libelle)}<br/>${declarant(d)}<a href="/app/${role === 'agent' ? 'agent/interventions' : 'supervision/incidents'}?dossier=${d.id}">Ouvrir le dossier</a> · <a target="_blank" rel="noreferrer" href="https://www.google.com/maps/dir/?api=1&destination=${d.latitude},${d.longitude}">Itinéraire</a>`,
       }));
     }
     if (operationnel && couches.sos) {
       (sos.donnees?.results || []).filter((d) => d.latitude != null).forEach((d) => pts.push({
         id: `s${d.id}`, lat: d.latitude, lng: d.longitude, couleur: COULEURS.sos, sos: true, taille: 20,
-        popup: `<b>${echapper(d.reference)}</b><br/>Alerte SOS · ${echapper(STATUTS[d.statut].libelle)}<br/><a href="/app/${role === 'agent' ? 'agent/interventions?type=sos&' : 'supervision/sos?'}dossier=${d.id}">Ouvrir</a> · <a target="_blank" rel="noreferrer" href="https://www.google.com/maps/dir/?api=1&destination=${d.latitude},${d.longitude}">Itinéraire</a>`,
+        popup: `<b>${echapper(d.reference)}</b><br/>Alerte SOS · ${echapper(STATUTS[d.statut].libelle)}<br/>${declarant(d)}<a href="/app/${role === 'agent' ? 'agent/interventions?type=sos&' : 'supervision/sos?'}dossier=${d.id}">Ouvrir</a> · <a target="_blank" rel="noreferrer" href="https://www.google.com/maps/dir/?api=1&destination=${d.latitude},${d.longitude}">Itinéraire</a>`,
       }));
     }
     if (lieu) pts.push({ id: 'lieu', lat: lieu.lat, lng: lieu.lng, couleur: COULEURS.marine, taille: 18, popup: echapper(lieu.nom) });
@@ -155,17 +160,34 @@ export default function CarteAvancee({ role = 'citoyen', hauteur = 'calc(100vh -
 
   const pointsChaleur = useMemo(() => (couches.chaleur ? (carte.donnees?.resultats || []).map((p) => ({ lat: p.latitude, lng: p.longitude, poids: p.gravite === 'critique' ? 1 : p.gravite === 'elevee' ? 0.8 : 0.5 })) : []), [couches.chaleur, carte.donnees]);
 
-  const localiser = () => navigator.geolocation?.getCurrentPosition(
+  const autour = useMemo(() => {
+    if (!moi) return { proches: 0, plusProche: null };
+    const distances = incidentsRecents.map((p) => distanceKm(moi, { lat: p.latitude, lng: p.longitude }));
+    return { proches: distances.filter((d) => d <= RAYON_PROCHE_KM).length, plusProche: distances.length ? Math.min(...distances) : null };
+  }, [moi, incidentsRecents]);
+  const { proches, plusProche } = autour;
+
+  // `auto` : tentative à l'ouverture de la carte, sans message d'erreur si la position est refusée.
+  const localiser = (auto = false) => navigator.geolocation?.getCurrentPosition(
     (p) => {
-      const l = { lat: p.coords.latitude, lng: p.coords.longitude, nom: `Ma position (± ${Math.round(p.coords.accuracy)} m)` };
-      if (!L.latLngBounds(BORNES_SENEGAL).contains([l.lat, l.lng])) { setMessage('Votre position est hors du Sénégal : elle ne peut pas être affichée sur cette carte.'); return; }
+      const l = { lat: p.coords.latitude, lng: p.coords.longitude, precision: p.coords.accuracy };
+      if (!L.latLngBounds(BORNES_SENEGAL).contains([l.lat, l.lng])) { if (!auto) setMessage('Votre position est hors du Sénégal : elle ne peut pas être affichée sur cette carte.'); return; }
       setMessage(null);
-      setLieu(l);
-      setCible({ ...l, zoom: 15 });
+      setMoi(l);
+      setCible({ ...l, zoom: 13 });
     },
-    () => setMessage('Position refusée ou indisponible.'),
+    () => { if (!auto) setMessage('Position refusée ou indisponible.'); },
     { enableHighAccuracy: true, timeout: 10000 },
   );
+
+  // Citoyen et agent : la carte s'ouvre sur leur position si le navigateur l'autorise (la supervision garde la vue nationale).
+  useEffect(() => {
+    if (role === 'superadmin' || !navigator.geolocation) return;
+    const demande = navigator.permissions?.query({ name: 'geolocation' });
+    if (!demande) { localiser(true); return; }
+    demande.then((s) => { if (s.state !== 'denied') localiser(true); }).catch(() => localiser(true));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role]);
 
   const Interrupteur = ({ cle, libelle, couleur }) => (
     <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl px-2.5 py-1.5 text-sm hover:bg-surface-douce">
@@ -177,7 +199,7 @@ export default function CarteAvancee({ role = 'citoyen', hauteur = 'calc(100vh -
   return (
     <div className="relative overflow-hidden rounded-3xl border border-surface-bord shadow-carte" style={{ height: hauteur, minHeight: 480 }}>
       <MapContainer center={CENTRE_SENEGAL} zoom={7} minZoom={6} maxBounds={BORNES_SENEGAL} maxBoundsViscosity={1} className="h-full w-full" zoomControl={false} aria-label="Carte interactive SenAlert">
-        <TileLayer key={fond} url={FONDS[fond].url} attribution={FONDS[fond].attribution} maxZoom={19} />
+        <TileLayer key={fond} url={FONDS[fond].url} attribution={FONDS[fond].attribution} maxZoom={19} maxNativeZoom={FONDS[fond].maxNativeZoom} />
         <Marqueurs points={points} />
         {couches.chaleur && <CoucheChaleur points={pointsChaleur} />}
         {couches.risque && (niveaux.donnees?.zones || []).filter((z) => z.niveau !== 'faible').map((z) => (
@@ -194,15 +216,31 @@ export default function CarteAvancee({ role = 'citoyen', hauteur = 'calc(100vh -
             </Circle>
           );
         }))}
+        {moi && (
+          <>
+            <Circle center={[moi.lat, moi.lng]} radius={Math.min(moi.precision || 0, 2000)} pathOptions={{ color: COULEURS.bleu, weight: 1, fillOpacity: 0.08 }} interactive={false} />
+            <Marker position={[moi.lat, moi.lng]} icon={ICONE_MOI} zIndexOffset={1000} keyboard={false} title="Vous êtes ici" />
+          </>
+        )}
         <Pilote cible={cible} />
       </MapContainer>
+
+      {moi && (
+        <button type="button" onClick={() => setCible({ ...moi, zoom: 13 })}
+          className="absolute bottom-6 left-3 z-[500] flex max-w-[calc(100%-5rem)] items-center gap-2 rounded-2xl bg-surface px-3 py-2 text-left text-sm shadow-flottant hover:bg-surface-douce">
+          <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: COULEURS.bleu }} aria-hidden />
+          <span><b>Vous êtes ici</b> · {proches > 0
+            ? `${proches} signalement${proches > 1 ? 's' : ''} récent${proches > 1 ? 's' : ''} à moins de ${RAYON_PROCHE_KM} km`
+            : `aucun signalement récent à moins de ${RAYON_PROCHE_KM} km${plusProche != null ? ` · le plus proche à ${Math.round(plusProche)} km` : ''}`}</span>
+        </button>
+      )}
 
       {/* Recherche */}
       <div className="absolute left-3 right-3 top-3 z-[500] sm:right-auto sm:w-96"><RechercheAdresse onChoix={(r) => { const l = { lat: r.latitude, lng: r.longitude, nom: r.nom }; setLieu(l); setCible(l); }} /></div>
 
       {/* Boutons flottants */}
       <div className="absolute bottom-6 right-3 z-[500] flex flex-col gap-2">
-        <button type="button" onClick={localiser} className="grid h-11 w-11 place-items-center rounded-2xl bg-surface shadow-flottant hover:bg-surface-douce" title="Me localiser" aria-label="Me localiser"><LocateFixed className="h-5 w-5 text-marque-700" /></button>
+        <button type="button" onClick={() => localiser()} className="grid h-11 w-11 place-items-center rounded-2xl bg-surface shadow-flottant hover:bg-surface-douce" title="Me localiser" aria-label="Me localiser"><LocateFixed className="h-5 w-5 text-marque-700" /></button>
         <button type="button" onClick={() => setPanneau((p) => !p)} className="grid h-11 w-11 place-items-center rounded-2xl bg-surface shadow-flottant hover:bg-surface-douce" title="Couches" aria-label="Afficher les couches" aria-expanded={panneau}><Layers className="h-5 w-5 text-marque-700" /></button>
       </div>
 

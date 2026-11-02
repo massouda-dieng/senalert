@@ -29,6 +29,22 @@ export const ICONE_AGENT = L.divIcon({
     + '<circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg></span>',
 });
 
+/** Position de l'utilisateur : point bleu pulsé avec l'étiquette « Vous êtes ici ». */
+export const ICONE_MOI = L.divIcon({
+  className: '',
+  iconSize: [20, 20],
+  iconAnchor: [10, 10],
+  html: `<span class="sa-moi"><span class="sa-moi-halo" style="background:${COULEURS.bleuVif}"></span>`
+    + `<span class="sa-moi-point" style="background:${COULEURS.bleu}"></span><span class="sa-moi-etiquette">Vous êtes ici</span></span>`,
+});
+
+/** Distance à vol d'oiseau en kilomètres (formule de haversine). */
+export function distanceKm(a, b) {
+  const rad = (d) => (d * Math.PI) / 180;
+  const h = Math.sin(rad(b.lat - a.lat) / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(rad(b.lng - a.lng) / 2) ** 2;
+  return 2 * 6371 * Math.asin(Math.sqrt(h));
+}
+
 /**
  * Couche de marqueurs regroupés.
  * points : [{ id, lat, lng, couleur, sos, popup (HTML échappé), onClick }]

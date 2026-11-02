@@ -143,7 +143,7 @@ class IncidentViewSet(ActionsDossierMixin, mixins.ListModelMixin, mixins.Retriev
             qs = qs.filter(region=request.query_params['region'])
         qs = qs.order_by('-date_creation')[:500]
         return Response({
-            'resultats': CarteIncidentSerializer(qs, many=True).data,
+            'resultats': CarteIncidentSerializer(qs, many=True, context={'request': request}).data,
             'periode_jours': jours,
             'genere_le': timezone.now(),
             'note': 'Positions arrondies à environ 100 m pour protéger la vie privée.',

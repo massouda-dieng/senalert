@@ -47,3 +47,7 @@ flutter:
     - assets/images/photos/
     - assets/data/
     - assets/traductions/
+
+# geolocator_android 4.6.2 exige un Flutter plus récent que 3.24 pour compiler sous Android.
+dependency_overrides:
+  geolocator_android: 4.6.1

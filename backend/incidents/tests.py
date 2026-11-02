@@ -153,7 +153,13 @@ class VisibiliteTests(SenAlertTestCase):
         self.assertEqual(len(r.data['resultats']), 1)
         point = r.data['resultats'][0]
         self.assertNotIn('description', point)
+        self.assertNotIn('citoyen', point)
         self.assertEqual(point['latitude'], round(self.inc.latitude, 3))
+        self.assertFalse(point['est_le_mien'])
+
+    def test_carte_signale_ses_propres_signalements(self):
+        self.en_tant_que(self.awa)
+        self.assertTrue(self.client.get(f'{URL}carte/').data['resultats'][0]['est_le_mien'])
 
 
 class WorkflowTests(SenAlertTestCase):

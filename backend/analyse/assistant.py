@@ -163,7 +163,17 @@ def appeler_groq(message, historique):
     )
     r.raise_for_status()
     contenu = r.json()['choices'][0]['message']['content']
-    return re.sub(r'<think>.*?</think>', '', contenu, flags=re.S).strip()
+    return texte_simple(re.sub(r'<think>.*?</think>', '', contenu, flags=re.S).strip())
+
+
+def texte_simple(texte):
+    """Retire la mise en forme Markdown du modèle (**gras**, titres, puces « * ») :
+    le web et le mobile affichent la réponse en texte brut."""
+    texte = re.sub(r'(\*\*|__)(.+?)\1', r'\2', texte)
+    texte = re.sub(r'(?m)^\s{0,3}#{1,6}\s+', '', texte)
+    texte = re.sub(r'(?m)^(\s*)[*-]\s+', r'\1• ', texte)
+    texte = re.sub(r'(?<![\w*])\*(?!\s)([^*\n]+?)\*(?!\w)', r'\1', texte)
+    return texte.replace('**', '')
 
 
 def orientation(texte):

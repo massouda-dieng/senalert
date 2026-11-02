@@ -216,10 +216,15 @@ class CarteIncidentSerializer(serializers.ModelSerializer):
 
     latitude = serializers.SerializerMethodField()
     longitude = serializers.SerializerMethodField()
+    est_le_mien = serializers.SerializerMethodField()
 
     class Meta:
         model = Incident
-        fields = ['id', 'type_incident', 'latitude', 'longitude', 'region', 'statut', 'gravite', 'date_creation']
+        fields = ['id', 'type_incident', 'latitude', 'longitude', 'region', 'statut', 'gravite', 'date_creation', 'est_le_mien']
+
+    def get_est_le_mien(self, obj) -> bool:
+        """Permet au citoyen de reconnaître ses propres signalements, sans rien révéler des autres déclarants."""
+        return obj.citoyen_id == self.context['request'].user.pk
 
     def get_latitude(self, obj) -> float:
         return round(obj.latitude, 3)

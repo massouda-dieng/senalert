@@ -21,6 +21,7 @@ const _couleursNiveau = {'critique': AppColors.rouge, 'eleve': Jetons.orange, 'm
 const _couleursAlerte = {'danger': AppColors.rouge, 'vigilance': Jetons.orange, 'info': AppColors.marine700};
 /// Cadre de la carte nationale : le Sénégal et ses frontières.
 final _bornes = LatLngBounds(const LatLng(9, -22), const LatLng(20, -7));
+const _rayonProcheKm = 5;
 
 /// Carte à couches. Citoyen : vue publique ; agent : dossiers ouverts et SOS en plus.
 class CarteScreen extends StatefulWidget {
@@ -32,10 +33,12 @@ class CarteScreen extends StatefulWidget {
 
 class _CarteScreenState extends State<CarteScreen> {
   final _carte = MapController();
-  String _fond = 'clair';
+  String _fond = 'plan';
   final Map<String, bool> _couches = {'incidents': true, 'risque': false, 'alertes': true, 'dossiers': true, 'sos': true};
   List<Map<String, dynamic>> _incidents = [], _dossiers = [], _sos = [], _niveaux = [], _alertes = [];
   LatLng? _moi;
+  double? _precision;
+  bool _cartePrete = false;
   ApiException? _erreur;
   bool _chargement = true;
   DateTime? _synchro;
@@ -44,6 +47,7 @@ class _CarteScreenState extends State<CarteScreen> {
   void initState() {
     super.initState();
     _charger();
+    _localiser(auto: true);
   }
 
   Future<List<Map<String, dynamic>>> _liste(String chemin, Map<String, dynamic> p, String cle) async =>
@@ -69,15 +73,45 @@ class _CarteScreenState extends State<CarteScreen> {
     if (mounted) setState(() => _chargement = false);
   }
 
-  Future<void> _localiser() async {
+  /// `auto` : tentative à l'ouverture de la carte, sans message si la position est refusée.
+  Future<void> _localiser({bool auto = false}) async {
     final p = await Localisation.lire();
     if (!mounted) return;
-    if (!p.ok) { afficherMessage(context, p.erreur ?? 'Position indisponible.', erreur: true); return; }
+    if (!p.ok) { if (!auto) afficherMessage(context, p.erreur ?? 'Position indisponible.', erreur: true); return; }
     final position = LatLng(p.lat!, p.lng!);
-    if (!_bornes.contains(position)) { afficherMessage(context, 'Votre position est hors du Sénégal : elle ne peut pas être affichée sur cette carte.', erreur: true); return; }
-    setState(() => _moi = position);
-    _carte.move(position, 14);
+    if (!_bornes.contains(position)) {
+      if (!auto) afficherMessage(context, 'Votre position est hors du Sénégal : elle ne peut pas être affichée sur cette carte.', erreur: true);
+      return;
+    }
+    setState(() { _moi = position; _precision = p.precision; });
+    if (_cartePrete) _carte.move(position, 13);
   }
+
+  List<double> get _distances => _moi == null ? [] : [for (final p in _autresIncidents) const Distance().as(LengthUnit.Kilometer, _moi!, _ll(p))];
+  int get _proches => _distances.where((d) => d <= _rayonProcheKm).length;
+  double? get _plusProche => _distances.isEmpty ? null : _distances.reduce((a, b) => a < b ? a : b);
+  String get _resumeAutour {
+    final n = _proches;
+    if (n > 0) return '$n signalement${n > 1 ? 's' : ''} récent${n > 1 ? 's' : ''} à moins de $_rayonProcheKm km';
+    final d = _plusProche;
+    return 'aucun signalement récent à moins de $_rayonProcheKm km${d == null ? '' : ' · le plus proche à ${d.round()} km'}';
+  }
+
+  /// Point bleu au centre exact de la position, étiquette « Vous êtes ici » au-dessus.
+  Marker _marqueurMoi() => Marker(
+        point: _moi!, width: 140, height: 84,
+        child: Stack(alignment: Alignment.center, children: [
+          Positioned(top: 0, child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(color: AppColors.marine800, borderRadius: BorderRadius.circular(99),
+                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)]),
+            child: const Text('Vous êtes ici', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+          )),
+          Container(width: 20, height: 20, decoration: BoxDecoration(
+              shape: BoxShape.circle, color: AppColors.info, border: Border.all(color: Colors.white, width: 3),
+              boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 6)])),
+        ]),
+      );
 
   /// Un dossier ouvert a déjà son point dans la couche Dossiers : il n'est pas dessiné deux fois.
   List<Map<String, dynamic>> get _autresIncidents {
@@ -155,13 +189,15 @@ class _CarteScreenState extends State<CarteScreen> {
     final marqueurs = <Marker>[
       if (_couches['incidents']!)
         for (final p in _autresIncidents)
-          _point(_ll(p), couleurHex(config.categorie(p['type_incident'])?.couleur), label: config.categorie(p['type_incident'])?.libelle, onTap: () => showModalBottomSheet(
+          _point(_ll(p), couleurHex(config.categorie(p['type_incident'])?.couleur), taille: p['est_le_mien'] == true ? 28 : 22, label: config.categorie(p['type_incident'])?.libelle, onTap: () => showModalBottomSheet(
             context: context, builder: (_) => Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (p['est_le_mien'] == true) Padding(padding: const EdgeInsets.only(bottom: 6), child: Text('Votre signalement', style: titre(14, couleur: AppColors.info))),
               Text(config.categorie(p['type_incident'])?.libelle ?? p['type_incident'], style: titre(18)),
               const SizedBox(height: 8),
               Row(children: [BadgeStatut(p['statut']), const SizedBox(width: 8), Text(dateHeure(lireDate(p['date_creation'])))]),
               const SizedBox(height: 8),
-              Text('Position arrondie à ~100 m.', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+              Text(p['est_le_mien'] == true ? 'Suivi dans « Dossiers » · position arrondie à ~100 m.' : 'Signalé par un citoyen, identité protégée · position arrondie à ~100 m.',
+                  style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
             ])))),
       if (widget.agent && _couches['dossiers']!)
         for (final d in _dossiers.where((d) => d['latitude'] != null))
@@ -169,10 +205,12 @@ class _CarteScreenState extends State<CarteScreen> {
       if (widget.agent && _couches['sos']!)
         for (final d in _sos.where((d) => d['latitude'] != null))
           _point(_ll(d), AppColors.rouge, taille: 30, label: 'SOS ${d['reference']}', onTap: () => context.push('/dossier/sos/${d['id']}')),
-      if (_moi != null) Marker(point: _moi!, width: 24, height: 24, child: Container(decoration: BoxDecoration(
-          shape: BoxShape.circle, color: AppColors.info, border: Border.all(color: Colors.white, width: 3)))),
+      if (_moi != null) _marqueurMoi(),
     ];
     final cercles = <CircleMarker>[
+      if (_moi != null && (_precision ?? 0) > 0)
+        CircleMarker(point: _moi!, radius: _precision!.clamp(0, 2000).toDouble(), useRadiusInMeter: true,
+            color: AppColors.info.withOpacity(0.08), borderColor: AppColors.info, borderStrokeWidth: 1),
       if (_couches['risque']!)
         for (final z in _niveaux.where((z) => _couleursNiveau.containsKey(z['niveau'])))
           CircleMarker(point: _ll(z), radius: z['niveau'] == 'critique' ? 32000 : z['niveau'] == 'eleve' ? 24000 : 16000, useRadiusInMeter: true,
@@ -194,9 +232,11 @@ class _CarteScreenState extends State<CarteScreen> {
         FlutterMap(
           mapController: _carte,
           options: MapOptions(initialCenter: const LatLng(14.45, -14.9), initialZoom: 6.3, minZoom: 5.5,
-              cameraConstraint: CameraConstraint.containCenter(bounds: _bornes)),
+              cameraConstraint: CameraConstraint.containCenter(bounds: _bornes),
+              onMapReady: () { _cartePrete = true; if (_moi != null) _carte.move(_moi!, 13); }),
           children: [
-            TileLayer(key: ValueKey(_fond), urlTemplate: fond.$2, userAgentPackageName: 'com.senalert.senalert_mobile'),
+            // Le fond clair n'a pas de détail au-delà du niveau 12 dans une partie du pays : il est agrandi.
+            TileLayer(key: ValueKey(_fond), urlTemplate: fond.$2, maxNativeZoom: _fond == 'clair' ? 12 : 19, userAgentPackageName: 'com.senalert.senalert_mobile'),
             CircleLayer(circles: cercles),
             MarkerLayer(markers: marqueurs),
             RichAttributionWidget(attributions: [TextSourceAttribution(fond.$3)]),
@@ -211,6 +251,21 @@ class _CarteScreenState extends State<CarteScreen> {
             const SizedBox(width: 8),
             Expanded(child: Text('${_alertes.first['titre']}${_alertes.length > 1 ? ' (+${_alertes.length - 1})' : ''}', style: const TextStyle(fontWeight: FontWeight.w700))),
           ])),
+        )),
+        if (_moi != null) Positioned(left: 12, right: 84, bottom: 70, child: Material(
+          color: AppColors.white, borderRadius: BorderRadius.circular(14), elevation: 3,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: () => _carte.move(_moi!, 13),
+            child: Padding(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9), child: Row(children: [
+              Container(width: 10, height: 10, decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.info)),
+              const SizedBox(width: 8),
+              Expanded(child: Text.rich(TextSpan(style: const TextStyle(fontSize: 13), children: [
+                const TextSpan(text: 'Vous êtes ici', style: TextStyle(fontWeight: FontWeight.w700)),
+                TextSpan(text: ' · $_resumeAutour'),
+              ]))),
+            ])),
+          ),
         )),
         Positioned(left: 12, bottom: 28, child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

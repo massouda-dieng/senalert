@@ -48,7 +48,7 @@ case "${1:-backend}" in
     cp "$RACINE/traductions/wolof.json" "$RACINE/mobile/assets/traductions/wolof.json"
     cd "$RACINE/mobile"
     "$FLUTTER" pub get
-    "$FLUTTER" build web --release --base-href /mobile/ --output "$RACINE/simulateur-mobile"
+    "$FLUTTER" build web --release --no-web-resources-cdn --base-href /mobile/ --output "$RACINE/simulateur-mobile"
     echo "→ Lancez le serveur (cd backend && python manage.py runserver) puis ouvrez http://127.0.0.1:8000/app/simulateur"
     ;;
   tests)

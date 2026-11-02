@@ -95,10 +95,38 @@ class ServicesProximiteTests(SenAlertTestCase):
         self.assertIn('OpenStreetMap', r.data['source'])
         self.assertIsNone(r.data['resultats'][1]['telephone'], 'aucune donnée inventée')
 
+    def test_extrait_embarque_si_serveurs_indisponibles(self):
+        base = {'source': '© contributeurs OpenStreetMap (ODbL), extrait Geofabrik', 'extrait_le': '2026-11-02', 'elements': [
+            {'type': 'node', 'id': 7, 'lat': 14.6935, 'lon': -17.4470, 'tags': {'amenity': 'hospital', 'name': 'Hôpital Principal'}},
+            {'type': 'node', 'id': 8, 'lat': 16.02, 'lon': -16.49, 'tags': {'amenity': 'police', 'name': 'Commissariat de Saint-Louis'}},
+        ]}
+        with mock.patch('core.views.interroger_overpass', side_effect=requests.ConnectionError), \
+                mock.patch('core.views.base_services_locale', return_value=base):
+            r = self.client.get(self.URL, {'lat': 14.69, 'lng': -17.44})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual([x['nom'] for x in r.data['resultats']], ['Hôpital Principal'])
+        self.assertTrue(r.data['donnees_anciennes'])
+        self.assertIn('Geofabrik', r.data['source'])
+
     def test_osm_indisponible_503(self):
-        with mock.patch('core.views.interroger_overpass', side_effect=requests.ConnectionError):
+        with mock.patch('core.views.interroger_overpass', side_effect=requests.ConnectionError), \
+                mock.patch('core.views.base_services_locale', return_value=None):
             r = self.client.get(self.URL, {'lat': 14.69, 'lng': -17.44})
         self.assertEqual(r.status_code, 503)
+
+    def test_pause_apres_panne_reponse_immediate(self):
+        with mock.patch('core.views.interroger_overpass', side_effect=requests.ConnectionError) as appel:
+            self.client.get(self.URL, {'lat': 14.69, 'lng': -17.44})
+            r = self.client.get(self.URL, {'lat': 14.75, 'lng': -17.40})
+        self.assertEqual(appel.call_count, 1, 'Overpass n’est pas réinterrogé juste après une panne')
+        self.assertEqual(r.status_code, 200)
+
+    def test_extrait_embarque_present_et_reel(self):
+        from core.views import base_services_locale
+        base = base_services_locale()
+        self.assertIsNotNone(base)
+        self.assertGreater(len(base['elements']), 500)
+        self.assertTrue(all(e['tags'].get('amenity') in {'hospital', 'clinic', 'pharmacy', 'police', 'fire_station'} for e in base['elements']))
 
     def test_parametres_requis(self):
         self.assertEqual(self.client.get(self.URL).status_code, 400)

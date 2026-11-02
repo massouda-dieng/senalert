@@ -193,6 +193,20 @@ class TestAssistant(SenAlertTestCase):
         self.assertNotIn('112', r.data['reponse'])
         self.assertIn('18', r.data['reponse'])
 
+    @override_settings(GROQ_API_KEY='cle-test')
+    def test_mise_en_forme_markdown_retiree(self):
+        reponse = mock.Mock(status_code=200)
+        reponse.json.return_value = {'choices': [{'message': {'content': (
+            '## Brûlure\n1. **Refroidissez la zone** : eau froide 10 à 20 min.\n* Ne percez pas les cloques.\n'
+            '- Consultez la fiche **Brûlure** dans *SenAlert*.')}}]}
+        with mock.patch('analyse.assistant.requests.post', return_value=reponse):
+            texte = self.client.post(self.URL, {'message': 'brûlure à la main'}, format='json').data['reponse']
+        self.assertNotIn('*', texte)
+        self.assertNotIn('#', texte)
+        self.assertIn('1. Refroidissez la zone : eau froide', texte)
+        self.assertIn('• Ne percez pas les cloques.', texte)
+        self.assertIn('• Consultez la fiche Brûlure dans SenAlert.', texte)
+
     def test_numeros_non_verifies_absents_du_prompt(self):
         self.assertNotIn('1515', assistant.prompt_systeme())
         self.assertIn('17', assistant.prompt_systeme())

@@ -1,4 +1,8 @@
+import json
 import logging
+import time
+from functools import lru_cache
+from pathlib import Path
 
 import requests
 from django.conf import settings
@@ -194,22 +198,41 @@ TYPES_OSM = {
 }
 
 
+# Au-delà, l'utilisateur attend trop : on répond avec les données déjà disponibles.
+OVERPASS_DELAI_TOTAL = 8
+# Après une panne, Overpass n'est plus interrogé pendant ce délai (secondes).
+OVERPASS_PAUSE_APRES_PANNE = 600
+
+
+@lru_cache(maxsize=1)
+def base_services_locale():
+    """Extrait OpenStreetMap embarqué (scripts/extraire_services_osm.py), ou None s'il est absent."""
+    chemin = Path(__file__).resolve().parent / 'data' / 'services_osm.json'
+    if not chemin.exists():
+        return None
+    return json.loads(chemin.read_text(encoding='utf-8'))
+
+
 def interroger_overpass(lat, lng, rayon, types):
     clauses = ''.join(
         f'nwr["{TYPES_OSM[t][0]}"="{TYPES_OSM[t][1]}"](around:{rayon},{lat},{lng});' for t in types
     )
     requete = f'[out:json][timeout:15];({clauses});out center tags 200;'
     derniere = None
+    echeance = time.monotonic() + OVERPASS_DELAI_TOTAL
     for url in settings.OVERPASS_URLS:  # serveur principal puis miroirs
+        reste = echeance - time.monotonic()
+        if reste <= 1:
+            break
         try:
-            reponse = requests.post(url, data={'data': requete}, timeout=(4, 10),
+            reponse = requests.post(url, data={'data': requete}, timeout=(min(3, reste), reste),
                                     headers={'User-Agent': 'SenAlert/3.0 (projet academique ISEP Diamniadio)'})
             reponse.raise_for_status()
             return reponse.json()['elements']
         except Exception as exc:  # saturé, hors délai ou réponse non JSON : serveur suivant
             logger.info('Overpass %s indisponible : %s', url, exc.__class__.__name__)
             derniere = exc
-    raise derniere or RuntimeError('Aucun serveur Overpass configuré')
+    raise derniere or TimeoutError('Overpass : délai total dépassé')
 
 
 class ServicesProximiteView(APIView):
@@ -237,17 +260,25 @@ class ServicesProximiteView(APIView):
         cache_val = cache.get(cle)
         if cache_val is None:
             try:
+                if cache.get('osm:en_panne'):
+                    raise TimeoutError('Overpass en pause après une panne récente')
                 elements = interroger_overpass(lat_r, lng_r, rayon + 1500, types)
                 cache_val = {'elements': elements, 'date': timezone.now().isoformat()}
                 cache.set(cle, cache_val, 60 * 60)
                 caches['osm'].set(cle, cache_val)
             except Exception as exc:
                 logger.warning('Overpass indisponible : %s', exc.__class__.__name__)
-                # Derniers résultats réels obtenus pour cette zone (datés), sinon erreur honnête.
+                cache.set('osm:en_panne', True, OVERPASS_PAUSE_APRES_PANNE)
+                # Derniers résultats réels obtenus pour cette zone, sinon l'extrait OpenStreetMap
+                # embarqué (daté), sinon erreur honnête.
                 cache_val = caches['osm'].get(cle)
-                if cache_val is None:
-                    raise ServiceIndisponible("Les serveurs OpenStreetMap sont saturés en ce moment. Réessayez dans quelques minutes.")
-                cache_val = {**cache_val, 'ancien': True}
+                if cache_val is not None:
+                    cache_val = {**cache_val, 'ancien': True}
+                else:
+                    base = base_services_locale()
+                    if base is None:
+                        raise ServiceIndisponible("Les serveurs OpenStreetMap sont saturés en ce moment. Réessayez dans quelques minutes.")
+                    cache_val = {'elements': base['elements'], 'date': base['extrait_le'], 'ancien': True, 'source': base['source']}
 
         resultats = []
         inverse = {v: k for k, v in TYPES_OSM.items()}
@@ -277,7 +308,7 @@ class ServicesProximiteView(APIView):
         resultats.sort(key=lambda r: r['distance_m'])
         return Response({
             'resultats': resultats[:100],
-            'source': '© contributeurs OpenStreetMap (ODbL)',
+            'source': cache_val.get('source', '© contributeurs OpenStreetMap (ODbL)'),
             'donnees_du': cache_val['date'],
             'donnees_anciennes': bool(cache_val.get('ancien')),
             'avertissement': ("Données collaboratives : vérifiez avant de vous déplacer. "
