@@ -60,8 +60,11 @@ function BoutonGoogle({ onJeton }) {
   const rappel = useRef(onJeton);
   rappel.current = onJeton;
 
+  // Tant que la configuration n'est pas chargée, on attend : décider « non configurée » trop tôt masquait le bouton.
+  const configure = Boolean(config?.pret && config.google_actif && clientId);
+
   useEffect(() => {
-    if (!config?.pret || !config.google_actif || !clientId) { setEtat('non_configure'); return undefined; }
+    if (!configure) return undefined;
     let annule = false;
     const initialiser = () => {
       if (annule || !window.google?.accounts?.id) return;
@@ -79,9 +82,9 @@ function BoutonGoogle({ onJeton }) {
       document.head.appendChild(s);
     }
     return () => { annule = true; };
-  }, [config?.pret, config?.google_actif, clientId]);
+  }, [configure, clientId]);
 
-  if (etat === 'non_configure') return <p className="rounded-xl bg-surface-douce px-3 py-2.5 text-center text-xs text-texte-doux">Connexion Google non configurée sur ce serveur (voir la documentation).</p>;
+  if (config?.pret && !configure) return <p className="rounded-xl bg-surface-douce px-3 py-2.5 text-center text-xs text-texte-doux">Connexion Google non configurée sur ce serveur (voir la documentation).</p>;
   if (etat === 'erreur') return <p className="text-center text-xs text-sos-fonce">Le service Google est injoignable. Utilisez votre e-mail et votre mot de passe.</p>;
   return <div ref={ref} className="flex min-h-[44px] justify-center" />;
 }
