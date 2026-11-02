@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:senalert_mobile/features/auth/auth_screens.dart';
 import 'package:senalert_mobile/features/auth/bienvenue_screen.dart';
 import 'package:senalert_mobile/state/configuration.dart';
@@ -46,12 +47,25 @@ void main() {
     }
   });
 
-  testWidgets('accueil : un seul écran, deux actions et les premiers secours sans compte', (t) async {
+  testWidgets('accueil : présentation en pages, « Passer » mène aux deux actions et aux premiers secours', (t) async {
+    SharedPreferences.setMockInitialValues({});
     await t.pumpWidget(envelopper(const BienvenueScreen()));
+    await t.pumpAndSettle();
+    expect(find.byType(PageView), findsOneWidget);
+    expect(find.text('Une urgence ? Un seul geste'), findsOneWidget);
+    await t.tap(find.text('Passer'));
+    await t.pumpAndSettle();
     expect(find.text('Créer mon compte'), findsOneWidget);
     expect(find.text('J’ai déjà un compte'), findsOneWidget);
     expect(find.text('Premiers secours, sans compte'), findsOneWidget);
-    expect(find.byType(PageView), findsNothing);
+    expect((await SharedPreferences.getInstance()).getBool('presentation_vue'), isTrue);
+  });
+
+  testWidgets('accueil : présentation déjà vue, ouverture directe sur les actions', (t) async {
+    SharedPreferences.setMockInitialValues({'presentation_vue': true});
+    await t.pumpWidget(envelopper(const BienvenueScreen()));
+    await t.pumpAndSettle();
+    expect(find.text('Créer mon compte'), findsOneWidget);
   });
 
   testWidgets('badge de statut lisible', (t) async {

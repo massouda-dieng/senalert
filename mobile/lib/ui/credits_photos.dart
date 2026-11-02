@@ -8,6 +8,7 @@ const creditsPhotos = <String, String>{
   'croix-rouge-agent': "Photo : Kikanakana — CC BY-SA 4.0",
   'croix-rouge-equipe': "Photo : Kikanakana — CC BY-SA 4.0",
   'ambulance-pompiers': "Photo : Babacar Dioum — CC BY-SA 4.0",
+  'motards-sapeurs': "Photo : Ibrahima xaalil Ndiaye — CC BY-SA 4.0",
   'rue-inondee': "Photo : Patrick Schumacher — Public domain",
   'dakar-cote': "Photo : Tbo47 — CC0",
 };
