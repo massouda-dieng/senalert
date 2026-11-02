@@ -6,6 +6,7 @@ import 'core/constants/app_colors.dart';
 import 'features/agent/agent_home_screen.dart';
 import 'features/auth/auth_screens.dart';
 import 'features/auth/bienvenue_screen.dart';
+import 'features/auth/onboarding_screen.dart';
 import 'features/citoyen/assistant_screen.dart';
 import 'features/citoyen/carte_screen.dart';
 import 'features/citoyen/home_screen.dart';
@@ -21,7 +22,7 @@ import 'state/session.dart';
 import 'ui/kit.dart';
 import 'state/langue.dart';
 
-const _publiques = {'/bienvenue', '/connexion', '/inscription', '/demande-agent', '/compte-superviseur', '/mot-de-passe-oublie', '/secours'};
+const _publiques = {'/bienvenue', '/connexion', '/inscription', '/demande-agent', '/compte-superviseur', '/mot-de-passe-oublie', '/secours', '/onboarding'};
 const _citoyen = {'/accueil', '/signaler', '/sos', '/services', '/assistant', '/carte', '/dossiers', '/communaute'};
 const _agent = {'/agent', '/interventions', '/carte-agent'};
 
@@ -43,6 +44,7 @@ GoRouter creerRouteur(Session session) => GoRouter(
       },
       routes: [
         GoRoute(path: '/', builder: (_, __) => const _Demarrage()),
+        GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
         GoRoute(path: '/bienvenue', builder: (_, __) => const BienvenueScreen()),
         GoRoute(path: '/connexion', builder: (_, __) => const ConnexionScreen()),
         GoRoute(path: '/inscription', builder: (_, __) => const InscriptionScreen()),
@@ -101,8 +103,40 @@ class _Coquille extends StatelessWidget {
 }
 
 /// Écran de démarrage : logo et slogan apparaissent en douceur pendant l'ouverture de la session.
-class _Demarrage extends StatelessWidget {
+/// À la première ouverture, redirige vers l'onboarding.
+class _Demarrage extends StatefulWidget {
   const _Demarrage();
+  @override
+  State<_Demarrage> createState() => _DemarrageState();
+}
+
+class _DemarrageState extends State<_Demarrage> {
+  @override
+  void initState() {
+    super.initState();
+    _rediriger();
+  }
+
+  Future<void> _rediriger() async {
+    // Attend que la session soit initialisée
+    final session = context.read<Session>();
+    await Future.doWhile(() async {
+      await Future.delayed(const Duration(milliseconds: 80));
+      return !session.initialisee;
+    });
+    if (!mounted) return;
+    // Si l'utilisateur est déjà connecté, va directement à son accueil
+    final u = session.utilisateur;
+    if (u != null) {
+      context.go(accueilPour(u.role));
+      return;
+    }
+    // Sinon, onboarding à la première ouverture
+    final aVoir = await onboardingAVoir();
+    if (!mounted) return;
+    context.go(aVoir ? '/onboarding' : '/bienvenue');
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         body: DecoratedBox(
