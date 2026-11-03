@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
 import { useRessource } from '../../api/hooks';
-import { useAuth } from '../../auth/AuthContext';
+import { estSupervision, useAuth } from '../../auth/AuthContext';
 import { Bouton, Chargement, EnTetePage, EtatErreur, EtatVide, IconeNotification, Pagination } from '../../components/ui';
 import { dateHeure, ilYa } from '../../lib/format';
 
@@ -21,8 +21,9 @@ export default function Notifications() {
   const ouvrir = async (n) => {
     if (!n.lue) api(`/notifications/${n.id}/lire/`, { methode: 'POST' }).then(() => recharger(true)).catch(() => {});
     if (!n.dossier) return;
-    const base = { citoyen: '/citoyen/dossiers', agent: '/agent/interventions', superadmin: n.dossier.type === 'sos' ? '/supervision/sos' : '/supervision/incidents' }[utilisateur.role];
-    const type = n.dossier.type === 'sos' && utilisateur.role !== 'superadmin' ? 'type=sos&' : '';
+    const base = estSupervision(utilisateur.role) ? (n.dossier.type === 'sos' ? '/supervision/sos' : '/supervision/incidents')
+      : { citoyen: '/citoyen/dossiers', agent: '/agent/interventions' }[utilisateur.role];
+    const type = n.dossier.type === 'sos' && !estSupervision(utilisateur.role) ? 'type=sos&' : '';
     navigate(`${base}?${type}dossier=${n.dossier.id}`);
   };
   return (

@@ -12,6 +12,7 @@ from django_filters import rest_framework as filters
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, permissions, serializers, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
@@ -19,8 +20,8 @@ from rest_framework.views import APIView
 from .audit import journaliser
 from .constants import GRAVITE_CHOICES, REGIONS, ROLE_CHOICES, STATUT_CHOICES
 from .exceptions import ServiceIndisponible
-from .geo import distance_m
-from .models import Categorie, FicheSecours, JournalAudit, Parametre, Service
+from .geo import dans_senegal, distance_m
+from .models import Categorie, FicheSecours, JournalAudit, Parametre, Service, Structure
 from .params import coordonnees, entier
 from .permissions import EstSuperAdmin
 
@@ -98,6 +99,90 @@ class ReferentielViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixin
 class ServiceViewSet(ReferentielViewSet):
     queryset = Service.objects.all()
     serializer_class = ServiceSerializer
+
+
+class StructureSerializer(serializers.ModelSerializer):
+    service_nom = serializers.CharField(source='service.nom', read_only=True)
+    service_code = serializers.CharField(source='service.code', read_only=True)
+    region_libelle = serializers.CharField(source='get_region_display', read_only=True)
+    distance_m = serializers.SerializerMethodField()
+    nb_agents_disponibles = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Structure
+        fields = ['id', 'nom', 'service', 'service_nom', 'service_code', 'latitude', 'longitude', 'region',
+                  'region_libelle', 'adresse', 'telephone', 'position_approximative', 'source', 'actif',
+                  'distance_m', 'nb_agents_disponibles']
+        read_only_fields = ['source']
+
+    def get_distance_m(self, obj) -> int | None:
+        d = self.context.get('distances', {}).get(obj.pk)
+        return round(d) if d is not None else None
+
+    def get_nb_agents_disponibles(self, obj) -> int | None:
+        return self.context.get('agents', {}).get(obj.pk)
+
+    def validate(self, attrs):
+        lat = attrs.get('latitude', getattr(self.instance, 'latitude', None))
+        lng = attrs.get('longitude', getattr(self.instance, 'longitude', None))
+        if lat is not None and lng is not None and not dans_senegal(lat, lng):
+            raise serializers.ValidationError({'latitude': 'La structure doit être située au Sénégal.'})
+        if 'latitude' in attrs or 'longitude' in attrs:
+            attrs['position_approximative'] = attrs.get('position_approximative', False)
+        return attrs
+
+
+class FiltreStructure(filters.FilterSet):
+    service = filters.CharFilter(field_name='service__code')
+    region = filters.CharFilter()
+    q = filters.CharFilter(field_name='nom', lookup_expr='icontains')
+    actif = filters.BooleanFilter()
+
+    class Meta:
+        model = Structure
+        fields = []
+
+
+class StructureViewSet(ReferentielViewSet):
+    """Structures d'intervention géolocalisées.
+
+    * `?lat=…&lng=…` (tout compte connecté) : les plus proches, avec la distance et le nombre d'agents
+      disponibles ; filtrées par `categorie` (service compétent) ou `service` (code).
+    * Sans position : liste filtrable (service, région, q) ; écriture réservée au superadministrateur.
+    * `/structures/{id}/agents/` : agents disponibles, présentés au citoyen par prénom et fonction seulement.
+    """
+
+    queryset = Structure.objects.select_related('service')
+    serializer_class = StructureSerializer
+    filterset_class = FiltreStructure
+
+    def list(self, request, *args, **kwargs):
+        from .structures import agents_disponibles, structures_proches
+        p = request.query_params
+        if p.get('lat') is None and p.get('lng') is None:
+            return super().list(request, *args, **kwargs)
+        lat, lng = coordonnees(p.get('lat'), p.get('lng'))
+        services = [p['service']] if p.get('service') else None
+        if p.get('categorie'):
+            cat = Categorie.objects.filter(code=p['categorie'], actif=True).select_related('service_defaut').first()
+            if cat and cat.service_defaut_id:
+                services = [cat.service_defaut.code]
+        proches = structures_proches(lat, lng, services, entier(p.get('limite'), 8, 1, 20, 'limite'))
+        contexte = {**self.get_serializer_context(),
+                    'distances': {s.pk: d for s, d in proches},
+                    'agents': {s.pk: agents_disponibles(s).count() for s, _ in proches}}
+        return Response(StructureSerializer([s for s, _ in proches], many=True, context=contexte).data)
+
+    @extend_schema(responses=OpenApiTypes.OBJECT)
+    @action(detail=True, methods=['get'])
+    def agents(self, request, pk=None):
+        from .structures import agents_disponibles
+        structure = self.get_object()
+        return Response([
+            {'id': a.pk, 'prenom': a.first_name or 'Agent', 'fonction': a.profil_agent.fonction or structure.service.nom,
+             'missions_actives': a.missions_actives}
+            for a in agents_disponibles(structure)
+        ])
 
 
 class CategorieViewSet(ReferentielViewSet):

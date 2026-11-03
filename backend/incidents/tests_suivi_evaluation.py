@@ -14,17 +14,19 @@ class SuiviEtEvaluationTests(SenAlertTestCase):
         self.autre = self.agent('ibou', 'pompiers', ['dakar'])
         self.inc = Incident.objects.create(citoyen=self.awa, type_incident='incendie', description='Feu de cuisine important',
                                            latitude=14.6928, longitude=-17.4467, region='dakar',
-                                           service=Service.objects.get(code='pompiers'))
+                                           service=Service.objects.get(code='pompiers'), structure=self.moussa.structure)
         self.url = f'/api/incidents/{self.inc.pk}/'
 
     def prise_en_charge(self):
+        self.en_tant_que(self.superviseur())
+        self.assertEqual(self.client.post(self.url + 'affecter/', {'agent': self.moussa.pk}, format='json').status_code, 200)
         self.en_tant_que(self.moussa)
-        self.assertEqual(self.client.post(self.url + 'prendre-en-charge/').status_code, 200)
+        self.assertEqual(self.client.post(self.url + 'accepter/').status_code, 200)
 
     def test_position_agent_visible_du_citoyen_pendant_intervention(self):
         self.en_tant_que(self.moussa)
-        # Avant prise en charge : refus
-        self.assertEqual(self.client.post(self.url + 'position-agent/', {'latitude': 14.70, 'longitude': -17.45}).status_code, 409)
+        # Avant affectation : le dossier n'est pas visible de l'agent
+        self.assertEqual(self.client.post(self.url + 'position-agent/', {'latitude': 14.70, 'longitude': -17.45}).status_code, 404)
         self.prise_en_charge()
         r = self.client.post(self.url + 'position-agent/', {'latitude': 14.7019, 'longitude': -17.4467, 'precision': 12}, format='json')
         self.assertEqual(r.status_code, 200, r.data)

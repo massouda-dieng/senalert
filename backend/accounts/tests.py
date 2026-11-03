@@ -249,16 +249,17 @@ class GestionUtilisateursTests(SenAlertTestCase):
 
     def test_creation_agent(self):
         self.en_tant_que(self.superadmin())
-        service = Service.objects.get(code='police')
+        commissariat = self.structure('police')
         r = self.client.post(self.URL + 'agents/', {
             'email': 'Nouvel.Agent@test.sn', 'first_name': 'Ibou', 'last_name': 'Fall', 'mot_de_passe_initial': 'Initial-Solide-2026',
-            'service': service.pk, 'zones': ['dakar', 'thies'],
+            'structure': commissariat.pk,
         }, format='json')
         self.assertEqual(r.status_code, 201, r.data)
         u = User.objects.get(email='nouvel.agent@test.sn')
         self.assertEqual(u.role, ROLE_AGENT)
         self.assertTrue(u.doit_changer_mot_de_passe)
-        self.assertEqual(u.profil_agent.zones, ['dakar', 'thies'])
+        self.assertEqual(u.structure, commissariat)
+        self.assertEqual(u.profil_agent.service.code, 'police', 'le service découle de la structure')
         self.assertTrue(JournalAudit.objects.filter(action='admin.creation_agent').exists())
 
     def test_role_superadmin_non_attribuable_par_api(self):

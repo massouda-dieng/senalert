@@ -8,7 +8,7 @@ import { useConfig } from '../../lib/config';
 import { choisirTheme, themeChoisi } from '../../lib/theme';
 
 const PREFS = [
-  ['notifications_push', 'Notifications push sur mobile', ['citoyen', 'agent', 'superadmin']],
+  ['notifications_push', 'Notifications push sur mobile', ['citoyen', 'agent', 'superviseur', 'superadmin']],
   ['notifications_statut', 'Être notifié des changements de statut de mes dossiers', ['citoyen']],
 ];
 

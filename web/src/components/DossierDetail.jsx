@@ -6,8 +6,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { api, urlObjetProtege } from '../api/client';
 import { useRessource } from '../api/hooks';
-import { useAuth } from '../auth/AuthContext';
-import { useConfig } from '../lib/config';
+import { estSupervision, useAuth } from '../auth/AuthContext';
 import { GRAVITES, STATUTS, dateHeure, duree, ilYa } from '../lib/format';
 import { libelleCategorie, useLangue } from '../lib/langue';
 import CarteSenAlert from './Carte';
@@ -71,7 +70,7 @@ export default function DossierDetail({ type = 'incident', id, onFermer, onModif
     if (s === 'accepte' && estMien) actions.push(<Bouton key="dem" icone={Play} onClick={() => agir('demarrer', undefined, 'Intervention démarrée.').catch(() => {})}>Démarrer l’intervention</Bouton>);
     if (['accepte', 'en_cours'].includes(s) && estMien) actions.push(<Bouton key="res" variante="succes" icone={Flag} onClick={() => setDialogue('resoudre')}>Clôturer (résolu)</Bouton>);
   }
-  if (role === 'superadmin') {
+  if (estSupervision(role)) {
     if (['nouveau', 'affecte', 'accepte', 'en_cours'].includes(s)) actions.push(<Bouton key="aff" icone={UserPlus} onClick={() => setDialogue('affecter')}>{inter?.agent ? 'Réaffecter' : 'Affecter'}</Bouton>);
     if (s === 'nouveau') actions.push(<Bouton key="rej" variante="secondaire" onClick={() => setDialogue('rejeter')}>Rejeter</Bouton>);
     if (['nouveau', 'affecte', 'accepte', 'en_cours'].includes(s)) actions.push(<Bouton key="ann" variante="secondaire" icone={XCircle} onClick={() => setDialogue('annuler')}>Annuler</Bouton>);
@@ -84,8 +83,8 @@ export default function DossierDetail({ type = 'incident', id, onFermer, onModif
       </a>,
     );
   }
-  const peutNoter = role === 'superadmin' || (role === 'agent' && estMien);
-  const peutGravite = (role === 'superadmin' || (role === 'agent' && estMien)) && !['resolu', 'refuse', 'annule'].includes(s);
+  const peutNoter = estSupervision(role) || (role === 'agent' && estMien);
+  const peutGravite = (estSupervision(role) || (role === 'agent' && estMien)) && !['resolu', 'refuse', 'annule'].includes(s);
 
   return (
     <div className="space-y-5">
@@ -124,6 +123,7 @@ export default function DossierDetail({ type = 'incident', id, onFermer, onModif
           {(d.description || d.message) && <p className="whitespace-pre-wrap rounded-2xl bg-surface-douce p-4 text-sm leading-relaxed">{d.description || d.message}</p>}
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
             {d.service_nom && <Info libelle="Service">{d.service_nom}</Info>}
+            {d.structure_nom && <Info libelle="Structure">{d.structure_nom}</Info>}
             {d.adresse && <Info libelle="Adresse / repère">{d.adresse}</Info>}
             <Info libelle="Position">{d.latitude != null ? `${d.latitude.toFixed(5)}, ${d.longitude.toFixed(5)}${d.precision_gps != null ? ` (± ${Math.round(d.precision_gps)} m)` : ''}` : 'Indisponible (GPS non fourni)'}</Info>
             {d.date_prise_en_charge && <Info libelle="Prise en charge">{`${dateHeure(d.date_prise_en_charge)} (${duree((new Date(d.date_prise_en_charge) - new Date(d.date_creation)) / 60000)})`}</Info>}
@@ -381,32 +381,45 @@ export function DialogueCloture({ ouverte, onFermer, onValider }) {
 }
 
 function DialogueAffectation({ dossier, onFermer, onValider }) {
-  const config = useConfig();
-  const [service, setService] = useState(dossier.service ? String(dossier.service) : '');
+  const { utilisateur } = useAuth();
+  const national = utilisateur.role === 'superadmin';
+  // Le superviseur affecte un agent de sa structure ; le superviseur national peut réorienter vers une structure proche.
+  const [structure, setStructure] = useState(dossier.structure ? String(dossier.structure) : '');
   const [agent, setAgent] = useState('');
   const [message, setMessage] = useState('');
   const [envoi, setEnvoi] = useState(false);
-  const services = useRessource('/services/');
-  const agents = useRessource('/gestion/utilisateurs/', { role: 'agent', is_active: true, service: service || undefined, zone: dossier.region || undefined, taille: 100 });
+  const proches = useRessource(national && dossier.latitude != null ? '/structures/' : null,
+    { lat: dossier.latitude, lng: dossier.longitude, limite: 10 });
+  const agents = useRessource(structure ? '/gestion/utilisateurs/' : null, { role: 'agent', is_active: true, structure, taille: 100 });
   const liste = agents.donnees?.results || [];
+  const optionsStructures = [
+    ...(dossier.structure ? [{ code: String(dossier.structure), libelle: `${dossier.structure_nom} (actuelle)` }] : []),
+    ...(proches.donnees || []).filter((s) => s.id !== dossier.structure)
+      .map((s) => ({ code: String(s.id), libelle: `${s.nom} — ${s.service_nom} · ${(s.distance_m / 1000).toFixed(1)} km` })),
+  ];
   return (
     <Fenetre ouverte onFermer={onFermer} titre={`Affecter ${dossier.reference}`} pied={<>
       <Bouton variante="secondaire" onClick={onFermer}>Annuler</Bouton>
       <Bouton chargement={envoi} disabled={!agent} onClick={async () => {
         setEnvoi(true);
-        try { await onValider({ agent: Number(agent), service: service ? Number(service) : null, message }); onFermer(); } catch { /* toast */ } finally { setEnvoi(false); }
+        try { await onValider({ agent: Number(agent), message }); onFermer(); } catch { /* toast */ } finally { setEnvoi(false); }
       }}>Affecter</Bouton>
     </>}>
       <div className="space-y-4">
-        <Champ libelle="Service">{(id) => (
-          <Selecteur id={id} valeur={service} onChange={(v) => { setService(v); setAgent(''); }} vide="Tous les services"
-            options={(services.donnees || []).filter((x) => x.actif).map((x) => ({ code: String(x.id), libelle: x.nom }))} />
-        )}</Champ>
-        <Champ libelle="Agent" requis aide={`Agents actifs couvrant la région ${config.region(dossier.region)?.libelle || ''}.`}>{(id) => (
-          agents.chargement ? <Chargement className="py-3" /> : liste.length === 0
-            ? <p id={id} className="rounded-xl bg-alerte-clair p-3 text-sm text-alerte">Aucun agent actif ne couvre cette zone pour ce service. Créez ou rattachez un agent dans « Utilisateurs ».</p>
-            : <Selecteur id={id} valeur={agent} onChange={setAgent} vide="Choisir un agent…"
-              options={liste.map((a) => ({ code: String(a.id), libelle: `${a.first_name} ${a.last_name} — ${a.profil_agent?.service_nom || 'sans service'}`.trim() }))} />
+        {national ? (
+          <Champ libelle="Structure" aide="Structures les plus proches du lieu du dossier.">{(id) => (
+            <Selecteur id={id} valeur={structure} onChange={(v) => { setStructure(v); setAgent(''); }} vide="Choisir une structure…" options={optionsStructures} />
+          )}</Champ>
+        ) : <p className="text-sm text-texte-doux">Structure : <strong className="text-texte">{dossier.structure_nom}</strong></p>}
+        <Champ libelle="Agent" requis aide="Les agents disponibles sont proposés en premier.">{(id) => (
+          !structure ? <p id={id} className="text-sm text-texte-doux">Choisissez d’abord une structure.</p>
+            : agents.chargement ? <Chargement className="py-3" /> : liste.length === 0
+              ? <p id={id} className="rounded-xl bg-alerte-clair p-3 text-sm text-alerte">Aucun agent actif dans cette structure. Ajoutez-en un dans « {national ? 'Utilisateurs' : 'Mes agents'} ».</p>
+              : <Selecteur id={id} valeur={agent} onChange={setAgent} vide="Choisir un agent…"
+                options={[...liste].sort((a, b) => Number(b.profil_agent?.disponible) - Number(a.profil_agent?.disponible)).map((a) => ({
+                  code: String(a.id),
+                  libelle: `${a.first_name} ${a.last_name} — ${a.profil_agent?.fonction || 'agent'} · ${a.profil_agent?.disponible ? 'disponible' : 'indisponible'}`.trim(),
+                }))} />
         )}</Champ>
         <Champ libelle="Consigne (optionnelle)">{(id) => <textarea id={id} rows={2} className="champ" value={message} onChange={(e) => setMessage(e.target.value)} maxLength={500} />}</Champ>
       </div>

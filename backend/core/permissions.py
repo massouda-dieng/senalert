@@ -1,10 +1,19 @@
 from rest_framework.permissions import BasePermission
 
-from .constants import ROLE_AGENT, ROLE_CITOYEN, ROLE_SUPERADMIN
+from .constants import ROLE_AGENT, ROLE_CITOYEN, ROLE_SUPERADMIN, ROLE_SUPERVISEUR, ROLES_SUPERVISION
 
 
 def est_superadmin(user):
     return bool(user and user.is_authenticated and user.role == ROLE_SUPERADMIN)
+
+
+def est_superviseur(user):
+    return bool(user and user.is_authenticated and user.role == ROLE_SUPERVISEUR)
+
+
+def est_supervision(user):
+    """Superadministrateur (tout le pays) ou superviseur de structure (sa structure seulement)."""
+    return bool(user and user.is_authenticated and user.role in ROLES_SUPERVISION)
 
 
 def est_agent(user):
@@ -20,6 +29,20 @@ class EstSuperAdmin(BasePermission):
 
     def has_permission(self, request, view):
         return est_superadmin(request.user)
+
+
+class EstSupervision(BasePermission):
+    message = "Action réservée à la supervision."
+
+    def has_permission(self, request, view):
+        return est_supervision(request.user)
+
+
+class EstAgentOuSupervision(BasePermission):
+    message = "Action réservée aux agents et à la supervision."
+
+    def has_permission(self, request, view):
+        return est_agent(request.user) or est_supervision(request.user)
 
 
 class EstAgent(BasePermission):

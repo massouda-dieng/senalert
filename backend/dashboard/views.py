@@ -13,7 +13,7 @@ from rest_framework.views import APIView
 from alerts.models import AlerteSOS
 from analyse.views import calculer
 from core.audit import journaliser
-from core.permissions import EstAgent, EstAgentOuSuperAdmin, EstSuperAdmin
+from core.permissions import EstAgent, EstAgentOuSupervision, EstSupervision, est_superviseur
 from incidents.models import Incident
 from incidents.views import FiltreIncident
 
@@ -24,14 +24,25 @@ COLONNES = ['reference', 'date_creation', 'categorie', 'region', 'statut', 'grav
             'doublon_potentiel_de']
 
 
-class StatistiquesView(APIView):
-    """Indicateurs de supervision (superadmin). Filtres : date_debut, date_fin, region, type_incident, service, granularite."""
+def parametres_perimetre(request):
+    """Filtres de la requête, avec la structure imposée pour un superviseur de structure."""
+    params = request.query_params.copy()
+    if est_superviseur(request.user):
+        params['structure'] = request.user.structure_id or -1  # sans structure : aucun dossier
+    return params
 
-    permission_classes = [EstSuperAdmin]
+
+class StatistiquesView(APIView):
+    """Indicateurs de supervision. Filtres : date_debut, date_fin, region, type_incident, service, granularite.
+
+    Le superviseur de structure ne voit que les indicateurs de sa structure.
+    """
+
+    permission_classes = [EstSupervision]
 
     @extend_schema(responses=OpenApiTypes.OBJECT)
     def get(self, request):
-        return Response(stats.statistiques(request.query_params))
+        return Response(stats.statistiques(parametres_perimetre(request)))
 
 
 class FluxView(APIView):
@@ -41,7 +52,7 @@ class FluxView(APIView):
     et des agents). Premier appel sans `depuis` : renvoie seulement l'heure du serveur.
     """
 
-    permission_classes = [EstAgentOuSuperAdmin]
+    permission_classes = [EstAgentOuSupervision]
 
     @extend_schema(responses=OpenApiTypes.OBJECT)
     def get(self, request):
@@ -80,7 +91,9 @@ class ActiviteAgentView(APIView):
 
 
 def lignes_export(request):
-    qs = Incident.objects.select_related('service', 'intervention__agent', 'doublon_potentiel_de').order_by('-date_creation')
+    from incidents.workflow import filtre_visibilite
+    qs = (Incident.objects.filter(filtre_visibilite(request.user, False))
+          .select_related('service', 'intervention__agent', 'doublon_potentiel_de').order_by('-date_creation'))
     qs = FiltreIncident(request.query_params, queryset=qs, request=request).qs
     for inc in qs.iterator(chunk_size=500):
         inter = getattr(inc, 'intervention', None)
@@ -109,7 +122,7 @@ def cellule_sure(valeur):
 class ExportCSVView(APIView):
     """Export CSV des incidents filtrés (mêmes filtres que la liste). Journalisé."""
 
-    permission_classes = [EstSuperAdmin]
+    permission_classes = [EstSupervision]
 
     @extend_schema(responses={(200, 'text/csv'): bytes})
     def get(self, request):
@@ -130,7 +143,7 @@ class ExportCSVView(APIView):
 class ExportPDFView(APIView):
     """Rapport PDF de synthèse (indicateurs, régions, catégories, zones de risque) pour la période choisie."""
 
-    permission_classes = [EstSuperAdmin]
+    permission_classes = [EstSupervision]
 
     @extend_schema(responses={(200, 'application/pdf'): bytes})
     def get(self, request):
@@ -140,7 +153,7 @@ class ExportPDFView(APIView):
         from reportlab.lib.units import cm
         from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-        s = stats.statistiques(request.query_params)
+        s = stats.statistiques(parametres_perimetre(request))
         debut, fin = s['periode']['debut'], s['periode']['fin']
         zones, _ = calculer(debut, fin)
         styles = getSampleStyleSheet()

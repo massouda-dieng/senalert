@@ -26,12 +26,17 @@ BBOX_SENEGAL = {'lat_min': 12.0, 'lat_max': 16.8, 'lng_min': -17.8, 'lng_max': -
 
 ROLE_CITOYEN = 'citoyen'
 ROLE_AGENT = 'agent'
+ROLE_SUPERVISEUR = 'superviseur'
 ROLE_SUPERADMIN = 'superadmin'
 ROLE_CHOICES = [
     (ROLE_CITOYEN, 'Citoyen'),
     (ROLE_AGENT, 'Agent de secours'),
+    (ROLE_SUPERVISEUR, 'Superviseur de structure'),
     (ROLE_SUPERADMIN, 'Superadministrateur'),
 ]
+# Rôles qui accèdent à l'espace de supervision : le superadministrateur (tout le pays)
+# et le superviseur d'une structure (uniquement les dossiers et agents de sa structure).
+ROLES_SUPERVISION = {ROLE_SUPERVISEUR, ROLE_SUPERADMIN}
 
 # Cycle de vie d'un dossier (incident ou alerte SOS).
 #   nouveau → affecte → accepte → en_cours → resolu

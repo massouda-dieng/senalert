@@ -20,8 +20,8 @@ from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from core.constants import (
-    ACCEPTE, AFFECTE, ANNULE, EN_COURS, NOUVEAU, REFUSE, RESOLU, ROLE_AGENT, ROLE_SUPERADMIN, STATUTS_ACTIFS,
-    STATUTS_FINAUX,
+    ACCEPTE, AFFECTE, ANNULE, EN_COURS, NOUVEAU, REFUSE, RESOLU, ROLE_AGENT, ROLE_SUPERADMIN, ROLE_SUPERVISEUR,
+    ROLES_SUPERVISION, STATUTS_ACTIFS, STATUTS_FINAUX,
 )
 from core.exceptions import Conflit
 from core.geo import boite_englobante, distance_m
@@ -96,42 +96,58 @@ def profil_agent(user):
 
 
 def filtre_visibilite(user, est_sos):
-    """Q-objet des dossiers visibles par un utilisateur (contrôle d'accès serveur)."""
+    """Q-objet des dossiers visibles par un utilisateur (contrôle d'accès serveur).
+
+    * superadministrateur : tout le pays ;
+    * superviseur de structure : les dossiers orientés vers sa structure ;
+    * agent : uniquement les dossiers qui lui sont affectés (choisi par le citoyen ou par son superviseur) ;
+    * citoyen : ses propres dossiers.
+    """
     if user.role == ROLE_SUPERADMIN:
         return Q()
+    if user.role == ROLE_SUPERVISEUR:
+        return Q(structure_id=user.structure_id) if user.structure_id else Q(pk__in=[])
     if user.role == ROLE_AGENT:
-        q = Q(intervention__agent=user)
-        profil = profil_agent(user)
-        if profil and profil.zones:
-            nouveaux = Q(statut=NOUVEAU, region__in=profil.zones)
-            if not est_sos:
-                # Un incident nouveau n'est visible que par le service compétent.
-                nouveaux &= Q(service=profil.service) if profil.service_id else Q(pk__in=[])
-            q |= nouveaux
-        return q
+        return Q(intervention__agent=user)
     return Q(citoyen=user)
 
 
 def dans_portee_agent(agent, dossier):
-    profil = profil_agent(agent)
-    if not profil or dossier.region not in (profil.zones or []):
-        return False
-    if est_incident(dossier):
-        return bool(profil.service_id) and dossier.service_id == profil.service_id
-    return True
+    """Un agent n'intervient que sur les dossiers de sa structure."""
+    return bool(agent.structure_id) and dossier.structure_id == agent.structure_id
+
+
+def exiger_portee_supervision(acteur, dossier):
+    """Un superviseur de structure n'agit que sur les dossiers de sa structure."""
+    if acteur.role == ROLE_SUPERVISEUR and (not acteur.structure_id or dossier.structure_id != acteur.structure_id):
+        raise PermissionDenied("Ce dossier ne relève pas de votre structure.")
 
 
 # --------------------------------------------------------------------------
 # Création
 # --------------------------------------------------------------------------
 
-def apres_creation(dossier, acteur):
-    """Événement initial, doublons potentiels et notification des agents compétents."""
+def apres_creation(dossier, acteur, agent=None):
+    """Événement initial, doublons potentiels, transmission à l'agent choisi et notifications."""
     evenement(dossier, 'creation', acteur, apres=dossier.statut,
               message='Alerte SOS enregistrée.' if not est_incident(dossier) else 'Signalement enregistré.')
     if est_incident(dossier):
         detecter_doublon(dossier)
+    if agent is not None:
+        transmettre(dossier, agent, acteur)
     transaction.on_commit(lambda: notif.notifier_nouveau_dossier(dossier))
+
+
+def transmettre(dossier, agent, acteur):
+    """Le dossier part directement à l'agent choisi par le citoyen (ou désigné automatiquement pour un SOS)."""
+    Intervention.objects.update_or_create(**_lien(dossier), defaults={
+        'agent': agent, 'service': dossier.service or (dossier.structure.service if dossier.structure_id else None),
+        'affecte_par': None, 'date_affectation': timezone.now(),
+    })
+    structure = dossier.structure.nom if dossier.structure_id else 'la structure'
+    evenement(dossier, 'affectation', acteur, f'Transmis à {agent.nom_affiche} ({structure}).', visible=False)
+    _changer_statut(dossier, AFFECTE, acteur, f'Dossier transmis à {structure}.')
+    transaction.on_commit(lambda: notif.notifier_affectation(dossier, agent))
 
 
 def detecter_doublon(incident):
@@ -171,14 +187,17 @@ def detecter_doublon(incident):
 
 @transaction.atomic
 def affecter(dossier, acteur, agent=None, service=None, message=''):
-    """Affectation ou réaffectation par le superadministrateur."""
+    """Affectation ou réaffectation par la supervision (superviseur : agents de sa structure uniquement)."""
     dossier = _verrouiller(dossier)
+    exiger_portee_supervision(acteur, dossier)
     _exiger_statut(dossier, {NOUVEAU, AFFECTE, ACCEPTE, EN_COURS}, 'affecter')
     if agent is None and service is None:
         raise ValidationError({'agent': 'Indiquez un agent ou un service.'})
     if agent is not None:
         if agent.role != ROLE_AGENT or not agent.is_active:
             raise ValidationError({'agent': "Ce compte n'est pas un agent actif."})
+        if acteur.role == ROLE_SUPERVISEUR and agent.structure_id != acteur.structure_id:
+            raise ValidationError({'agent': "Cet agent n'appartient pas à votre structure."})
         profil = profil_agent(agent)
         service = service or (profil.service if profil else None)
 
@@ -194,9 +213,16 @@ def affecter(dossier, acteur, agent=None, service=None, message=''):
     inter.date_acceptation = inter.date_debut = None
     inter.save()
 
+    champs = []
     if service and dossier.service_id != service.pk:
         dossier.service = service
-        dossier.save(update_fields=['service'])
+        champs.append('service')
+    if agent is not None and agent.structure_id and dossier.structure_id != agent.structure_id:
+        # Réorientation par le superadministrateur vers la structure de l'agent choisi.
+        dossier.structure_id = agent.structure_id
+        champs.append('structure')
+    if champs:
+        dossier.save(update_fields=champs)
 
     cible = agent.nom_affiche if agent else (service.nom if service else '')
     texte = f"{'Réaffecté' if reaffectation else 'Affecté'} à {cible}." + (f' {message}' if message else '')
@@ -219,7 +245,7 @@ def prendre_en_charge(dossier, agent):
     dossier = _verrouiller(dossier)
     _exiger_statut(dossier, {NOUVEAU}, 'prendre en charge')
     if not dans_portee_agent(agent, dossier):
-        raise PermissionDenied("Ce dossier n'est pas dans votre zone ou votre service.")
+        raise PermissionDenied("Ce dossier ne relève pas de votre structure.")
     profil = profil_agent(agent)
     now = timezone.now()
     Intervention.objects.update_or_create(**_lien(dossier), defaults={
@@ -259,7 +285,7 @@ def decliner(dossier, agent, motif):
     inter.date_affectation = None
     inter.save(update_fields=['agent', 'date_affectation'])
     _changer_statut(dossier, NOUVEAU, agent, f'Affectation déclinée : {motif}', visible=False)
-    transaction.on_commit(lambda: notif.notifier_superadmins(
+    transaction.on_commit(lambda: notif.notifier_supervision(
         dossier, 'affectation', 'Affectation déclinée', f'{dossier.reference} : {motif}', f'decline:{timezone.now().timestamp()}'))
     return dossier
 
@@ -335,7 +361,8 @@ def annuler(dossier, acteur, motif):
     if not motif:
         raise ValidationError({'motif': "Le motif d'annulation est obligatoire."})
     dossier = _verrouiller(dossier)
-    if acteur.role == ROLE_SUPERADMIN:
+    if acteur.role in ROLES_SUPERVISION:
+        exiger_portee_supervision(acteur, dossier)
         _exiger_statut(dossier, STATUTS_ACTIFS, 'annuler')
     elif dossier.citoyen_id == acteur.pk:
         if not regles().get('citoyen_peut_annuler', True):
@@ -355,6 +382,7 @@ def rejeter(dossier, acteur, motif):
     if not motif:
         raise ValidationError({'motif': 'Le motif est obligatoire.'})
     dossier = _verrouiller(dossier)
+    exiger_portee_supervision(acteur, dossier)
     _exiger_statut(dossier, {NOUVEAU}, 'rejeter')
     _changer_statut(dossier, REFUSE, acteur, f'Signalement rejeté : {motif}', motif=motif)
     return dossier

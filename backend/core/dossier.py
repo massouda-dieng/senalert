@@ -25,6 +25,8 @@ class Dossier(models.Model):
     statut = models.CharField(max_length=20, choices=STATUT_CHOICES, default=NOUVEAU, db_index=True)
     gravite = models.CharField(max_length=10, choices=GRAVITE_CHOICES, default='moyenne')
     service = models.ForeignKey('core.Service', null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
+    # Structure qui traite le dossier : seuls son superviseur et l'agent affecté le voient.
+    structure = models.ForeignKey('core.Structure', null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
     client_request_id = models.UUIDField(
         null=True, blank=True, help_text="Clé d'idempotence fournie par le client (anti-doublon réseau).",
     )

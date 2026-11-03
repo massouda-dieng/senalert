@@ -6,8 +6,8 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenObtainSerializer
 from rest_framework_simplejwt.settings import api_settings as jwt_settings
 
-from core.constants import REGIONS, ROLE_AGENT, ROLE_CITOYEN, ROLE_SUPERADMIN
-from core.models import Service
+from core.constants import REGIONS, ROLE_AGENT, ROLE_CITOYEN, ROLE_SUPERADMIN, ROLE_SUPERVISEUR
+from core.models import Service, Structure
 
 from .models import PREFERENCES_DEFAUT, AgentProfil, User
 
@@ -24,7 +24,7 @@ class AgentProfilSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AgentProfil
-        fields = ['service', 'service_nom', 'zones', 'matricule', 'fonction']
+        fields = ['service', 'service_nom', 'zones', 'matricule', 'fonction', 'disponible']
 
 
 class ProfilAgentSiAgentMixin:
@@ -42,15 +42,16 @@ class UtilisateurSerializer(ProfilAgentSiAgentMixin, serializers.ModelSerializer
 
     profil_agent = AgentProfilSerializer(read_only=True)
     role_libelle = serializers.CharField(source='get_role_display', read_only=True)
+    structure_nom = serializers.CharField(source='structure.nom', default=None, read_only=True)
     google_lie = serializers.SerializerMethodField()
     a_mot_de_passe = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'telephone', 'region', 'role',
-                  'role_libelle', 'preferences', 'doit_changer_mot_de_passe', 'profil_agent', 'google_lie',
-                  'a_mot_de_passe', 'date_joined']
-        read_only_fields = ['id', 'username', 'role', 'doit_changer_mot_de_passe', 'date_joined']
+                  'role_libelle', 'structure', 'structure_nom', 'preferences', 'doit_changer_mot_de_passe',
+                  'profil_agent', 'google_lie', 'a_mot_de_passe', 'date_joined']
+        read_only_fields = ['id', 'username', 'role', 'structure', 'doit_changer_mot_de_passe', 'date_joined']
 
     def get_google_lie(self, obj) -> bool:
         return obj.comptes_externes.filter(fournisseur='google').exists()
@@ -113,6 +114,9 @@ class InscriptionSerializer(serializers.ModelSerializer):
 
 
 ONGLETS_CONNEXION = {ROLE_CITOYEN: 'Citoyen', ROLE_AGENT: 'Agent', ROLE_SUPERADMIN: 'Superviseur'}
+# Onglet de connexion de chaque rôle : le superviseur de structure se connecte par l'onglet « Superviseur ».
+ESPACE_DU_ROLE = {ROLE_CITOYEN: ROLE_CITOYEN, ROLE_AGENT: ROLE_AGENT, ROLE_SUPERVISEUR: ROLE_SUPERADMIN,
+                  ROLE_SUPERADMIN: ROLE_SUPERADMIN}
 
 
 class ConnexionSerializer(TokenObtainPairSerializer):
@@ -130,32 +134,19 @@ class ConnexionSerializer(TokenObtainPairSerializer):
         identifiant = (attrs.get('username') or '').strip()
         user = User.objects.filter(email__iexact=identifiant).first() if '@' in identifiant else None
         attrs['username'] = user.username if user else identifiant
-        if user is None and '@' in identifiant:
-            self._signaler_demande_en_cours(identifiant, attrs.get('password') or '')
         espace = attrs.pop('espace', '')
         data = TokenObtainSerializer.validate(self, attrs)  # authentification seule : aucun jeton émis avant le contrôle
-        if espace and espace != self.user.role:
+        attendu = ESPACE_DU_ROLE[self.user.role]
+        if espace and espace != attendu:
             raise AuthenticationFailed(
-                f'Ce compte est un compte {ONGLETS_CONNEXION[self.user.role].lower()} : choisissez l’onglet '
-                f'« {ONGLETS_CONNEXION[self.user.role]} » pour vous connecter.', code='mauvais_espace')
+                f'Ce compte est un compte {ONGLETS_CONNEXION[attendu].lower()} : choisissez l’onglet '
+                f'« {ONGLETS_CONNEXION[attendu]} » pour vous connecter.', code='mauvais_espace')
         refresh = self.get_token(self.user)
         data['refresh'], data['access'] = str(refresh), str(refresh.access_token)
         if jwt_settings.UPDATE_LAST_LOGIN:
             update_last_login(None, self.user)
         data['utilisateur'] = UtilisateurSerializer(self.user).data
         return data
-
-    @staticmethod
-    def _signaler_demande_en_cours(email, mot_de_passe):
-        """Demande d'accès agent en attente : message explicite, seulement si le mot de passe correspond."""
-        from django.contrib.auth.hashers import check_password
-        from rest_framework.exceptions import AuthenticationFailed
-
-        from .models import DemandeCompteAgent
-        d = DemandeCompteAgent.objects.filter(email__iexact=email, statut='en_attente').first()
-        if d and check_password(mot_de_passe, d.mot_de_passe_hash):
-            raise AuthenticationFailed('Votre demande de compte agent est en attente de validation par un superviseur. '
-                                       'Vous pourrez vous connecter dès qu’elle sera acceptée.', code='demande_en_attente')
 
     @classmethod
     def get_token(cls, user):
@@ -218,25 +209,26 @@ class DeviceTokenSerializer(serializers.Serializer):
 class UtilisateurAdminSerializer(ProfilAgentSiAgentMixin, serializers.ModelSerializer):
     profil_agent = AgentProfilSerializer(read_only=True)
     role_libelle = serializers.CharField(source='get_role_display', read_only=True)
+    structure_nom = serializers.CharField(source='structure.nom', default=None, read_only=True)
     nb_interventions = serializers.IntegerField(read_only=True, default=None)
 
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'telephone', 'region', 'role', 'role_libelle',
-                  'is_active', 'last_login', 'date_joined', 'profil_agent', 'nb_interventions']
+                  'structure', 'structure_nom', 'is_active', 'last_login', 'date_joined', 'profil_agent',
+                  'nb_interventions']
         read_only_fields = fields
 
 
-class CreationAgentSerializer(serializers.Serializer):
+class CreationCompteSerializer(serializers.Serializer):
+    """Champs communs à la création d'un agent ou d'un superviseur de structure."""
+
     email = serializers.EmailField()
     first_name = serializers.CharField(max_length=150)
     last_name = serializers.CharField(max_length=150)
     telephone = serializers.CharField(max_length=20, required=False, allow_blank=True)
     mot_de_passe_initial = serializers.CharField(write_only=True)
-    service = serializers.PrimaryKeyRelatedField(queryset=Service.objects.filter(actif=True))
-    zones = serializers.ListField(child=serializers.ChoiceField(choices=list(REGIONS)), allow_empty=False)
-    matricule = serializers.CharField(max_length=40, required=False, allow_blank=True)
-    fonction = serializers.CharField(max_length=80, required=False, allow_blank=True)
+    structure = serializers.PrimaryKeyRelatedField(queryset=Structure.objects.filter(actif=True), required=False)
 
     def validate_email(self, value):
         value = value.strip().lower()
@@ -249,15 +241,28 @@ class CreationAgentSerializer(serializers.Serializer):
         return attrs
 
 
+class CreationAgentSerializer(CreationCompteSerializer):
+    """Le superviseur crée ses agents dans sa propre structure (le champ structure est alors ignoré)."""
+
+    matricule = serializers.CharField(max_length=40, required=False, allow_blank=True)
+    fonction = serializers.CharField(max_length=80, required=False, allow_blank=True)
+
+
+class CreationSuperviseurSerializer(CreationCompteSerializer):
+    structure = serializers.PrimaryKeyRelatedField(queryset=Structure.objects.filter(actif=True))
+
+
 class ModificationUtilisateurSerializer(serializers.Serializer):
-    """Seuls les rôles citoyen ↔ agent sont attribuables par l'API.
+    """Seuls les rôles citoyen, agent et superviseur de structure sont attribuables par l'API.
 
     Le rôle superadministrateur se provisionne exclusivement en ligne de
     commande sur le serveur (python manage.py creer_superadmin).
     """
 
-    role = serializers.ChoiceField(choices=[ROLE_CITOYEN, ROLE_AGENT], required=False)
+    role = serializers.ChoiceField(choices=[ROLE_CITOYEN, ROLE_AGENT, ROLE_SUPERVISEUR], required=False)
     is_active = serializers.BooleanField(required=False)
+    structure = serializers.PrimaryKeyRelatedField(queryset=Structure.objects.all(), required=False, allow_null=True)
+    disponible = serializers.BooleanField(required=False)
     service = serializers.PrimaryKeyRelatedField(queryset=Service.objects.all(), required=False, allow_null=True)
     zones = serializers.ListField(child=serializers.ChoiceField(choices=list(REGIONS)), required=False)
     matricule = serializers.CharField(max_length=40, required=False, allow_blank=True)

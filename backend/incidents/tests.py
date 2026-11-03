@@ -114,7 +114,8 @@ class VisibiliteTests(SenAlertTestCase):
         super().setUp()
         self.awa = self.citoyen('awa')
         self.inc = Incident.objects.create(citoyen=self.awa, type_incident='incendie', latitude=14.7, longitude=-17.45,
-                                           region='dakar', service_id=self.service('pompiers'))
+                                           region='dakar', service_id=self.service('pompiers'),
+                                           structure=self.structure('pompiers'))
 
     def service(self, code):
         from core.models import Service
@@ -127,8 +128,13 @@ class VisibiliteTests(SenAlertTestCase):
         self.assertEqual(self.client.get(f'{URL}{self.inc.pk}/').status_code, 404)
         self.assertEqual(self.client.post(f'{URL}{self.inc.pk}/annuler/', {'motif': 'x'}, format='json').status_code, 404)
 
-    def test_agent_du_bon_service_et_de_la_zone(self):
-        self.en_tant_que(self.agent('pompier', 'pompiers', ['dakar']))
+    def test_agent_ne_voit_que_les_dossiers_qui_lui_sont_transmis(self):
+        """Même structure ne suffit pas : seul l'agent choisi (ou affecté par son superviseur) voit le dossier."""
+        pompier = self.en_tant_que(self.agent('pompier', 'pompiers', ['dakar']))
+        self.assertEqual(self.client.get(URL).data['count'], 0)
+        self.en_tant_que(self.superadmin())
+        self.client.post(f'{URL}{self.inc.pk}/affecter/', {'agent': pompier.pk}, format='json')
+        self.en_tant_que(pompier)
         self.assertEqual(self.client.get(URL).data['count'], 1)
 
     def test_agent_autre_service_ou_autre_zone(self):
@@ -143,8 +149,14 @@ class VisibiliteTests(SenAlertTestCase):
         self.awa.save()
         pompier = self.agent('pompier', 'pompiers', ['dakar'])
         self.en_tant_que(pompier)
-        self.assertIsNone(self.client.get(f'{URL}{self.inc.pk}/').data['citoyen_contact'])
-        self.client.post(f'{URL}{self.inc.pk}/prendre-en-charge/')
+        self.assertEqual(self.client.get(f'{URL}{self.inc.pk}/').status_code, 404)
+        self.en_tant_que(self.citoyen('voisin'))
+        self.assertEqual(self.client.get(f'{URL}{self.inc.pk}/').status_code, 404)
+        self.en_tant_que(self.superviseur())
+        self.assertEqual(self.client.get(f'{URL}{self.inc.pk}/').data['citoyen_contact']['telephone'], '771234567',
+                         'le superviseur de la structure peut rappeler le déclarant')
+        self.client.post(f'{URL}{self.inc.pk}/affecter/', {'agent': pompier.pk}, format='json')
+        self.en_tant_que(pompier)
         self.assertEqual(self.client.get(f'{URL}{self.inc.pk}/').data['citoyen_contact']['telephone'], '771234567')
 
     def test_carte_minimale_et_arrondie(self):
@@ -177,6 +189,11 @@ class WorkflowTests(SenAlertTestCase):
         with self.captureOnCommitCallbacks(execute=True):
             return self.client.post(f'{self.url}{nom}/', data, format='json')
 
+    def prise_en_charge(self):
+        """Affectation par la supervision puis acceptation par l'agent."""
+        self.action(self.chef, 'affecter', agent=self.pompier.pk)
+        return self.action(self.pompier, 'accepter')
+
     def test_parcours_complet(self):
         """Scénarios 2, 3, 4 : affectation, acceptation, mise à jour, suivi par le citoyen."""
         r = self.action(self.chef, 'affecter', agent=self.pompier.pk)
@@ -203,21 +220,22 @@ class WorkflowTests(SenAlertTestCase):
         self.assertEqual(types_notif, {'statut', 'resolution'})
 
     def test_compte_rendu_obligatoire(self):
-        self.action(self.pompier, 'prendre-en-charge')
+        self.prise_en_charge()
         r = self.action(self.pompier, 'resoudre', compte_rendu='ok')
         self.assertEqual(r.status_code, 400)
 
     def test_transition_invalide_409(self):
+        self.action(self.chef, 'affecter', agent=self.pompier.pk)
         r = self.action(self.pompier, 'demarrer')
-        self.assertEqual(r.status_code, 409)  # « nouveau » : le démarrage est impossible
-        self.action(self.pompier, 'prendre-en-charge')
+        self.assertEqual(r.status_code, 409)  # « affecté » : il faut d'abord accepter
+        self.action(self.pompier, 'accepter')
         r = self.action(self.pompier, 'accepter')
         self.assertEqual(r.status_code, 409)
 
-    def test_concurrence_deux_agents(self):
+    def test_autre_agent_de_la_structure_ne_voit_pas_le_dossier(self):
         autre = self.agent('pompier2', 'pompiers', ['dakar'])
-        self.assertEqual(self.action(self.pompier, 'prendre-en-charge').status_code, 200)
-        self.assertEqual(self.action(autre, 'prendre-en-charge').status_code, 404)  # n'est plus visible
+        self.prise_en_charge()
+        self.assertEqual(self.action(autre, 'accepter').status_code, 404)
 
     def test_agent_ne_peut_pas_affecter(self):
         self.assertEqual(self.action(self.pompier, 'affecter', agent=self.pompier.pk).status_code, 403)
@@ -248,7 +266,7 @@ class WorkflowTests(SenAlertTestCase):
         self.assertEqual(self.action(self.chef, 'rejeter', motif='Signalement non fondé').data['statut'], REFUSE)
 
     def test_complement_citoyen_notifie_agent(self):
-        self.action(self.pompier, 'prendre-en-charge')
+        self.prise_en_charge()
         self.en_tant_que(self.awa)
         with self.captureOnCommitCallbacks(execute=True):
             r = self.client.post(f'{self.url}completer/', {'message': 'Le feu a gagné le bâtiment voisin'}, format='json')

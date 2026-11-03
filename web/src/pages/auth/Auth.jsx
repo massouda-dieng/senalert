@@ -1,4 +1,4 @@
-import { BadgeCheck, Eye, EyeOff, LogIn, MailCheck, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, LogIn, MailCheck, ShieldCheck } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../api/client';
@@ -100,10 +100,10 @@ const ESPACES = {
     libelle: 'Citoyen', sousTitre: 'Signalez un incident, lancez un SOS et suivez vos dossiers.', identifiant: 'E-mail ou identifiant',
   },
   agent: {
-    libelle: 'Agent', sousTitre: 'Police, pompiers, santé, SENELEC, ONAS : traitez les interventions de votre service.', identifiant: 'E-mail professionnel',
+    libelle: 'Agent', sousTitre: 'Police, pompiers, santé, SENELEC, ONAS : traitez les interventions qui vous sont transmises.', identifiant: 'E-mail professionnel',
   },
   superadmin: {
-    libelle: 'Superviseur', sousTitre: 'Supervisez les dossiers, les agents et la plateforme.', identifiant: 'E-mail ou identifiant',
+    libelle: 'Superviseur', sousTitre: 'Superviseur de structure ou national : suivez les dossiers et gérez vos agents.', identifiant: 'E-mail ou identifiant',
   },
 };
 
@@ -147,17 +147,17 @@ export function Connexion() {
       </form>
       <p className="mt-6 text-center text-sm text-texte-doux">
         {espace === 'citoyen' && <>Pas encore de compte ? <Link to="/inscription" className="lien">Créer un compte citoyen</Link></>}
-        {espace === 'agent' && <>Pas encore de compte ? <Link to="/demande-agent" className="lien">Demander un compte agent</Link><br /><span className="text-xs">Activé après vérification par un superviseur.</span></>}
-        {espace === 'superadmin' && <>Les comptes superviseur ne se créent pas en ligne : ils sont attribués par l’administrateur du serveur.</>}
+        {espace === 'agent' && <>Pas encore de compte ? Il est créé par le superviseur de votre structure (caserne, commissariat, hôpital, agence).</>}
+        {espace === 'superadmin' && <>Les comptes superviseur ne se créent pas en ligne : ils sont attribués par le superviseur national.</>}
       </p>
     </Cadre>
   );
 }
 
-/** Choix du type de compte à créer : citoyen (libre), agent (sur demande), superviseur (jamais en ligne). */
+/** Choix du type de compte à créer : citoyen (libre) ; agent et superviseur ne se créent jamais en ligne. */
 function ChoixCompte({ actif }) {
   const navigate = useNavigate();
-  const chemins = { citoyen: '/inscription', agent: '/demande-agent', superadmin: '/inscription?espace=superadmin' };
+  const chemins = { citoyen: '/inscription', agent: '/inscription?espace=agent', superadmin: '/inscription?espace=superadmin' };
   return (
     <div className="mb-6"><Onglets onglets={Object.entries(ESPACES).map(([code, e]) => ({ code, libelle: e.libelle }))} actif={actif} onChange={(e) => navigate(chemins[e], { replace: true })} /></div>
   );
@@ -165,11 +165,20 @@ function ChoixCompte({ actif }) {
 
 export function Inscription() {
   const [params] = useSearchParams();
+  if (params.get('espace') === 'agent') {
+    return (
+      <Cadre titre="Compte agent" sousTitre="Police, pompiers, santé, SENELEC, ONAS.">
+        <ChoixCompte actif="agent" />
+        <Bandeau type="info" titre="Créé par votre superviseur">Votre compte agent est créé par le superviseur de votre structure (caserne, commissariat, hôpital, agence). Il vous remet un mot de passe provisoire, que vous changez à la première connexion.</Bandeau>
+        <p className="mt-6 text-center text-sm text-texte-doux">Vous avez déjà ce compte ? <Link to="/connexion?espace=agent" className="lien">Se connecter</Link></p>
+      </Cadre>
+    );
+  }
   if (params.get('espace') === 'superadmin') {
     return (
       <Cadre titre="Compte superviseur" sousTitre="Accès réservé aux responsables de la plateforme.">
         <ChoixCompte actif="superadmin" />
-        <Bandeau type="info" titre="Pas de création en ligne">Pour protéger les données des citoyens, un compte superviseur n’est jamais créé depuis le site : il est attribué par l’administrateur du serveur.</Bandeau>
+        <Bandeau type="info" titre="Pas de création en ligne">Pour protéger les données des citoyens, un compte superviseur n’est jamais créé depuis le site : chaque structure reçoit son superviseur du superviseur national.</Bandeau>
         <p className="mt-6 text-center text-sm text-texte-doux">Vous avez déjà ce compte ? <Link to="/connexion?espace=superadmin" className="lien">Se connecter</Link></p>
       </Cadre>
     );
@@ -268,71 +277,6 @@ export function Reinitialiser() {
           <Bouton type="submit" className="w-full" chargement={envoi}>Enregistrer</Bouton>
         </form>
       )}
-    </Cadre>
-  );
-}
-
-/** Demande d'accès agent : le compte n'existe qu'après validation par un superadministrateur. */
-export function DemandeAgent() {
-  const config = useConfig();
-  const [f, setF] = useState({ prenom: '', nom: '', email: '', telephone: '', matricule: '', service: '', structure: '', fonction: '', zones: [], message: '', mot_de_passe: '' });
-  const [erreurs, setErreurs] = useState({});
-  const [erreur, setErreur] = useState(null);
-  const [envoi, setEnvoi] = useState(false);
-  const [fait, setFait] = useState(null);
-  const maj = (k) => (v) => setF((x) => ({ ...x, [k]: typeof v === 'string' ? v : v.target.value }));
-  const basculerZone = (code) => setF((x) => ({ ...x, zones: x.zones.includes(code) ? x.zones.filter((z) => z !== code) : [...x.zones, code] }));
-
-  if (fait) {
-    return (
-      <Cadre titre="Demande envoyée">
-        <Bandeau type="succes" titre="Votre demande est en cours d’examen">{fait}</Bandeau>
-        <p className="mt-4 text-sm text-texte-doux">Un superviseur vérifie votre identité professionnelle (service, matricule, structure). Vous serez informé par e-mail ; tant que la demande n’est pas validée, la connexion est impossible.</p>
-        <p className="mt-6 text-center text-sm"><Link to="/connexion?espace=agent" className="lien">Retour à la connexion</Link></p>
-      </Cadre>
-    );
-  }
-
-  return (
-    <Cadre titre="Demander un compte agent" sousTitre="Réservé aux agents des services de secours et d’intervention. Chaque demande est vérifiée par un superviseur avant activation.">
-      <ChoixCompte actif="agent" />
-      <form className="space-y-4" onSubmit={async (e) => {
-        e.preventDefault();
-        setEnvoi(true); setErreur(null); setErreurs({});
-        try {
-          const r = await api('/auth/demandes-agent/', { methode: 'POST', auth: false, corps: { ...f, service: Number(f.service) || null } });
-          setFait(r.detail);
-        } catch (err) { setErreurs(err.champs || {}); setErreur(err.detail); } finally { setEnvoi(false); }
-      }}>
-        <div className="grid grid-cols-2 gap-3">
-          <Champ libelle="Prénom" requis erreur={erreurs.prenom}>{(id) => <input id={id} className="champ" value={f.prenom} onChange={maj('prenom')} autoComplete="given-name" required />}</Champ>
-          <Champ libelle="Nom" requis erreur={erreurs.nom}>{(id) => <input id={id} className="champ" value={f.nom} onChange={maj('nom')} autoComplete="family-name" required />}</Champ>
-        </div>
-        <Champ libelle="E-mail professionnel" requis erreur={erreurs.email} aide="Servira d’identifiant de connexion.">{(id) => <input id={id} type="email" className="champ" value={f.email} onChange={maj('email')} autoComplete="email" required />}</Champ>
-        <div className="grid grid-cols-2 gap-3">
-          <Champ libelle="Service" requis erreur={erreurs.service}>{(id) => <Selecteur id={id} valeur={f.service} onChange={maj('service')} vide="Choisir…" options={config.services || []} required />}</Champ>
-          <Champ libelle="Matricule" requis erreur={erreurs.matricule}>{(id) => <input id={id} className="champ" value={f.matricule} onChange={maj('matricule')} required />}</Champ>
-        </div>
-        <Champ libelle="Structure d’affectation" requis aide="Ex. : commissariat, caserne, district sanitaire, agence." erreur={erreurs.structure}>{(id) => <input id={id} className="champ" value={f.structure} onChange={maj('structure')} required />}</Champ>
-        <div className="grid grid-cols-2 gap-3">
-          <Champ libelle="Fonction / grade" erreur={erreurs.fonction}>{(id) => <input id={id} className="champ" value={f.fonction} onChange={maj('fonction')} />}</Champ>
-          <Champ libelle="Téléphone" erreur={erreurs.telephone}>{(id) => <input id={id} type="tel" className="champ" value={f.telephone} onChange={maj('telephone')} autoComplete="tel" />}</Champ>
-        </div>
-        <fieldset>
-          <legend className="etiquette">Zones d’intervention <span className="text-sos-fonce">*</span></legend>
-          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-            {(config.regions || []).map((r) => (
-              <label key={r.code} className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={f.zones.includes(r.code)} onChange={() => basculerZone(r.code)} />{r.libelle}</label>
-            ))}
-          </div>
-          {erreurs.zones && <p className="mt-1 text-xs text-sos-fonce">{erreurs.zones}</p>}
-        </fieldset>
-        <Champ libelle="Message au superviseur" aide="Facultatif : nom de votre chef de service, précisions utiles." erreur={erreurs.message}>{(id) => <textarea id={id} rows={2} maxLength={1000} className="champ" value={f.message} onChange={maj('message')} />}</Champ>
-        <Champ libelle="Mot de passe" requis aide="Vous le choisissez maintenant ; il est stocké chiffré et le superviseur ne le voit jamais." erreur={erreurs.mot_de_passe}>{(id) => <ChampMotDePasse id={id} valeur={f.mot_de_passe} onChange={maj('mot_de_passe')} autoComplete="new-password" />}</Champ>
-        {erreur && <Bandeau type="danger">{erreur}</Bandeau>}
-        <Bouton type="submit" taille="lg" className="w-full" icone={BadgeCheck} chargement={envoi}>Envoyer ma demande</Bouton>
-      </form>
-      <p className="mt-6 text-center text-sm text-texte-doux">Déjà validé ? <Link to="/connexion?espace=agent" className="lien">Se connecter</Link></p>
     </Cadre>
   );
 }

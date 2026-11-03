@@ -16,6 +16,10 @@ class Utilisateur {
   final bool googleLie;
   final String? serviceNom;
   final List<String> zones;
+  final int? structureId;
+  final String? structureNom;
+  final String fonction;
+  final bool disponible;
 
   Utilisateur.depuis(Map<String, dynamic> j)
       : id = j['id'],
@@ -32,11 +36,17 @@ class Utilisateur {
         aMotDePasse = j['a_mot_de_passe'] != false,
         googleLie = j['google_lie'] == true,
         serviceNom = j['profil_agent']?['service_nom'],
-        zones = List<String>.from(j['profil_agent']?['zones'] ?? const []);
+        zones = List<String>.from(j['profil_agent']?['zones'] ?? const []),
+        structureId = j['structure'],
+        structureNom = j['structure_nom'],
+        fonction = j['profil_agent']?['fonction'] ?? '',
+        disponible = j['profil_agent']?['disponible'] != false;
 
   bool get estCitoyen => role == 'citoyen';
   bool get estAgent => role == 'agent';
   bool get estSuperadmin => role == 'superadmin';
+  /// Superviseur national ou superviseur d'une structure : ils travaillent sur le web.
+  bool get estSupervision => role == 'superadmin' || role == 'superviseur';
   String get nomAffiche => prenom.isNotEmpty ? '$prenom $nom'.trim() : username;
 }
 

@@ -2,12 +2,12 @@ import clsx from 'clsx';
 import {
   Activity, Bell, BookOpenCheck, Bot, Building2, ClipboardList, FileClock, FolderOpen, Gauge, Home, LogOut, Map,
   MapPinned, Megaphone, Menu, Moon, Presentation, Sun, PanelLeftClose, PanelLeftOpen, Search, Settings2, ShieldAlert, Siren, SlidersHorizontal,
-  Smartphone, Tags, UserCheck, UserCircle2, Users, UsersRound, WifiOff, X,
+  Smartphone, Tags, UserCircle2, Users, UsersRound, WifiOff, X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useRessource } from '../api/hooks';
-import { useAuth } from '../auth/AuthContext';
+import { estSupervision, useAuth } from '../auth/AuthContext';
 import { useConfig } from '../lib/config';
 import { useInstallation } from '../lib/installation';
 import { useLangue } from '../lib/langue';
@@ -32,6 +32,15 @@ export const NAVIGATION = {
     { a: '/agent/carte', libelle: 'Carte opérationnelle', icone: Map },
     { a: '/agent/secours', libelle: 'Premiers secours', icone: BookOpenCheck },
   ],
+  // Superviseur d'une structure : uniquement les dossiers et les agents de sa structure.
+  superviseur: [
+    { a: '/supervision', libelle: 'Ma structure', icone: Gauge, fin: true },
+    { a: '/supervision/incidents', libelle: 'Incidents', icone: ClipboardList },
+    { a: '/supervision/sos', libelle: 'Alertes SOS', icone: Siren },
+    { a: '/supervision/carte', libelle: 'Carte interactive', icone: Map },
+    { groupe: 'Équipe' },
+    { a: '/supervision/utilisateurs', libelle: 'Mes agents', icone: Users },
+  ],
   superadmin: [
     { a: '/supervision', libelle: 'Supervision', icone: Gauge, fin: true },
     { a: '/supervision/incidents', libelle: 'Incidents', icone: ClipboardList },
@@ -42,7 +51,7 @@ export const NAVIGATION = {
     { a: '/supervision/communaute', libelle: 'Communauté', icone: UsersRound },
     { groupe: 'Administration' },
     { a: '/supervision/utilisateurs', libelle: 'Utilisateurs', icone: Users },
-    { a: '/supervision/demandes-agent', libelle: 'Demandes d’accès', icone: UserCheck, compteur: 'demandes' },
+    { a: '/supervision/structures', libelle: 'Structures', icone: Building2 },
     { a: '/supervision/referentiels', libelle: 'Services & catégories', icone: Tags },
     { a: '/supervision/parametres', libelle: 'Paramètres', icone: SlidersHorizontal },
     { a: '/supervision/audit', libelle: "Journal d'audit", icone: FileClock },
@@ -105,8 +114,7 @@ export default function Layout() {
   const { donnees: compteur } = useRessource('/notifications/compteur/', null, { intervalle: 30000 });
   const { langue, setLangue, t } = useLangue();
   const traduit = utilisateur.role === 'citoyen'; // seul l'espace citoyen est traduit en wolof
-  const { donnees: demandes, recharger: rechargerDemandes } = useRessource(utilisateur.role === 'superadmin' ? '/gestion/demandes-agent/compteur/' : null, null, { intervalle: 60000 });
-  const compteurs = { demandes: demandes?.en_attente || 0 };
+  const compteurs = {};
   const liens = NAVIGATION[utilisateur.role] || [];
   const nonLues = compteur?.non_lues || 0;
   // Les listes ont leur propre recherche : une seule barre à l'écran.
@@ -114,11 +122,6 @@ export default function Layout() {
   const regionAlertes = utilisateur.role === 'agent' ? utilisateur.profil_agent?.zones?.[0] : utilisateur.region;
 
   useEffect(() => setMobileOuvert(false), [lieu.pathname]);
-  useEffect(() => {
-    const maj = () => rechargerDemandes(true);
-    window.addEventListener('senalert:demandes-agent', maj);
-    return () => window.removeEventListener('senalert:demandes-agent', maj);
-  }, [rechargerDemandes]);
   useEffect(() => { try { localStorage.setItem('senalert.menu', replie ? 'replie' : 'ouvert'); } catch { /* rien */ } }, [replie]);
 
   const rechercher = (e) => {
@@ -140,6 +143,7 @@ export default function Layout() {
           <div className={clsx(replie && 'lg:hidden')}>
             <p className="font-titre text-lg font-extrabold leading-none">SenAlert</p>
             <p className="text-[11px] text-white/65">{utilisateur.role_libelle}</p>
+            {utilisateur.structure_nom && <p className="max-w-[11rem] truncate text-[11px] text-white/65" title={utilisateur.structure_nom}>{utilisateur.structure_nom}</p>}
           </div>
         </Link>
         <nav className="relative flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 py-2" aria-label="Navigation principale">
@@ -201,7 +205,7 @@ export default function Layout() {
               <MenuProfil utilisateur={utilisateur} onDeconnexion={async () => { const role = utilisateur.role; await deconnexion(); navigate(role === 'citoyen' ? '/connexion' : `/connexion?espace=${role}`); }} />
             </div>
           </div>
-          {utilisateur.role !== 'superadmin' && <BandeauAlertesZone region={regionAlertes} />}
+          {!estSupervision(utilisateur.role) && <BandeauAlertesZone region={regionAlertes} />}
         </header>
 
         {utilisateur.doit_changer_mot_de_passe && lieu.pathname !== '/profil' && (
@@ -228,6 +232,7 @@ const BARRE_MOBILE = {
   citoyen: [['/citoyen', 'Accueil', Home, true], ['/citoyen/signaler', 'Signaler', ShieldAlert], ['/citoyen/dossiers', 'Dossiers', FolderOpen], ['/citoyen/carte', 'Carte', Map]],
   agent: [['/agent', 'Tableau', Gauge, true], ['/agent/interventions', 'Missions', ClipboardList], ['/agent/carte', 'Carte', Map], ['/notifications', 'Alertes', Bell]],
   superadmin: [['/supervision', 'Vue d’ensemble', Gauge, true], ['/supervision/incidents', 'Incidents', ClipboardList], ['/supervision/sos', 'SOS', Siren], ['/supervision/carte', 'Carte', Map]],
+  superviseur: [['/supervision', 'Ma structure', Gauge, true], ['/supervision/incidents', 'Incidents', ClipboardList], ['/supervision/sos', 'SOS', Siren], ['/supervision/utilisateurs', 'Agents', Users]],
 };
 
 /** Barre d'onglets du téléphone : les écrans clés restent à portée de pouce, le reste est dans « Menu ». */
@@ -269,7 +274,7 @@ function MenuProfil({ utilisateur, onDeconnexion }) {
           <div role="menu" className="absolute right-0 z-20 mt-2 w-60 animate-apparition rounded-2xl border border-surface-bord bg-surface p-1.5 shadow-flottant">
             <div className="px-3 py-2">
               <p className="truncate text-sm font-semibold">{utilisateur.email || utilisateur.username}</p>
-              <p className="text-xs text-texte-doux">{utilisateur.role_libelle}{utilisateur.profil_agent?.service_nom ? ` · ${utilisateur.profil_agent.service_nom}` : ''}</p>
+              <p className="text-xs text-texte-doux">{utilisateur.role_libelle}{utilisateur.structure_nom ? ` · ${utilisateur.structure_nom}` : ''}</p>
             </div>
             <NavLink role="menuitem" to="/profil" onClick={() => setOuvert(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-surface-douce"><UserCircle2 className="h-4 w-4" /> Profil et sécurité</NavLink>
             {installation.possible && !installation.ios && <button role="menuitem" type="button" onClick={() => { setOuvert(false); installation.installer(); }} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-surface-douce"><Smartphone className="h-4 w-4" /> Installer l’application</button>}

@@ -14,7 +14,7 @@ from core.audit import journaliser
 from core.constants import GRAVITE_CHOICES, REGION_CHOICES, ROLE_AGENT, STATUT_CHOICES
 from core.models import Service
 from core.params import motif as lire_motif
-from core.permissions import est_agent, est_superadmin
+from core.permissions import est_agent, est_supervision
 
 from . import workflow
 from .serializers import (
@@ -70,7 +70,7 @@ class ActionsDossierMixin:
     @extend_schema(request=AffectationSerializer)
     @action(detail=True, methods=['post'])
     def affecter(self, request, pk=None):
-        self._exiger(est_superadmin(request.user), "Seul le superadministrateur affecte les dossiers.")
+        self._exiger(est_supervision(request.user), "Seule la supervision affecte les dossiers.")
         dossier = self.get_object()
         s = AffectationSerializer(data=request.data)
         s.is_valid(raise_exception=True)
@@ -125,7 +125,7 @@ class ActionsDossierMixin:
     @extend_schema(request=MotifSerializer)
     @action(detail=True, methods=['post'])
     def rejeter(self, request, pk=None):
-        self._exiger(est_superadmin(request.user), 'Action réservée au superadministrateur.')
+        self._exiger(est_supervision(request.user), 'Action réservée à la supervision.')
         dossier = workflow.rejeter(self.get_object(), request.user, lire_motif(request.data))
         journaliser(request, 'dossier.rejet', dossier, {'motif': dossier.motif_cloture})
         return self._repondre(dossier)
@@ -135,8 +135,8 @@ class ActionsDossierMixin:
     def gravite(self, request, pk=None):
         dossier = self.get_object()
         inter = getattr(dossier, 'intervention', None)
-        self._exiger(est_superadmin(request.user) or (inter and inter.agent_id == request.user.pk),
-                     'Seuls le superadministrateur et l’agent affecté modifient la gravité.')
+        self._exiger(est_supervision(request.user) or (inter and inter.agent_id == request.user.pk),
+                     'Seuls la supervision et l’agent affecté modifient la gravité.')
         s = GraviteSerializer(data=request.data)
         s.is_valid(raise_exception=True)
         return self._repondre(workflow.changer_gravite(dossier, request.user, s.validated_data['gravite']))
@@ -144,7 +144,7 @@ class ActionsDossierMixin:
     @extend_schema(request=NoteSerializer)
     @action(detail=True, methods=['post'])
     def note(self, request, pk=None):
-        self._exiger(est_agent(request.user) or est_superadmin(request.user), 'Action réservée aux agents.')
+        self._exiger(est_agent(request.user) or est_supervision(request.user), 'Action réservée aux agents.')
         s = NoteSerializer(data=request.data)
         s.is_valid(raise_exception=True)
         ev = workflow.ajouter_note(self.get_object(), request.user, **s.validated_data)
@@ -173,6 +173,6 @@ class ActionsDossierMixin:
     def evenements(self, request, pk=None):
         dossier = self.get_object()
         evs = dossier.evenements.select_related('acteur')
-        if not (est_agent(request.user) or est_superadmin(request.user)):
+        if not (est_agent(request.user) or est_supervision(request.user)):
             evs = evs.filter(visible_citoyen=True)
         return Response(EvenementSerializer(evs, many=True, context={'request': request}).data)

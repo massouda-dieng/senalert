@@ -213,7 +213,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
   }
 }
 
-/// Le superadministrateur travaille sur le web (tableaux, exports, configuration).
+/// La supervision (nationale ou de structure) travaille sur le web : tableaux, affectations, agents, exports.
 class SupervisionWebScreen extends StatelessWidget {
   const SupervisionWebScreen({super.key});
   @override

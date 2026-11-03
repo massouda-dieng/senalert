@@ -11,7 +11,7 @@ class Configuration extends ChangeNotifier {
   List<Categorie> categories = [];
   List<Region> regions = [];
   List<NumeroUrgence> numeros = [];
-  /// Services d'intervention actifs : (identifiant, nom), pour la demande de compte agent.
+  /// Services d'intervention actifs : (identifiant, nom).
   List<(int, String)> services = [];
   String? smsSecours;
   String avertissement = 'SenAlert ne remplace pas les services officiels de secours.';

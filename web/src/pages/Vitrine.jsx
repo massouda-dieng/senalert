@@ -335,7 +335,7 @@ export default function Vitrine() {
             <ul className="mt-3 space-y-2">
               <li><Link to="/connexion" className="hover:text-white">Connexion</Link></li>
               <li><Link to="/inscription" className="hover:text-white">Créer un compte</Link></li>
-              <li><Link to="/demande-agent" className="inline-flex items-center gap-1.5 hover:text-white"><Building2 className="h-3.5 w-3.5" /> Demande d’accès agent</Link></li>
+              <li><Link to="/connexion?espace=agent" className="inline-flex items-center gap-1.5 hover:text-white"><Building2 className="h-3.5 w-3.5" /> Espace agent</Link></li>
             </ul>
           </div>
           <div>

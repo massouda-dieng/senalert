@@ -21,15 +21,15 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from core.audit import journaliser
-from core.constants import ROLE_AGENT, ROLE_CITOYEN, ROLE_SUPERADMIN
+from core.constants import ROLE_AGENT, ROLE_CITOYEN, ROLE_SUPERADMIN, ROLE_SUPERVISEUR
 from core.models import Parametre
-from core.permissions import EstSuperAdmin
+from core.permissions import EstAgent, EstSuperAdmin, EstSupervision, est_superviseur
 
 from . import google
 from .models import AgentProfil, DeviceToken, User
 from .serializers import (
     ChangementMotDePasseSerializer, ConfirmationReinitialisationSerializer, ConnexionSerializer,
-    CreationAgentSerializer, DeconnexionSerializer, DemandeReinitialisationSerializer, DeviceTokenSerializer, GoogleSerializer,
+    CreationAgentSerializer, CreationSuperviseurSerializer, DeconnexionSerializer, DemandeReinitialisationSerializer, DeviceTokenSerializer, GoogleSerializer,
     InscriptionSerializer, ModificationUtilisateurSerializer, SuppressionCompteSerializer,
     UtilisateurAdminSerializer, UtilisateurSerializer,
 )
@@ -262,6 +262,8 @@ class FiltreUtilisateur(filters.FilterSet):
     role = filters.CharFilter()
     is_active = filters.BooleanFilter()
     service = filters.NumberFilter(field_name='profil_agent__service_id')
+    structure = filters.NumberFilter(field_name='structure_id')
+    disponible = filters.BooleanFilter(field_name='profil_agent__disponible')
     q = filters.CharFilter(method='recherche')
     zone = filters.CharFilter(method='filtre_zone')
 
@@ -280,18 +282,32 @@ class FiltreUtilisateur(filters.FilterSet):
 
 
 class UtilisateurAdminViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    """Gestion des comptes par le superadministrateur (toutes les opérations sont journalisées)."""
+    """Gestion des comptes (toutes les opérations sont journalisées).
 
-    permission_classes = [EstSuperAdmin]
+    * Superadministrateur : tous les comptes ; crée les superviseurs de structure et les agents.
+    * Superviseur de structure : uniquement les agents de sa structure, qu'il crée lui-même.
+    """
+
+    permission_classes = [EstSupervision]
     serializer_class = UtilisateurAdminSerializer
     filterset_class = FiltreUtilisateur
     ordering_fields = ['date_joined', 'last_login', 'username']
 
     def get_queryset(self):
-        return (User.objects.filter(date_anonymisation__isnull=True)
-                .select_related('profil_agent__service')
+        qs = User.objects.filter(date_anonymisation__isnull=True)
+        if est_superviseur(self.request.user):
+            qs = qs.filter(role=ROLE_AGENT, structure_id=self.request.user.structure_id) \
+                if self.request.user.structure_id else qs.none()
+        return (qs.select_related('profil_agent__service', 'structure')
                 .annotate(nb_interventions=Count('interventions'))
                 .order_by('-date_joined'))
+
+    def _creer_compte(self, d, role, structure):
+        return User.objects.create_user(
+            username=d['email'], email=d['email'], password=d['mot_de_passe_initial'], role=role,
+            first_name=d['first_name'], last_name=d['last_name'], telephone=d.get('telephone', ''),
+            region=structure.region, structure=structure, doit_changer_mot_de_passe=True,
+        )
 
     @extend_schema(request=CreationAgentSerializer, responses=UtilisateurAdminSerializer)
     @action(detail=False, methods=['post'], url_path='agents')
@@ -299,15 +315,26 @@ class UtilisateurAdminViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, 
         s = CreationAgentSerializer(data=request.data)
         s.is_valid(raise_exception=True)
         d = s.validated_data
+        # Le superviseur ajoute ses agents dans sa propre structure ; le superadministrateur la précise.
+        structure = request.user.structure if est_superviseur(request.user) else d.get('structure')
+        if structure is None:
+            raise ValidationError({'structure': 'Indiquez la structure de l’agent.'})
         with transaction.atomic():
-            user = User.objects.create_user(
-                username=d['email'], email=d['email'], password=d['mot_de_passe_initial'], role=ROLE_AGENT,
-                first_name=d['first_name'], last_name=d['last_name'], telephone=d.get('telephone', ''),
-                doit_changer_mot_de_passe=True,
-            )
-            AgentProfil.objects.create(user=user, service=d['service'], zones=d['zones'],
+            user = self._creer_compte(d, ROLE_AGENT, structure)
+            AgentProfil.objects.create(user=user, service=structure.service, zones=[structure.region],
                                        matricule=d.get('matricule', ''), fonction=d.get('fonction', ''))
-            journaliser(request, 'admin.creation_agent', user, {'service': d['service'].pk, 'zones': d['zones']})
+            journaliser(request, 'admin.creation_agent', user, {'structure': structure.pk})
+        return Response(UtilisateurAdminSerializer(self.get_queryset().get(pk=user.pk)).data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(request=CreationSuperviseurSerializer, responses=UtilisateurAdminSerializer)
+    @action(detail=False, methods=['post'], url_path='superviseurs', permission_classes=[EstSuperAdmin])
+    def creer_superviseur(self, request):
+        s = CreationSuperviseurSerializer(data=request.data)
+        s.is_valid(raise_exception=True)
+        d = s.validated_data
+        with transaction.atomic():
+            user = self._creer_compte(d, ROLE_SUPERVISEUR, d['structure'])
+            journaliser(request, 'admin.creation_superviseur', user, {'structure': d['structure'].pk})
         return Response(UtilisateurAdminSerializer(self.get_queryset().get(pk=user.pk)).data, status=status.HTTP_201_CREATED)
 
     @extend_schema(request=ModificationUtilisateurSerializer, responses=UtilisateurAdminSerializer)
@@ -320,34 +347,62 @@ class UtilisateurAdminViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, 
             raise PermissionDenied('Vous ne pouvez pas modifier votre propre rôle ou statut.')
         if cible.role == ROLE_SUPERADMIN:
             raise PermissionDenied("Un superadministrateur ne se modifie qu'en ligne de commande sur le serveur.")
-        avant = {'role': cible.role, 'is_active': cible.is_active}
+        if est_superviseur(request.user) and ({'role', 'structure', 'service', 'zones'} & set(d)):
+            raise PermissionDenied('Le superviseur ne change ni le rôle ni la structure de ses agents.')
+        avant = {'role': cible.role, 'is_active': cible.is_active, 'structure': cible.structure_id}
         with transaction.atomic():
             if 'role' in d:
                 cible.role = d['role']
             if 'is_active' in d:
                 cible.is_active = d['is_active']
+            if 'structure' in d:
+                cible.structure = d['structure']
+            if cible.role in (ROLE_AGENT, ROLE_SUPERVISEUR) and cible.structure is None:
+                raise ValidationError({'structure': 'Un agent ou un superviseur doit être rattaché à une structure.'})
             cible.save()
             if cible.role == ROLE_AGENT:
                 profil, _ = AgentProfil.objects.get_or_create(user=cible)
-                for champ in ('service', 'zones', 'matricule', 'fonction'):
+                for champ in ('matricule', 'fonction', 'disponible'):
                     if champ in d:
                         setattr(profil, champ, d[champ])
+                # Service et zone découlent de la structure de rattachement.
+                profil.service, profil.zones = cible.structure.service, [cible.structure.region]
                 profil.save()
             if avant['is_active'] and not cible.is_active:
                 revoquer_toutes_les_sessions(cible)
-            if avant['role'] != cible.role:
-                revoquer_toutes_les_sessions(cible)  # le rôle est porté par le jeton : reconnexion obligatoire
+            if avant['role'] != cible.role or avant['structure'] != cible.structure_id:
+                revoquer_toutes_les_sessions(cible)  # le rôle et la structure fixent les droits : reconnexion obligatoire
             journaliser(request, 'admin.modification_utilisateur', cible,
                         {'avant': avant, 'apres': {k: (v.pk if hasattr(v, 'pk') else v) for k, v in d.items()}})
         return Response(UtilisateurAdminSerializer(self.get_queryset().get(pk=cible.pk)).data)
 
     @action(detail=False, methods=['get'])
     def statistiques(self, request):
-        qs = User.objects.filter(date_anonymisation__isnull=True)
+        qs = self.get_queryset()
         return Response({
             'citoyens': qs.filter(role=ROLE_CITOYEN).count(),
             'agents': qs.filter(role=ROLE_AGENT).count(),
             'agents_actifs': qs.filter(role=ROLE_AGENT, is_active=True).count(),
+            'agents_disponibles': qs.filter(role=ROLE_AGENT, is_active=True, profil_agent__disponible=True).count(),
+            'superviseurs': qs.filter(role=ROLE_SUPERVISEUR).count(),
             'superadmins': qs.filter(role=ROLE_SUPERADMIN).count(),
             'inactifs': qs.filter(is_active=False).count(),
         })
+
+
+class DisponibiliteView(APIView):
+    """L'agent se déclare disponible ou indisponible : seuls les agents disponibles sont proposés au citoyen."""
+
+    permission_classes = [EstAgent]
+
+    @extend_schema(request=None, responses=UtilisateurSerializer)
+    def post(self, request):
+        valeur = request.data.get('disponible')
+        if not isinstance(valeur, bool):
+            raise ValidationError({'disponible': 'Valeur vraie ou fausse attendue.'})
+        profil, _ = AgentProfil.objects.get_or_create(user=request.user)
+        profil.disponible = valeur
+        profil.save(update_fields=['disponible'])
+        request.user.profil_agent = profil
+        journaliser(request, 'agent.disponibilite', request.user, {'disponible': valeur})
+        return Response(UtilisateurSerializer(request.user).data)

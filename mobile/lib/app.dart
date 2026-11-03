@@ -22,11 +22,11 @@ import 'state/session.dart';
 import 'ui/kit.dart';
 import 'state/langue.dart';
 
-const _publiques = {'/bienvenue', '/connexion', '/inscription', '/demande-agent', '/compte-superviseur', '/mot-de-passe-oublie', '/secours', '/onboarding'};
+const _publiques = {'/bienvenue', '/connexion', '/inscription', '/compte-agent', '/compte-superviseur', '/mot-de-passe-oublie', '/secours', '/onboarding'};
 const _citoyen = {'/accueil', '/signaler', '/sos', '/services', '/assistant', '/carte', '/dossiers', '/communaute'};
 const _agent = {'/agent', '/interventions', '/carte-agent'};
 
-String accueilPour(String role) => switch (role) { 'agent' => '/agent', 'superadmin' => '/supervision', _ => '/accueil' };
+String accueilPour(String role) => switch (role) { 'agent' => '/agent', 'superviseur' || 'superadmin' => '/supervision', _ => '/accueil' };
 
 GoRouter creerRouteur(Session session) => GoRouter(
       initialLocation: '/',
@@ -36,10 +36,10 @@ GoRouter creerRouteur(Session session) => GoRouter(
         if (!session.initialisee) return lieu == '/' ? null : '/';
         final u = session.utilisateur;
         if (u == null) return _publiques.contains(lieu) ? null : '/bienvenue';
-        if (lieu == '/' || const {'/bienvenue', '/connexion', '/inscription', '/demande-agent', '/compte-superviseur', '/mot-de-passe-oublie'}.contains(lieu)) return accueilPour(u.role);
+        if (lieu == '/' || const {'/bienvenue', '/connexion', '/inscription', '/compte-agent', '/compte-superviseur', '/mot-de-passe-oublie'}.contains(lieu)) return accueilPour(u.role);
         if (_citoyen.contains(lieu) && !u.estCitoyen) return accueilPour(u.role);
         if (_agent.contains(lieu) && !u.estAgent) return accueilPour(u.role);
-        if (lieu == '/supervision' && !u.estSuperadmin) return accueilPour(u.role);
+        if (lieu == '/supervision' && !u.estSupervision) return accueilPour(u.role);
         return null;
       },
       routes: [
@@ -48,7 +48,7 @@ GoRouter creerRouteur(Session session) => GoRouter(
         GoRoute(path: '/bienvenue', builder: (_, __) => const BienvenueScreen()),
         GoRoute(path: '/connexion', builder: (_, __) => const ConnexionScreen()),
         GoRoute(path: '/inscription', builder: (_, __) => const InscriptionScreen()),
-        GoRoute(path: '/demande-agent', builder: (_, __) => const DemandeAgentScreen()),
+        GoRoute(path: '/compte-agent', builder: (_, __) => const CompteAgentScreen()),
         GoRoute(path: '/compte-superviseur', builder: (_, __) => const CompteSuperviseurScreen()),
         GoRoute(path: '/mot-de-passe-oublie', builder: (_, __) => const MotDePasseOublieScreen()),
         GoRoute(path: '/sos', builder: (_, __) => const SosScreen()),

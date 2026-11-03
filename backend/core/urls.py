@@ -6,6 +6,7 @@ from . import views
 router = DefaultRouter()
 router.register('services', views.ServiceViewSet, basename='service')
 router.register('categories', views.CategorieViewSet, basename='categorie')
+router.register('structures', views.StructureViewSet, basename='structure')
 router.register('parametres', views.ParametreViewSet, basename='parametre')
 router.register('audit', views.JournalAuditViewSet, basename='audit')
 router.register('fiches-secours', views.FicheSecoursViewSet, basename='fiche-secours')

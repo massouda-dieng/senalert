@@ -7,8 +7,12 @@ from PIL import Image
 from rest_framework.test import APITestCase
 
 from accounts.models import AgentProfil, User
-from core.constants import ROLE_AGENT, ROLE_CITOYEN, ROLE_SUPERADMIN
+from core.constants import ROLE_AGENT, ROLE_CITOYEN, ROLE_SUPERADMIN, ROLE_SUPERVISEUR
 from core.models import Service
+from core.structures import structures_proches
+
+# Position des signalements de test (incident_payload) : Dakar.
+POSITION_TEST = (14.70, -17.45)
 
 MDP = 'Motdepasse-Solide-2026'
 
@@ -20,11 +24,21 @@ class SenAlertTestCase(APITestCase):
     def citoyen(self, nom='awa', region='dakar'):
         return User.objects.create_user(username=nom, email=f'{nom}@test.sn', password=MDP, role=ROLE_CITOYEN, region=region)
 
-    def agent(self, nom='moussa', service='pompiers', zones=('dakar',)):
+    def structure(self, service='pompiers', position=POSITION_TEST):
+        """Structure du service la plus proche de la position (par défaut celle des signalements de test)."""
+        return structures_proches(*position, [service], 1)[0][0]
+
+    def agent(self, nom='moussa', service='pompiers', zones=('dakar',), structure=None, disponible=True):
+        structure = structure or self.structure(service)
         u = User.objects.create_user(username=nom, email=f'{nom}@test.sn', password=MDP, role=ROLE_AGENT,
-                                     first_name=nom.title())
-        AgentProfil.objects.create(user=u, service=Service.objects.get(code=service), zones=list(zones))
+                                     first_name=nom.title(), structure=structure)
+        AgentProfil.objects.create(user=u, service=Service.objects.get(code=service), zones=list(zones),
+                                   disponible=disponible)
         return u
+
+    def superviseur(self, nom='responsable', service='pompiers', structure=None):
+        return User.objects.create_user(username=nom, email=f'{nom}@test.sn', password=MDP, role=ROLE_SUPERVISEUR,
+                                        structure=structure or self.structure(service))
 
     def superadmin(self, nom='chef'):
         return User.objects.create_user(username=nom, email=f'{nom}@test.sn', password=MDP, role=ROLE_SUPERADMIN)

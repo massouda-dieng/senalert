@@ -37,7 +37,16 @@ void main() {
     expect(find.text('Se connecter en tant que superviseur'), findsOneWidget);
     expect(find.textContaining('Créer un compte'), findsNothing);
     expect(find.textContaining('Connexion Google'), findsNothing);
-    expect(find.textContaining('administrateur du serveur'), findsOneWidget);
+    expect(find.textContaining('superviseur national'), findsOneWidget);
+  });
+
+  testWidgets('connexion : onglet Agent sans demande de compte, créé par le superviseur', (t) async {
+    await t.pumpWidget(envelopper(const ConnexionScreen()));
+    await t.tap(find.text('Agent'));
+    await t.pump();
+    expect(find.text('Se connecter en tant que agent'), findsOneWidget);
+    expect(find.textContaining('Demander un compte'), findsNothing);
+    expect(find.textContaining('créé par le superviseur de votre structure'), findsOneWidget);
   });
 
   testWidgets('création de compte : choix Citoyen, Agent, Superviseur', (t) async {

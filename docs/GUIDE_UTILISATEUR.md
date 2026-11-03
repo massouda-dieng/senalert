@@ -4,7 +4,7 @@ SenAlert ne remplace pas les services officiels de secours. En cas de danger imm
 
 ## Connexion
 
-L'écran de connexion propose trois onglets : **Citoyen**, **Agent**, **Superviseur**. L'onglet ne donne aucun droit : le serveur vérifie le rôle réel du compte et, s'il ne correspond pas, refuse avec un message indiquant le bon onglet (uniquement si le mot de passe est correct). Création de compte : libre pour un citoyen, sur demande validée pour un agent, jamais depuis l'application pour un superviseur (`python manage.py creer_superadmin`).
+L'écran de connexion propose trois onglets : **Citoyen**, **Agent**, **Superviseur**. L'onglet ne donne aucun droit : le serveur vérifie le rôle réel du compte et, s'il ne correspond pas, refuse avec un message indiquant le bon onglet (uniquement si le mot de passe est correct). Création de compte : libre pour un citoyen ; un agent est créé par le superviseur de sa structure ; un superviseur de structure est créé par le superviseur national (superadministrateur, lui-même créé par `python manage.py creer_superadmin`). Le superviseur de structure et le superviseur national se connectent tous deux par l'onglet **Superviseur**.
 
 ## Citoyen (web : `/app/citoyen`, mobile)
 
@@ -19,10 +19,10 @@ L'écran de connexion propose trois onglets : **Citoyen**, **Agent**, **Supervis
 **Déclencher un SOS**
 1. Touchez le grand bouton rouge **SOS**.
 2. Un compte à rebours de 5 secondes démarre : **Annuler** si c'est une erreur, **Envoyer maintenant** pour gagner du temps. Votre position est recherchée en parallèle et sa précision est affichée.
-3. À la confirmation, la référence `SOS-AAAA-NNNNNN` et le statut actuel s'affichent. Tant qu'un agent n'a pas pris en charge l'alerte, aucune intervention n'est garantie : en cas de danger vital, appelez aussi les secours.
+3. À la confirmation, la référence `SOS-AAAA-NNNNNN` et le statut actuel s'affichent. Le SOS part automatiquement vers la structure de secours la plus proche ayant un agent disponible, et cet agent le reçoit directement ; sans agent disponible, le superviseur de la structure l'affecte. Tant qu'un agent n'a pas accepté l'alerte, aucune intervention n'est garantie : en cas de danger vital, appelez aussi les secours.
 4. Si l'envoi échoue, l'écran l'indique clairement (« L'alerte n'a PAS été transmise ») avec les boutons d'appel et « Réessayer » (un nouvel essai ne crée jamais de doublon).
 
-**Signaler un incident** — 4 étapes : catégorie → lieu (« Utiliser ma position » ou toucher la carte, repère facultatif) → détails (description, photos ≤ 5) → vérification → envoi. Le brouillon est conservé sur l'appareil en cas de coupure. Vous recevez une référence `INC-AAAA-NNNNNN`.
+**Signaler un incident** — 5 étapes : catégorie → lieu (« Utiliser ma position » ou toucher la carte, repère facultatif) → **structure** (les structures du service compétent les plus proches, avec leur distance ; puis un agent disponible de la structure choisie, présenté par son prénom et sa fonction, ou « Laisser le superviseur choisir ») → détails (description, photos ≤ 5) → vérification → envoi. Le dossier n'est visible que par l'agent choisi et par le superviseur de la structure. Le brouillon est conservé sur l'appareil en cas de coupure. Vous recevez une référence `INC-AAAA-NNNNNN`.
 
 **Suivre mes dossiers** — « Mes dossiers » : recherche par référence, vues **Tous** et **En cours**. L'accueil rappelle uniquement les dossiers en cours. Le détail montre l'historique horodaté (Nouveau → Affecté → Pris en charge → En cours → Résolu), le service intervenant et, à la clôture, le compte rendu. Vous pouvez **compléter** un dossier ouvert (texte, photos) ou l'**annuler** tant qu'il n'est pas pris en charge.
 
@@ -38,23 +38,32 @@ L'écran de connexion propose trois onglets : **Citoyen**, **Agent**, **Supervis
 
 **Obtenir un compte** — sur l'écran de connexion, « Demander un compte agent » (web : `/app/demande-agent`) : identité, e-mail professionnel, service, matricule, structure (commissariat, caserne…), zones d'intervention et mot de passe choisi. La demande est examinée par un superadministrateur ; la connexion n'est possible qu'après validation (un e-mail informe de la décision). Un superadministrateur peut aussi créer le compte directement depuis **Utilisateurs**.
 
-Le compte est rattaché à un **service** (Police, Pompiers, Santé, SENELEC, ONAS…) et des **zones** (régions). S’il a été créé par le superadministrateur avec un mot de passe initial, changez-le à la première connexion (bandeau d’invitation).
+Le compte est créé par le **superviseur de votre structure** (caserne, commissariat, hôpital, agence SENELEC ou ONAS) avec un mot de passe initial, à changer à la première connexion (bandeau d’invitation). Vous ne voyez que les dossiers qui vous sont **transmis** : choisis par un citoyen, désignés automatiquement pour un SOS, ou affectés par votre superviseur. Le bouton **Disponible / Indisponible** du tableau de bord indique si les citoyens peuvent vous choisir.
 
-**Tableau de bord** — nombre de nouvelles alertes (qui mène à Interventions), interventions en cours, résolues sur 7 jours, délai moyen de prise en charge (web) et liste « Mes interventions en cours ». Actualisation automatique (web) ou tirer pour rafraîchir (mobile).
+**Tableau de bord** — missions reçues à accepter, interventions en cours, résolues sur 7 jours, délai moyen de prise en charge (web) et liste « Mes interventions en cours ». Actualisation automatique (web) ou tirer pour rafraîchir (mobile).
 
 **Interventions** — onglets Incidents / SOS avec le nombre de dossiers ouverts, puis trois vues : **Ouverts**, **Mes interventions**, **Tous** (y compris les dossiers clos). Le bouton **Filtres** ouvre catégorie, région, gravité et dates.
 
 **Traiter une intervention**
 | Situation | Action |
 |---|---|
-| Dossier **nouveau** de votre zone/service | **Prendre en charge** |
 | Dossier **affecté** à vous | **Accepter** ou **Décliner** (motif obligatoire, le superviseur est prévenu) |
 | **Pris en charge** | **Démarrer l'intervention** (équipe en route / sur place) |
 | **En cours** | **Clôturer** avec un compte rendu (visible du citoyen) et les difficultés éventuelles (internes) |
 
 **Partager ma position** (dossier accepté ou en cours) : le déclarant voit votre progression ; arrêt à tout moment, position effacée à la clôture. Le détail donne aussi la position et sa précision, l'**itinéraire** (Google Maps), les photos, le contact du déclarant (une fois le dossier pris en charge) et l'historique. Vous pouvez ajouter des **notes** (internes ou visibles du citoyen) et ajuster la **gravité**. Si un autre agent a agi entre-temps, un message « dossier modifié entre-temps » s'affiche et la fiche se recharge.
 
-## Superadministrateur (web uniquement : `/app/supervision`)
+## Superviseur de structure (web : `/app/supervision`)
+
+Chaque structure (caserne, commissariat, hôpital, agence) a son superviseur. Il ne voit que les dossiers orientés vers sa structure et ses propres agents.
+
+**Ma structure** — indicateurs, carte et file « À traiter » limités à la structure ; exports CSV et PDF de la structure.
+
+**Incidents / Alertes SOS** — les dossiers de la structure ; un dossier sans agent choisi (ou décliné) attend une **affectation** à un agent de la structure.
+
+**Mes agents** — **Ajouter un agent** (prénom, nom, e-mail, mot de passe initial, fonction, matricule) : il est automatiquement rattaché à la structure ; modifier sa fonction, sa disponibilité, l'activer ou le désactiver. Le superviseur ne change ni le rôle ni la structure de ses agents.
+
+## Superadministrateur — superviseur national (web uniquement : `/app/supervision`)
 
 **Supervision** — indicateurs calculés en direct (filtres période, région, catégorie, granularité), évolution, répartition par catégorie et par région, qualité des données (position, précision GPS, description, photos, doublons). Survolez un indicateur pour sa définition ; la section « Définition des indicateurs » les détaille.
 
@@ -68,9 +77,9 @@ Le compte est rattaché à un **service** (Police, Pompiers, Santé, SENELEC, ON
 
 **Satisfaction** — sur la page Supervision : note moyenne des citoyens, taux de réponse et moyenne par service.
 
-**Demandes d'accès** — demandes de compte agent (badge = nombre en attente). Vérifiez matricule et structure auprès du service, puis **Valider** (crée un compte agent limité au service et aux zones demandés ; le mot de passe reste celui choisi par l'agent) ou **Refuser** avec un motif. Tout est tracé dans le journal d'audit.
+**Structures** — les casernes, commissariats et hôpitaux du Sénégal (OpenStreetMap), plus une agence SENELEC et une agence ONAS par région placées au chef-lieu (« à confirmer ») ; recherche par service, région et nom ; corriger la position, le téléphone, désactiver ou ajouter une structure.
 
-**Utilisateurs** — recherche et filtres ; **Créer un agent** (service, zones, mot de passe initial) ; modifier rôle (citoyen ↔ agent), service, zones, activer/désactiver (ferme les sessions). Le rôle superadministrateur ne se donne qu'en ligne de commande : `python manage.py creer_superadmin email@exemple.sn`.
+**Utilisateurs** — recherche et filtres ; **Créer un superviseur** de structure et **Ajouter un agent** (dans une structure choisie) ; modifier rôle (citoyen, agent, superviseur de structure), structure, disponibilité, activer/désactiver (ferme les sessions). Le rôle superadministrateur ne se donne qu'en ligne de commande : `python manage.py creer_superadmin email@exemple.sn`.
 
 **Services & catégories** — ajout, modification, désactivation (pas de suppression, pour préserver l'historique).
 

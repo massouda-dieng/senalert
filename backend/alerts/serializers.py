@@ -14,7 +14,7 @@ class AlerteSOSSerializer(DossierLectureMixin, serializers.ModelSerializer):
         fields = [
             'id', 'uuid', 'reference', 'message', 'latitude', 'longitude', 'precision_gps', 'source_position',
             'region', 'region_libelle', 'adresse', 'statut', 'statut_libelle', 'gravite', 'service', 'service_nom',
-            'date_creation', 'date_modification', 'date_prise_en_charge', 'date_cloture', 'motif_cloture',
+            'structure', 'structure_nom', 'date_creation', 'date_modification', 'date_prise_en_charge', 'date_cloture', 'motif_cloture',
             'en_retard', 'intervention', 'citoyen_contact', 'est_proprietaire',
         ]
 

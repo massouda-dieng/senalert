@@ -15,6 +15,7 @@ import { NIVEAUX_RISQUE, STATUTS, dateHeure } from '../lib/format';
 import { BORNES_SENEGAL, CENTRE_SENEGAL, ICONE_MOI, distanceKm, echapper, icone } from './Carte';
 import { IndicateurSynchro, Selecteur } from './ui';
 import { COULEURS } from '../lib/couleurs';
+import { estSupervision } from '../auth/AuthContext';
 
 const FONDS = {
   plan: { libelle: 'Plan', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', attribution: 'Fond &copy; Esri, HERE, Garmin, &copy; contributeurs OpenStreetMap' },
@@ -182,7 +183,7 @@ export default function CarteAvancee({ role = 'citoyen', hauteur = 'calc(100vh -
 
   // Citoyen et agent : la carte s'ouvre sur leur position si le navigateur l'autorise (la supervision garde la vue nationale).
   useEffect(() => {
-    if (role === 'superadmin' || !navigator.geolocation) return;
+    if (estSupervision(role) || !navigator.geolocation) return;
     const demande = navigator.permissions?.query({ name: 'geolocation' });
     if (!demande) { localiser(true); return; }
     demande.then((s) => { if (s.state !== 'denied') localiser(true); }).catch(() => localiser(true));

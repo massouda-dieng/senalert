@@ -41,6 +41,12 @@ class _SignalerScreenState extends State<SignalerScreen> {
   bool _envoi = false;
   ApiException? _erreur;
   final _carte = MapController();
+  // Étape « Structure » : structures proches du lieu, puis agents disponibles de celle choisie.
+  List<Map<String, dynamic>>? _structures;
+  String? _erreurStructures;
+  Map<String, dynamic>? _structure;
+  List<Map<String, dynamic>>? _agents;
+  Map<String, dynamic>? _agent;
 
   @override
   void initState() {
@@ -112,9 +118,89 @@ class _SignalerScreenState extends State<SignalerScreen> {
   bool get _etapeValide => switch (_etape) {
         0 => _type != null,
         1 => _lat != null,
-        2 => _type != 'autre' || _description.text.trim().length >= 10,
+        2 => _structures != null && (_structures!.isEmpty || _structure != null),
+        3 => _type != 'autre' || _description.text.trim().length >= 10,
         _ => true,
       };
+
+  String _km(num m) => '${(m / 1000).toStringAsFixed(1).replaceAll('.', ',')} km';
+
+  Future<void> _chargerStructures() async {
+    setState(() { _structures = null; _erreurStructures = null; _structure = null; _agents = null; _agent = null; });
+    try {
+      final r = await Api.instance.get<List<dynamic>>('/structures/', params: {'lat': _lat, 'lng': _lng, 'categorie': _type, 'limite': 5});
+      if (mounted) setState(() => _structures = r.cast<Map<String, dynamic>>());
+    } on ApiException catch (e) {
+      // Sans liste, le serveur oriente vers la structure compétente la plus proche.
+      if (mounted) setState(() { _structures = []; _erreurStructures = e.message; });
+    }
+  }
+
+  Future<void> _choisirStructure(Map<String, dynamic> s) async {
+    setState(() { _structure = s; _agents = null; _agent = null; });
+    try {
+      final r = await Api.instance.get<List<dynamic>>('/structures/${s['id']}/agents/');
+      if (mounted && _structure == s) setState(() => _agents = r.cast<Map<String, dynamic>>());
+    } on ApiException {
+      if (mounted) setState(() => _agents = []);
+    }
+  }
+
+  void _suivant() {
+    setState(() => _etape++);
+    if (_etape == 2) _chargerStructures();
+  }
+
+  List<Widget> _etapeStructure() {
+    if (_structures == null) return [const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()))];
+    if (_structures!.isEmpty) {
+      return [Bandeau(_erreurStructures != null
+          ? 'Structures indisponibles ($_erreurStructures). Votre signalement sera orienté vers la structure compétente la plus proche.'
+          : 'Aucune structure n’est enregistrée pour ce type d’incident : la supervision orientera votre signalement.')];
+    }
+    return [
+      Text('Structures les plus proches', style: titre(18)),
+      const SizedBox(height: 10),
+      for (final s in _structures!)
+        Padding(padding: const EdgeInsets.only(bottom: 8), child: Carte(
+          couleur: _structure?['id'] == s['id'] ? AppColors.marine50 : null,
+          onTap: () => _choisirStructure(s),
+          child: Row(children: [
+            const Icon(Icons.apartment_rounded, color: AppColors.marine700),
+            const SizedBox(width: 10),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('${s['nom']}', style: const TextStyle(fontWeight: FontWeight.w700), maxLines: 2),
+              Text('${s['service_nom']} · ${s['region_libelle']}', style: TextStyle(fontSize: 12, color: AppColors.textGrey)),
+            ])),
+            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              Text(_km(s['distance_m'] ?? 0), style: const TextStyle(fontWeight: FontWeight.w700)),
+              Text((s['nb_agents_disponibles'] ?? 0) > 0 ? '${s['nb_agents_disponibles']} disponible(s)' : 'aucun disponible',
+                  style: TextStyle(fontSize: 11, color: (s['nb_agents_disponibles'] ?? 0) > 0 ? AppColors.success : AppColors.textMuted)),
+            ]),
+          ]),
+        )),
+      if (_structure != null) ...[
+        const SizedBox(height: 8),
+        Text('Agent disponible', style: titre(16)),
+        const SizedBox(height: 8),
+        if (_agents == null) const Center(child: CircularProgressIndicator())
+        else ...[
+          for (final a in _agents!)
+            RadioListTile<int?>(
+              value: a['id'], groupValue: _agent?['id'], onChanged: (_) => setState(() => _agent = a),
+              title: Text('${a['prenom']} · ${a['fonction']} · ${_km(_structure!['distance_m'] ?? 0)}'),
+              secondary: const Icon(Icons.person_rounded),
+            ),
+          RadioListTile<int?>(
+            value: null, groupValue: _agent?['id'], onChanged: (_) => setState(() => _agent = null),
+            title: const Text('Laisser le superviseur de la structure choisir'),
+          ),
+          if (_agents!.isEmpty) Text('Aucun agent n’est disponible en ce moment : le superviseur affectera votre dossier.',
+              style: TextStyle(fontSize: 12, color: AppColors.textGrey)),
+        ],
+      ],
+    ];
+  }
 
   Future<void> _envoyer() async {
     setState(() { _envoi = true; _erreur = null; });
@@ -129,6 +215,8 @@ class _SignalerScreenState extends State<SignalerScreen> {
         'description': _description.text.trim(),
         'infos_complementaires': _infos.text.trim(),
         'client_request_id': _cle,
+        if (_structure != null) 'structure': _structure!['id'],
+        if (_agent != null) 'agent': _agent!['id'],
       });
       for (final p in _photos) {
         form.files.add(MapEntry('photos', MultipartFile.fromBytes(await p.readAsBytes(), filename: 'photo.jpg')));
@@ -142,7 +230,9 @@ class _SignalerScreenState extends State<SignalerScreen> {
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           SelectableText(r['reference'], style: const TextStyle(fontFamily: 'monospace', fontSize: 18, fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
-          Text('Transmis au service ${r['service_nom'] ?? 'compétent'}. Vous serez notifié à chaque changement de statut.', textAlign: TextAlign.center),
+          Text('Transmis à ${r['structure_nom'] ?? 'la structure compétente'}'
+              '${r['statut'] == 'affecte' ? ', à l’agent que vous avez choisi' : ', dont le superviseur va désigner un agent'}. '
+              'Vous serez notifié à chaque changement de statut.', textAlign: TextAlign.center),
         ]),
         actions: [FilledButton(onPressed: () => Navigator.pop(c), child: const Text('Suivre le dossier'))],
       ));
@@ -157,7 +247,7 @@ class _SignalerScreenState extends State<SignalerScreen> {
   @override
   Widget build(BuildContext context) {
     final config = context.watch<Configuration>();
-    const etapes = ['Catégorie', 'Lieu', 'Détails', 'Vérification'];
+    const etapes = ['Catégorie', 'Lieu', 'Structure', 'Détails', 'Vérification'];
     return Scaffold(
       appBar: AppBar(title: const Text('Signaler un incident')),
       body: SafeArea(
@@ -239,7 +329,8 @@ class _SignalerScreenState extends State<SignalerScreen> {
               const SizedBox(height: 12),
               TextField(controller: _adresse, maxLength: 255, decoration: const InputDecoration(labelText: 'Adresse ou repère', hintText: 'Ex. : près du marché, rond-point…')),
             ],
-            if (_etape == 2) ...[
+            if (_etape == 2) ..._etapeStructure(),
+            if (_etape == 3) ...[
               TextField(controller: _description, maxLines: 4, maxLength: 2000,
                   decoration: InputDecoration(labelText: _type == 'autre' ? 'Description (obligatoire)' : 'Description', hintText: 'Ce que vous voyez : victimes, danger, accès…')),
               const SizedBox(height: 8),
@@ -258,12 +349,13 @@ class _SignalerScreenState extends State<SignalerScreen> {
               const SizedBox(height: 6),
               Text('Les métadonnées des photos (dont la position) sont supprimées par le serveur.', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
             ],
-            if (_etape == 3) ...[
+            if (_etape == 4) ...[
               Text('Vérifiez avant l’envoi', style: titre(18)),
               const SizedBox(height: 10),
               Carte(child: Column(children: [
                 LigneInfo('Catégorie', config.categorie(_type)?.libelle ?? '—'),
-                LigneInfo('Service', config.categorie(_type)?.service ?? 'À déterminer par le superviseur'),
+                LigneInfo('Structure', _structure?['nom'] ?? 'La plus proche du service compétent'),
+                LigneInfo('Agent', _agent == null ? 'Désigné par le superviseur' : '${_agent!['prenom']} · ${_agent!['fonction']}'),
                 LigneInfo('Position', _lat == null ? '—' : '${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}'),
                 LigneInfo('Région', config.region(_region)?.libelle ?? 'Automatique'),
                 LigneInfo('Repère', _adresse.text.isEmpty ? '—' : _adresse.text),
@@ -283,9 +375,9 @@ class _SignalerScreenState extends State<SignalerScreen> {
               if (_etape > 0) Expanded(child: OutlinedButton(onPressed: () => setState(() => _etape--), child: const Text('Retour'))),
               if (_etape > 0) const SizedBox(width: 10),
               Expanded(flex: 2, child: FilledButton(
-                onPressed: !_etapeValide || _envoi ? null : (_etape < 3 ? () => setState(() => _etape++) : _envoyer),
+                onPressed: !_etapeValide || _envoi ? null : (_etape < 4 ? _suivant : _envoyer),
                 child: _envoi ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white))
-                    : Text(_etape < 3 ? 'Continuer' : 'Envoyer le signalement'),
+                    : Text(_etape < 4 ? 'Continuer' : 'Envoyer le signalement'),
               )),
             ]),
           ),

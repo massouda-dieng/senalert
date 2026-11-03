@@ -8,7 +8,7 @@ import { Audit, Parametres, Referentiels } from './pages/admin/Configuration';
 import { IncidentsAdmin, SOSAdmin } from './pages/admin/Dossiers';
 import Risques from './pages/admin/Risques';
 import Utilisateurs from './pages/admin/Utilisateurs';
-import { Connexion, DemandeAgent, Inscription, MotDePasseOublie, Reinitialiser } from './pages/auth/Auth';
+import { Connexion, Inscription, MotDePasseOublie, Reinitialiser } from './pages/auth/Auth';
 import Accueil from './pages/citoyen/Accueil';
 import Assistant from './pages/citoyen/Assistant';
 import Guide from './pages/citoyen/Guide';
@@ -16,7 +16,7 @@ import MesDossiers from './pages/citoyen/MesDossiers';
 import Services from './pages/citoyen/Services';
 import Signaler from './pages/citoyen/Signaler';
 import AlertesZone from './pages/admin/AlertesZone';
-import DemandesAgent from './pages/admin/DemandesAgent';
+import Structures from './pages/admin/Structures';
 import Demonstration from './pages/admin/Demonstration';
 import CartePage from './pages/commun/CartePage';
 import Communaute from './pages/commun/Communaute';
@@ -25,6 +25,8 @@ import Notifications from './pages/commun/Notifications';
 import Simulateur from './pages/Simulateur';
 import Vitrine from './pages/Vitrine';
 import Profil from './pages/commun/Profil';
+
+const SUPERVISION = ['superadmin', 'superviseur'];
 
 // Chargé à la demande : les graphiques ne pèsent pas sur les espaces citoyen et agent.
 const Supervision = lazy(() => import('./pages/admin/Supervision'));
@@ -50,7 +52,6 @@ export default function App() {
     <Routes>
       <Route path="/connexion" element={<Public><Connexion /></Public>} />
       <Route path="/inscription" element={<Public><Inscription /></Public>} />
-      <Route path="/demande-agent" element={<Public><DemandeAgent /></Public>} />
       <Route path="/mot-de-passe-oublie" element={<Public><MotDePasseOublie /></Public>} />
       <Route path="/reinitialiser" element={<Reinitialiser />} />
       <Route path="/" element={<Vitrine />} />
@@ -72,16 +73,16 @@ export default function App() {
         <Route path="/agent/carte" element={<Espace roles={['agent']}><CartePage /></Espace>} />
         <Route path="/agent/secours" element={<Espace roles={['agent']}><Guide /></Espace>} />
 
-        <Route path="/supervision" element={<Espace roles={['superadmin']}><Suspense fallback={<Chargement />}><Supervision /></Suspense></Espace>} />
-        <Route path="/supervision/incidents" element={<Espace roles={['superadmin']}><IncidentsAdmin /></Espace>} />
-        <Route path="/supervision/sos" element={<Espace roles={['superadmin']}><SOSAdmin /></Espace>} />
-        <Route path="/supervision/carte" element={<Espace roles={['superadmin']}><CartePage /></Espace>} />
+        <Route path="/supervision" element={<Espace roles={SUPERVISION}><Suspense fallback={<Chargement />}><Supervision /></Suspense></Espace>} />
+        <Route path="/supervision/incidents" element={<Espace roles={SUPERVISION}><IncidentsAdmin /></Espace>} />
+        <Route path="/supervision/sos" element={<Espace roles={SUPERVISION}><SOSAdmin /></Espace>} />
+        <Route path="/supervision/carte" element={<Espace roles={SUPERVISION}><CartePage /></Espace>} />
         <Route path="/supervision/demo" element={<Espace roles={['superadmin']}><Demonstration /></Espace>} />
         <Route path="/supervision/alertes-zone" element={<Espace roles={['superadmin']}><AlertesZone /></Espace>} />
         <Route path="/supervision/communaute" element={<Espace roles={['superadmin']}><Communaute /></Espace>} />
         <Route path="/supervision/risques" element={<Espace roles={['superadmin']}><Risques /></Espace>} />
-        <Route path="/supervision/demandes-agent" element={<Espace roles={['superadmin']}><DemandesAgent /></Espace>} />
-        <Route path="/supervision/utilisateurs" element={<Espace roles={['superadmin']}><Utilisateurs /></Espace>} />
+        <Route path="/supervision/structures" element={<Espace roles={['superadmin']}><Structures /></Espace>} />
+        <Route path="/supervision/utilisateurs" element={<Espace roles={SUPERVISION}><Utilisateurs /></Espace>} />
         <Route path="/supervision/referentiels" element={<Espace roles={['superadmin']}><Referentiels /></Espace>} />
         <Route path="/supervision/parametres" element={<Espace roles={['superadmin']}><Parametres /></Espace>} />
         <Route path="/supervision/audit" element={<Espace roles={['superadmin']}><Audit /></Espace>} />

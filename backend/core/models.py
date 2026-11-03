@@ -4,7 +4,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db import models
 
-from .constants import GRAVITE_CHOICES
+from .constants import GRAVITE_CHOICES, REGION_CHOICES
 
 
 class Service(models.Model):
@@ -13,6 +13,36 @@ class Service(models.Model):
     code = models.SlugField(max_length=30, unique=True)
     nom = models.CharField(max_length=120)
     description = models.TextField(blank=True)
+    actif = models.BooleanField(default=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['nom']
+
+    def __str__(self):
+        return self.nom
+
+
+class Structure(models.Model):
+    """Structure d'intervention géolocalisée : caserne, commissariat, hôpital, agence SENELEC ou ONAS…
+
+    Chaque agent et chaque superviseur de structure est rattaché à une structure ; le citoyen se voit
+    proposer les structures les plus proches du lieu de l'incident.
+    """
+
+    SOURCES = [('osm', 'OpenStreetMap'), ('manuel', 'Saisie manuelle')]
+
+    nom = models.CharField(max_length=150)
+    service = models.ForeignKey(Service, on_delete=models.PROTECT, related_name='structures')
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+    region = models.CharField(max_length=30, choices=REGION_CHOICES, db_index=True)
+    adresse = models.CharField(max_length=255, blank=True)
+    telephone = models.CharField(max_length=30, blank=True)
+    position_approximative = models.BooleanField(
+        default=False, help_text="Position provisoire (chef-lieu de région) à corriger par le superadministrateur.")
+    source = models.CharField(max_length=10, choices=SOURCES, default='manuel')
+    reference_osm = models.CharField(max_length=40, blank=True)
     actif = models.BooleanField(default=True)
     date_creation = models.DateTimeField(auto_now_add=True)
 

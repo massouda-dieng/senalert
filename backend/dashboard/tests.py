@@ -124,15 +124,19 @@ class FluxTempsReelTests(SenAlertTestCase):
         from datetime import timedelta
         self.en_tant_que(self.citoyen())
         self.assertEqual(self.client.get(self.URL).status_code, 403)
-        pompier = self.en_tant_que(self.agent('pompier', 'pompiers', ['dakar']))
+        pompier = self.agent('pompier', 'pompiers', ['dakar'])
+        self.en_tant_que(self.superviseur('responsable', structure=pompier.structure))
         depuis = self.client.get(self.URL).data['maintenant']
-        AlerteSOS.objects.create(region='dakar')
+        AlerteSOS.objects.create(region='dakar', structure=pompier.structure)
         AlerteSOS.objects.create(region='matam')
-        Incident.objects.create(type_incident='incendie', region='dakar', service_id=pompier.profil_agent.service_id)
-        Incident.objects.create(type_incident='agression', region='dakar')  # autre service
+        Incident.objects.create(type_incident='incendie', region='dakar', service_id=pompier.profil_agent.service_id,
+                                structure=pompier.structure)
+        Incident.objects.create(type_incident='agression', region='dakar')  # autre structure
         r = self.client.get(self.URL, {'depuis': depuis.isoformat()})
-        self.assertEqual(len(r.data['sos']), 1)
-        self.assertEqual(len(r.data['incidents']), 1)
+        self.assertEqual((len(r.data['sos']), len(r.data['incidents'])), (1, 1), 'superviseur : sa structure seulement')
+        self.en_tant_que(pompier)
+        r = self.client.get(self.URL, {'depuis': depuis.isoformat()})
+        self.assertEqual((len(r.data['sos']), len(r.data['incidents'])), (0, 0), 'agent : seulement ce qui lui est transmis')
         self.en_tant_que(self.superadmin())
         r = self.client.get(self.URL, {'depuis': (depuis - timedelta(seconds=1)).isoformat()})
         self.assertEqual((len(r.data['sos']), len(r.data['incidents'])), (2, 2))

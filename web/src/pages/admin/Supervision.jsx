@@ -1,13 +1,14 @@
 import clsx from 'clsx';
 import {
-  Activity, AlertTriangle, ArrowDownRight, ArrowRight, ArrowUpRight, CheckCircle2, ClipboardList, Clock, Database, FileClock, FileDown,
-  FileSpreadsheet, Hourglass, Info, Minus, Radio, ShieldCheck, Siren, Star, Tags, Timer, UserCheck, Users,
+  Activity, AlertTriangle, ArrowDownRight, ArrowRight, ArrowUpRight, Building2, CheckCircle2, ClipboardList, Clock, Database, FileClock, FileDown,
+  FileSpreadsheet, Hourglass, Info, Minus, Radio, ShieldCheck, Siren, Star, Tags, Timer, Users,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { telecharger } from '../../api/client';
 import { useRessource } from '../../api/hooks';
+import { useAuth } from '../../auth/AuthContext';
 import CarteAvancee from '../../components/CarteAvancee';
 import { Bandeau, Bouton, Carte, Chargement, EtatErreur, IndicateurSynchro, Indicateur, Selecteur, useToast } from '../../components/ui';
 import { useConfig } from '../../lib/config';
@@ -83,16 +84,19 @@ function NiveauxUrgence({ repartition, sos }) {
 
 const ADMINISTRATION = [
   { a: '/supervision/utilisateurs', titre: 'Citoyens et agents', icone: Users, cle: 'comptes' },
+  { a: '/supervision/structures', titre: 'Structures', icone: Building2, cle: 'structures', national: true },
   { a: '/supervision/incidents', titre: 'Incidents', icone: ClipboardList, cle: 'incidents' },
   { a: '/supervision/sos', titre: 'Alertes SOS', icone: Siren, cle: 'sos' },
   { a: '/supervision/incidents?statut=en_cours', titre: 'Interventions', icone: Activity, cle: 'interventions' },
-  { a: '/supervision/referentiels', titre: 'Catégories et services', icone: Tags, cle: 'referentiels' },
-  { a: '/supervision/demandes-agent', titre: 'Demandes d’accès', icone: UserCheck, cle: 'demandes' },
-  { a: '/supervision/audit', titre: 'Activités', icone: FileClock, cle: 'audit' },
+  { a: '/supervision/referentiels', titre: 'Catégories et services', icone: Tags, cle: 'referentiels', national: true },
+  { a: '/supervision/audit', titre: 'Activités', icone: FileClock, cle: 'audit', national: true },
 ];
 
 export default function Supervision() {
   const config = useConfig();
+  const { utilisateur } = useAuth();
+  // Le superviseur d'une structure ne voit que sa structure (le serveur filtre déjà toutes les données).
+  const national = utilisateur.role === 'superadmin';
   const toast = useToast();
   const [periode, setPeriode] = useState('30');
   const [region, setRegion] = useState('');
@@ -105,9 +109,8 @@ export default function Supervision() {
   const { donnees: s, chargement, erreur, recharger, derniereSynchro } = useRessource('/tableau-de-bord/statistiques/', filtres, { intervalle: 60000 });
   const sosOuverts = useRessource('/alertes/sos/', { statut: 'nouveau', taille: 5 }, { intervalle: 15000 });
   const incOuverts = useRessource('/incidents/', { statut: 'nouveau', taille: 5 }, { intervalle: 30000 });
-  const activite = useRessource('/audit/', { taille: 6 }, { intervalle: 60000 });
+  const activite = useRessource(national ? '/audit/' : null, { taille: 6 }, { intervalle: 60000 });
   const comptes = useRessource('/gestion/utilisateurs/statistiques/');
-  const demandes = useRessource('/gestion/demandes-agent/compteur/', null, { intervalle: 60000 });
 
   const serie = useMemo(() => {
     if (!s) return [];
@@ -136,12 +139,13 @@ export default function Supervision() {
   const def = s?.definitions || {};
   const file = [...(sosOuverts.donnees?.results || []).map((d) => ({ ...d, sos: true })), ...(incOuverts.donnees?.results || [])].slice(0, 6);
   const comptesAdmin = {
-    comptes: comptes.donnees ? `${nombre(comptes.donnees.citoyens)} citoyens · ${nombre(comptes.donnees.agents)} agents` : '…',
+    comptes: !comptes.donnees ? '…' : national ? `${nombre(comptes.donnees.citoyens)} citoyens · ${nombre(comptes.donnees.agents)} agents`
+      : `${nombre(comptes.donnees.agents)} agents · ${nombre(comptes.donnees.agents_disponibles)} disponibles`,
+    structures: 'Casernes, commissariats, hôpitaux…',
     incidents: r ? `${nombre(r.total_incidents)} sur la période` : '…',
     sos: r ? `${nombre(r.total_sos)} sur la période` : '…',
     interventions: r ? `${nombre(r.en_cours)} en cours` : '…',
     referentiels: config.categories.length ? `${config.categories.length} catégories · ${config.services?.length ?? 0} services` : '…',
-    demandes: demandes.donnees ? `${nombre(demandes.donnees.en_attente)} en attente` : '…',
     audit: 'Journal des actions',
   };
 
@@ -150,8 +154,8 @@ export default function Supervision() {
       <div className="mb-5 rounded-3xl bg-marque-800 px-5 py-6 text-white sm:px-7">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="inline-flex items-center gap-2 text-[13px] font-semibold text-white/80"><Radio className="h-4 w-4 text-marque-100" aria-hidden /> Supervision nationale</p>
-            <h1 className="mt-1 font-titre text-2xl font-extrabold sm:text-3xl">Centre de supervision</h1>
+            <p className="inline-flex items-center gap-2 text-[13px] font-semibold text-white/80"><Radio className="h-4 w-4 text-marque-100" aria-hidden /> {national ? 'Supervision nationale' : 'Supervision de structure'}</p>
+            <h1 className="mt-1 font-titre text-2xl font-extrabold sm:text-3xl">{national ? 'Centre de supervision' : utilisateur.structure_nom || 'Ma structure'}</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Bouton variante="secondaire" taille="sm" icone={FileSpreadsheet} chargement={exportEnCours === 'csv'} onClick={() => exporter('csv')}>CSV</Bouton>
@@ -210,7 +214,7 @@ export default function Supervision() {
                   </ul>
                 )}
               </Carte>
-              <Carte titre="Activité récente" action={<Link to="/supervision/audit" className="lien text-sm">Journal</Link>} corpsClassName="p-0">
+              {national && <Carte titre="Activité récente" action={<Link to="/supervision/audit" className="lien text-sm">Journal</Link>} corpsClassName="p-0">
                 {!activite.donnees?.results?.length ? <p className="p-5 text-sm text-texte-doux">Aucune activité enregistrée.</p> : (
                   <ul className="divide-y divide-surface-bord">
                     {activite.donnees.results.slice(0, 5).map((e) => (
@@ -221,7 +225,7 @@ export default function Supervision() {
                     ))}
                   </ul>
                 )}
-              </Carte>
+              </Carte>}
             </div>
           </div>
 
@@ -278,7 +282,7 @@ export default function Supervision() {
                 </div>
               )}
             </Carte>
-            <Carte titre="Répartition par région" action={<Link to="/supervision/risques" className="lien text-sm">Zones de risque</Link>}>
+            <Carte titre="Répartition par région" action={national && <Link to="/supervision/risques" className="lien text-sm">Zones de risque</Link>}>
               {regions.length === 0 ? <p className="py-16 text-center text-sm text-texte-doux">Aucune donnée.</p> : (
                 <div style={{ height: Math.max(180, regions.length * 34 + 28) }} role="img" aria-label="Barres empilées du nombre d’incidents et de SOS par région">
                   <ResponsiveContainer>
@@ -366,7 +370,7 @@ export default function Supervision() {
           <section className="mt-5" aria-label="Administration">
             <h2 className="mb-3 text-[15px] font-bold">Administration</h2>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-              {ADMINISTRATION.map((a) => (
+              {ADMINISTRATION.filter((a) => national || !a.national).map((a) => (
                 <Link key={a.a} to={a.a} className="carte group flex items-center gap-3 p-4 transition hover:-translate-y-0.5">
                   <a.icone className="h-5 w-5 shrink-0 text-marque-600" aria-hidden />
                   <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{a.titre}</p><p className="truncate text-xs text-texte-doux">{comptesAdmin[a.cle]}</p></div>

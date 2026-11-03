@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from django.utils import timezone
 
-from core.constants import ACCEPTE, ROLE_SUPERADMIN
+from core.constants import ACCEPTE, AFFECTE, REGIONS, ROLE_SUPERADMIN
 from core.tests_utils import SenAlertTestCase
 from notifications.models import Notification
 
@@ -52,23 +52,36 @@ class SOSTests(SenAlertTestCase):
         self.client.force_authenticate(None)
         self.assertEqual(self.client.post(URL, {}, format='json').status_code, 401)
 
-    def test_agents_de_la_zone_et_superadmin_notifies(self):
+    def test_sos_transmis_automatiquement_a_l_agent_disponible_le_plus_proche(self):
+        """En urgence le citoyen ne choisit rien : structure de secours proche ayant un agent disponible."""
         pompier = self.agent('pompier', 'pompiers', ['dakar'])
-        policier_matam = self.agent('policier', 'police', ['matam'])
+        matam = (REGIONS['matam']['lat'], REGIONS['matam']['lng'])
+        policier_matam = self.agent('policier', 'police', ['matam'], structure=self.structure('police', matam))
+        responsable = self.superviseur('responsable', structure=pompier.structure)
         chef = self.superadmin()
         with self.captureOnCommitCallbacks(execute=True):
-            self.client.post(URL, {'latitude': 14.69, 'longitude': -17.44}, format='json')
+            r = self.client.post(URL, {'latitude': 14.69, 'longitude': -17.44}, format='json')
+        self.assertEqual(r.data['statut'], AFFECTE)
+        self.assertEqual(r.data['structure'], pompier.structure_id)
+        self.assertTrue(Notification.objects.filter(destinataire=pompier, type='affectation').exists())
         notifies = set(Notification.objects.filter(type='nouvelle_alerte').values_list('destinataire', flat=True))
-        self.assertEqual(notifies, {pompier.pk, chef.pk})
-        self.assertNotIn(policier_matam.pk, notifies)
+        self.assertEqual(notifies, {responsable.pk, chef.pk})
+        self.assertFalse(Notification.objects.filter(destinataire=policier_matam).exists())
+
+    def test_sos_sans_agent_disponible_va_au_superviseur(self):
+        self.agent('pompier', 'pompiers', ['dakar'], disponible=False)
+        r = self.client.post(URL, {'latitude': 14.69, 'longitude': -17.44}, format='json')
+        self.assertEqual(r.data['statut'], 'nouveau')
+        self.assertIsNotNone(r.data['structure'], 'structure de secours la plus proche, son superviseur affectera')
 
     def test_historique_et_prise_en_charge(self):
+        policier = self.agent('policier', 'police', ['dakar'])
         r = self.client.post(URL, {'latitude': 14.69, 'longitude': -17.44}, format='json')
         self.assertEqual(self.client.get(URL).data['count'], 1)
         self.en_tant_que(self.citoyen('autre'))
         self.assertEqual(self.client.get(URL).data['count'], 0)
-        policier = self.en_tant_que(self.agent('policier', 'police', ['dakar']))
-        r = self.client.post(f"{URL}{r.data['id']}/prendre-en-charge/")
+        self.en_tant_que(policier)
+        r = self.client.post(f"{URL}{r.data['id']}/accepter/")
         self.assertEqual(r.data['statut'], ACCEPTE)
         self.assertEqual(r.data['intervention']['agent'], policier.pk)
 

@@ -62,6 +62,8 @@ def filtrer(qs, params, debut, fin, est_incident, champ='date_creation'):
         qs = qs.filter(region=params['region'])
     if params.get('service'):
         qs = qs.filter(service_id=params['service'])
+    if params.get('structure'):
+        qs = qs.filter(structure_id=params['structure'])
     if est_incident and params.get('type_incident'):
         qs = qs.filter(type_incident=params['type_incident'])
     return qs
@@ -234,14 +236,20 @@ def statistiques(params):
         'en_retard': ci['en_retard'] + cs['en_retard'],
         'taux_resolution': (round(100 * (ci['resolus'] + cs['resolus']) / (total - ci['rejetes_annules'] - cs['rejetes_annules']), 1)
                             if total - ci['rejetes_annules'] - cs['rejetes_annules'] else None),
-        'citoyens': User.objects.filter(role=ROLE_CITOYEN, is_active=True).count(),
-        'agents': User.objects.filter(role=ROLE_AGENT, is_active=True).count(),
+        # Superviseur de structure : seulement les citoyens qui ont un dossier dans sa structure.
+        'citoyens': (User.objects.filter(role=ROLE_CITOYEN, is_active=True).filter(
+                         Q(incidents__structure_id=params['structure']) | Q(pk__in=AlerteSOS.objects.filter(
+                             structure_id=params['structure']).values('citoyen_id'))).distinct().count()
+                     if params.get('structure') else User.objects.filter(role=ROLE_CITOYEN, is_active=True).count()),
+        'agents': User.objects.filter(role=ROLE_AGENT, is_active=True,
+                                      **({'structure_id': params['structure']} if params.get('structure') else {})).count(),
         'total_signalements': total,
         'a_traiter': ci['nouveaux'] + cs['nouveaux'] + ci['en_attente'] + cs['en_attente'],
         'delai_moyen_prise_en_charge_min': delai_global(ci, cs),
         'agents_en_intervention': (Intervention.objects
                                    .filter(Q(incident__statut__in=[ACCEPTE, EN_COURS]) | Q(alerte__statut__in=[ACCEPTE, EN_COURS]),
-                                           agent__isnull=False)
+                                           agent__isnull=False,
+                                           **({'agent__structure_id': params['structure']} if params.get('structure') else {}))
                                    .values('agent').distinct().count()),
     }
     return {

@@ -1107,34 +1107,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/Deconnexion'
           description: ''
-  /api/auth/demandes-agent/:
+  /api/auth/disponibilite/:
     post:
-      operationId: auth_demandes_agent_create
-      description: 'POST /api/auth/demandes-agent/ : demande d''accès agent (publique,
-        limitée à 10 par heure).'
+      operationId: auth_disponibilite_create
+      description: 'L''agent se déclare disponible ou indisponible : seuls les agents
+        disponibles sont proposés au citoyen.'
       tags:
       - auth
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DemandeCreationRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/DemandeCreationRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/DemandeCreationRequest'
-        required: true
       security:
       - jwtAuth: []
-      - {}
       responses:
-        '201':
+        '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DemandeCreation'
+                $ref: '#/components/schemas/Utilisateur'
           description: ''
   /api/auth/google/:
     post:
@@ -1633,154 +1620,19 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
-  /api/gestion/demandes-agent/:
-    get:
-      operationId: gestion_demandes_agent_list
-      description: Demandes d'accès agent, pour le superadministrateur (filtre ?statut=).
-      parameters:
-      - name: ordering
-        required: false
-        in: query
-        description: Quel champ utiliser pour classer les résultats.
-        schema:
-          type: string
-      - name: page
-        required: false
-        in: query
-        description: Un numéro de page de l'ensemble des résultats.
-        schema:
-          type: integer
-      - name: taille
-        required: false
-        in: query
-        description: Nombre de résultats à retourner par page.
-        schema:
-          type: integer
-      tags:
-      - gestion
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedDemandeList'
-          description: ''
-  /api/gestion/demandes-agent/{id}/:
-    get:
-      operationId: gestion_demandes_agent_retrieve
-      description: Demandes d'accès agent, pour le superadministrateur (filtre ?statut=).
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un(une) valeur entière unique identifiant ce(cette) Demande de
-          compte agent.
-        required: true
-      tags:
-      - gestion
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Demande'
-          description: ''
-  /api/gestion/demandes-agent/{id}/refuser/:
-    post:
-      operationId: gestion_demandes_agent_refuser_create
-      description: Demandes d'accès agent, pour le superadministrateur (filtre ?statut=).
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un(une) valeur entière unique identifiant ce(cette) Demande de
-          compte agent.
-        required: true
-      tags:
-      - gestion
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DemandeRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/DemandeRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/DemandeRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Demande'
-          description: ''
-  /api/gestion/demandes-agent/{id}/valider/:
-    post:
-      operationId: gestion_demandes_agent_valider_create
-      description: Demandes d'accès agent, pour le superadministrateur (filtre ?statut=).
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un(une) valeur entière unique identifiant ce(cette) Demande de
-          compte agent.
-        required: true
-      tags:
-      - gestion
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DemandeRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/DemandeRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/DemandeRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Demande'
-          description: ''
-  /api/gestion/demandes-agent/compteur/:
-    get:
-      operationId: gestion_demandes_agent_compteur_retrieve
-      description: Demandes d'accès agent, pour le superadministrateur (filtre ?statut=).
-      tags:
-      - gestion
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Demande'
-          description: ''
   /api/gestion/utilisateurs/:
     get:
       operationId: gestion_utilisateurs_list
-      description: Gestion des comptes par le superadministrateur (toutes les opérations
-        sont journalisées).
+      description: |-
+        Gestion des comptes (toutes les opérations sont journalisées).
+
+        * Superadministrateur : tous les comptes ; crée les superviseurs de structure et les agents.
+        * Superviseur de structure : uniquement les agents de sa structure, qu'il crée lui-même.
       parameters:
+      - in: query
+        name: disponible
+        schema:
+          type: boolean
       - in: query
         name: is_active
         schema:
@@ -1809,6 +1661,10 @@ paths:
         name: service
         schema:
           type: number
+      - in: query
+        name: structure
+        schema:
+          type: number
       - name: taille
         required: false
         in: query
@@ -1833,8 +1689,11 @@ paths:
   /api/gestion/utilisateurs/{id}/:
     get:
       operationId: gestion_utilisateurs_retrieve
-      description: Gestion des comptes par le superadministrateur (toutes les opérations
-        sont journalisées).
+      description: |-
+        Gestion des comptes (toutes les opérations sont journalisées).
+
+        * Superadministrateur : tous les comptes ; crée les superviseurs de structure et les agents.
+        * Superviseur de structure : uniquement les agents de sa structure, qu'il crée lui-même.
       parameters:
       - in: path
         name: id
@@ -1855,8 +1714,11 @@ paths:
           description: ''
     patch:
       operationId: gestion_utilisateurs_partial_update
-      description: Gestion des comptes par le superadministrateur (toutes les opérations
-        sont journalisées).
+      description: |-
+        Gestion des comptes (toutes les opérations sont journalisées).
+
+        * Superadministrateur : tous les comptes ; crée les superviseurs de structure et les agents.
+        * Superviseur de structure : uniquement les agents de sa structure, qu'il crée lui-même.
       parameters:
       - in: path
         name: id
@@ -1889,8 +1751,11 @@ paths:
   /api/gestion/utilisateurs/agents/:
     post:
       operationId: gestion_utilisateurs_agents_create
-      description: Gestion des comptes par le superadministrateur (toutes les opérations
-        sont journalisées).
+      description: |-
+        Gestion des comptes (toutes les opérations sont journalisées).
+
+        * Superadministrateur : tous les comptes ; crée les superviseurs de structure et les agents.
+        * Superviseur de structure : uniquement les agents de sa structure, qu'il crée lui-même.
       tags:
       - gestion
       requestBody:
@@ -1917,10 +1782,44 @@ paths:
   /api/gestion/utilisateurs/statistiques/:
     get:
       operationId: gestion_utilisateurs_statistiques_retrieve
-      description: Gestion des comptes par le superadministrateur (toutes les opérations
-        sont journalisées).
+      description: |-
+        Gestion des comptes (toutes les opérations sont journalisées).
+
+        * Superadministrateur : tous les comptes ; crée les superviseurs de structure et les agents.
+        * Superviseur de structure : uniquement les agents de sa structure, qu'il crée lui-même.
       tags:
       - gestion
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UtilisateurAdmin'
+          description: ''
+  /api/gestion/utilisateurs/superviseurs/:
+    post:
+      operationId: gestion_utilisateurs_superviseurs_create
+      description: |-
+        Gestion des comptes (toutes les opérations sont journalisées).
+
+        * Superadministrateur : tous les comptes ; crée les superviseurs de structure et les agents.
+        * Superviseur de structure : uniquement les agents de sa structure, qu'il crée lui-même.
+      tags:
+      - gestion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreationSuperviseurRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreationSuperviseurRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreationSuperviseurRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
@@ -3274,6 +3173,218 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /api/structures/:
+    get:
+      operationId: structures_list
+      description: |-
+        Structures d'intervention géolocalisées.
+
+        * `?lat=…&lng=…` (tout compte connecté) : les plus proches, avec la distance et le nombre d'agents
+          disponibles ; filtrées par `categorie` (service compétent) ou `service` (code).
+        * Sans position : liste filtrable (service, région, q) ; écriture réservée au superadministrateur.
+        * `/structures/{id}/agents/` : agents disponibles, présentés au citoyen par prénom et fonction seulement.
+      parameters:
+      - in: query
+        name: actif
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Quel champ utiliser pour classer les résultats.
+        schema:
+          type: string
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: region
+        schema:
+          type: string
+      - in: query
+        name: service
+        schema:
+          type: string
+      tags:
+      - structures
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Structure'
+          description: ''
+    post:
+      operationId: structures_create
+      description: |-
+        Structures d'intervention géolocalisées.
+
+        * `?lat=…&lng=…` (tout compte connecté) : les plus proches, avec la distance et le nombre d'agents
+          disponibles ; filtrées par `categorie` (service compétent) ou `service` (code).
+        * Sans position : liste filtrable (service, région, q) ; écriture réservée au superadministrateur.
+        * `/structures/{id}/agents/` : agents disponibles, présentés au citoyen par prénom et fonction seulement.
+      tags:
+      - structures
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StructureRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StructureRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StructureRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Structure'
+          description: ''
+  /api/structures/{id}/:
+    get:
+      operationId: structures_retrieve
+      description: |-
+        Structures d'intervention géolocalisées.
+
+        * `?lat=…&lng=…` (tout compte connecté) : les plus proches, avec la distance et le nombre d'agents
+          disponibles ; filtrées par `categorie` (service compétent) ou `service` (code).
+        * Sans position : liste filtrable (service, région, q) ; écriture réservée au superadministrateur.
+        * `/structures/{id}/agents/` : agents disponibles, présentés au citoyen par prénom et fonction seulement.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) structure.
+        required: true
+      tags:
+      - structures
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Structure'
+          description: ''
+    put:
+      operationId: structures_update
+      description: |-
+        Structures d'intervention géolocalisées.
+
+        * `?lat=…&lng=…` (tout compte connecté) : les plus proches, avec la distance et le nombre d'agents
+          disponibles ; filtrées par `categorie` (service compétent) ou `service` (code).
+        * Sans position : liste filtrable (service, région, q) ; écriture réservée au superadministrateur.
+        * `/structures/{id}/agents/` : agents disponibles, présentés au citoyen par prénom et fonction seulement.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) structure.
+        required: true
+      tags:
+      - structures
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StructureRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StructureRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StructureRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Structure'
+          description: ''
+    patch:
+      operationId: structures_partial_update
+      description: |-
+        Structures d'intervention géolocalisées.
+
+        * `?lat=…&lng=…` (tout compte connecté) : les plus proches, avec la distance et le nombre d'agents
+          disponibles ; filtrées par `categorie` (service compétent) ou `service` (code).
+        * Sans position : liste filtrable (service, région, q) ; écriture réservée au superadministrateur.
+        * `/structures/{id}/agents/` : agents disponibles, présentés au citoyen par prénom et fonction seulement.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) structure.
+        required: true
+      tags:
+      - structures
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStructureRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedStructureRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedStructureRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Structure'
+          description: ''
+  /api/structures/{id}/agents/:
+    get:
+      operationId: structures_agents_retrieve
+      description: |-
+        Structures d'intervention géolocalisées.
+
+        * `?lat=…&lng=…` (tout compte connecté) : les plus proches, avec la distance et le nombre d'agents
+          disponibles ; filtrées par `categorie` (service compétent) ou `service` (code).
+        * Sans position : liste filtrable (service, région, q) ; écriture réservée au superadministrateur.
+        * `/structures/{id}/agents/` : agents disponibles, présentés au citoyen par prénom et fonction seulement.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) structure.
+        required: true
+      tags:
+      - structures
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/tableau-de-bord/activite-agent/:
     get:
       operationId: tableau_de_bord_activite_agent_retrieve
@@ -3393,8 +3504,10 @@ paths:
   /api/tableau-de-bord/statistiques/:
     get:
       operationId: tableau_de_bord_statistiques_retrieve
-      description: 'Indicateurs de supervision (superadmin). Filtres : date_debut,
-        date_fin, region, type_incident, service, granularite.'
+      description: |-
+        Indicateurs de supervision. Filtres : date_debut, date_fin, region, type_incident, service, granularite.
+
+        Le superviseur de structure ne voit que les indicateurs de sa structure.
       tags:
       - tableau-de-bord
       security:
@@ -3438,6 +3551,8 @@ components:
         fonction:
           type: string
           maxLength: 80
+        disponible:
+          type: boolean
       required:
       - service_nom
     AgentProfilRequest:
@@ -3454,6 +3569,8 @@ components:
         fonction:
           type: string
           maxLength: 80
+        disponible:
+          type: boolean
     AlerteSOS:
       type: object
       description: Champs calculés communs aux incidents et SOS.
@@ -3513,6 +3630,12 @@ components:
         service_nom:
           type: string
           readOnly: true
+        structure:
+          type: integer
+          nullable: true
+        structure_nom:
+          type: string
+          readOnly: true
         date_creation:
           type: string
           format: date-time
@@ -3560,6 +3683,7 @@ components:
       - region_libelle
       - service_nom
       - statut_libelle
+      - structure_nom
       - uuid
     AlerteSOSCreationRequest:
       type: object
@@ -3626,6 +3750,9 @@ components:
         gravite:
           $ref: '#/components/schemas/GraviteEnum'
         service:
+          type: integer
+          nullable: true
+        structure:
           type: integer
           nullable: true
         date_creation:
@@ -3926,6 +4053,8 @@ components:
       - username
     CreationAgentRequest:
       type: object
+      description: Le superviseur crée ses agents dans sa propre structure (le champ
+        structure est alors ignoré).
       properties:
         email:
           type: string
@@ -3946,12 +4075,8 @@ components:
           type: string
           writeOnly: true
           minLength: 1
-        service:
+        structure:
           type: integer
-        zones:
-          type: array
-          items:
-            $ref: '#/components/schemas/ZonesEnum'
         matricule:
           type: string
           maxLength: 40
@@ -3963,8 +4088,38 @@ components:
       - first_name
       - last_name
       - mot_de_passe_initial
-      - service
-      - zones
+    CreationSuperviseurRequest:
+      type: object
+      description: Champs communs à la création d'un agent ou d'un superviseur de
+        structure.
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        telephone:
+          type: string
+          maxLength: 20
+        mot_de_passe_initial:
+          type: string
+          writeOnly: true
+          minLength: 1
+        structure:
+          type: integer
+      required:
+      - email
+      - first_name
+      - last_name
+      - mot_de_passe_initial
+      - structure
     Deconnexion:
       type: object
       properties:
@@ -3982,179 +4137,6 @@ components:
         tout:
           type: boolean
           default: false
-    Demande:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        prenom:
-          type: string
-          maxLength: 150
-        nom:
-          type: string
-          maxLength: 150
-        email:
-          type: string
-          format: email
-          maxLength: 254
-        telephone:
-          type: string
-          maxLength: 20
-        matricule:
-          type: string
-          maxLength: 40
-        service:
-          type: integer
-        service_nom:
-          type: string
-          readOnly: true
-        structure:
-          type: string
-          description: Commissariat, caserne, hôpital, agence…
-          maxLength: 150
-        fonction:
-          type: string
-          maxLength: 80
-        zones: {}
-        zones_libelles:
-          type: array
-          items: {}
-          readOnly: true
-        message:
-          type: string
-          maxLength: 1000
-        statut:
-          $ref: '#/components/schemas/DemandeStatutEnum'
-        motif_refus:
-          type: string
-          maxLength: 255
-        traite_par_nom:
-          type: string
-          readOnly: true
-        date_traitement:
-          type: string
-          format: date-time
-          nullable: true
-        date_demande:
-          type: string
-          format: date-time
-          readOnly: true
-        utilisateur:
-          type: integer
-          nullable: true
-      required:
-      - date_demande
-      - email
-      - id
-      - matricule
-      - nom
-      - prenom
-      - service
-      - service_nom
-      - structure
-      - telephone
-      - traite_par_nom
-      - zones_libelles
-    DemandeCreation:
-      type: object
-      properties:
-        prenom:
-          type: string
-          maxLength: 150
-        nom:
-          type: string
-          maxLength: 150
-        email:
-          type: string
-          format: email
-          maxLength: 254
-        telephone:
-          type: string
-          maxLength: 20
-        matricule:
-          type: string
-          maxLength: 40
-        service:
-          type: integer
-        structure:
-          type: string
-          description: Commissariat, caserne, hôpital, agence…
-          maxLength: 150
-        fonction:
-          type: string
-          maxLength: 80
-        zones:
-          type: array
-          items:
-            $ref: '#/components/schemas/ZonesEnum'
-        message:
-          type: string
-          maxLength: 1000
-      required:
-      - email
-      - matricule
-      - nom
-      - prenom
-      - service
-      - structure
-      - telephone
-      - zones
-    DemandeCreationRequest:
-      type: object
-      properties:
-        prenom:
-          type: string
-          minLength: 1
-          maxLength: 150
-        nom:
-          type: string
-          minLength: 1
-          maxLength: 150
-        email:
-          type: string
-          format: email
-          minLength: 1
-          maxLength: 254
-        telephone:
-          type: string
-          minLength: 1
-          maxLength: 20
-        matricule:
-          type: string
-          minLength: 1
-          maxLength: 40
-        service:
-          type: integer
-        structure:
-          type: string
-          minLength: 1
-          description: Commissariat, caserne, hôpital, agence…
-          maxLength: 150
-        fonction:
-          type: string
-          maxLength: 80
-        zones:
-          type: array
-          items:
-            $ref: '#/components/schemas/ZonesEnum'
-        message:
-          type: string
-          maxLength: 1000
-        mot_de_passe:
-          type: string
-          writeOnly: true
-          minLength: 1
-      required:
-      - email
-      - matricule
-      - mot_de_passe
-      - nom
-      - prenom
-      - service
-      - structure
-      - telephone
-      - zones
     DemandeReinitialisation:
       type: object
       properties:
@@ -4172,74 +4154,6 @@ components:
           minLength: 1
       required:
       - email
-    DemandeRequest:
-      type: object
-      properties:
-        prenom:
-          type: string
-          minLength: 1
-          maxLength: 150
-        nom:
-          type: string
-          minLength: 1
-          maxLength: 150
-        email:
-          type: string
-          format: email
-          minLength: 1
-          maxLength: 254
-        telephone:
-          type: string
-          minLength: 1
-          maxLength: 20
-        matricule:
-          type: string
-          minLength: 1
-          maxLength: 40
-        service:
-          type: integer
-        structure:
-          type: string
-          minLength: 1
-          description: Commissariat, caserne, hôpital, agence…
-          maxLength: 150
-        fonction:
-          type: string
-          maxLength: 80
-        zones: {}
-        message:
-          type: string
-          maxLength: 1000
-        statut:
-          $ref: '#/components/schemas/DemandeStatutEnum'
-        motif_refus:
-          type: string
-          maxLength: 255
-        date_traitement:
-          type: string
-          format: date-time
-          nullable: true
-        utilisateur:
-          type: integer
-          nullable: true
-      required:
-      - email
-      - matricule
-      - nom
-      - prenom
-      - service
-      - structure
-      - telephone
-    DemandeStatutEnum:
-      enum:
-      - en_attente
-      - validee
-      - refusee
-      type: string
-      description: |-
-        * `en_attente` - En attente
-        * `validee` - Validée
-        * `refusee` - Refusée
     DeviceToken:
       type: object
       properties:
@@ -4528,6 +4442,12 @@ components:
         service_nom:
           type: string
           readOnly: true
+        structure:
+          type: integer
+          nullable: true
+        structure_nom:
+          type: string
+          readOnly: true
         date_creation:
           type: string
           format: date-time
@@ -4593,6 +4513,7 @@ components:
       - region_libelle
       - service_nom
       - statut_libelle
+      - structure_nom
       - type_incident
       - uuid
     IncidentCreationRequest:
@@ -4636,6 +4557,12 @@ components:
         client_request_id:
           type: string
           format: uuid
+          nullable: true
+        structure:
+          type: integer
+          nullable: true
+        agent:
+          type: integer
           nullable: true
       required:
       - type_incident
@@ -4682,6 +4609,9 @@ components:
         gravite:
           $ref: '#/components/schemas/GraviteEnum'
         service:
+          type: integer
+          nullable: true
+        structure:
           type: integer
           nullable: true
         date_creation:
@@ -4807,10 +4737,12 @@ components:
       enum:
       - citoyen
       - agent
+      - superviseur
       type: string
       description: |-
         * `citoyen` - citoyen
         * `agent` - agent
+        * `superviseur` - superviseur
     MotifRequest:
       type: object
       properties:
@@ -4951,29 +4883,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AlerteZone'
-    PaginatedDemandeList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Demande'
     PaginatedFilList:
       type: object
       required:
@@ -5183,7 +5092,7 @@ components:
     PatchedModificationUtilisateurRequest:
       type: object
       description: |-
-        Seuls les rôles citoyen ↔ agent sont attribuables par l'API.
+        Seuls les rôles citoyen, agent et superviseur de structure sont attribuables par l'API.
 
         Le rôle superadministrateur se provisionne exclusivement en ligne de
         commande sur le serveur (python manage.py creer_superadmin).
@@ -5191,6 +5100,11 @@ components:
         role:
           $ref: '#/components/schemas/ModificationUtilisateurRoleEnum'
         is_active:
+          type: boolean
+        structure:
+          type: integer
+          nullable: true
+        disponible:
           type: boolean
         service:
           type: integer
@@ -5223,6 +5137,35 @@ components:
           maxLength: 120
         description:
           type: string
+        actif:
+          type: boolean
+    PatchedStructureRequest:
+      type: object
+      properties:
+        nom:
+          type: string
+          minLength: 1
+          maxLength: 150
+        service:
+          type: integer
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        region:
+          $ref: '#/components/schemas/RegionEnum'
+        adresse:
+          type: string
+          maxLength: 255
+        telephone:
+          type: string
+          maxLength: 30
+        position_approximative:
+          type: boolean
+          description: Position provisoire (chef-lieu de région) à corriger par le
+            superadministrateur.
         actif:
           type: boolean
     PatchedUtilisateurRequest:
@@ -5379,11 +5322,13 @@ components:
       enum:
       - citoyen
       - agent
+      - superviseur
       - superadmin
       type: string
       description: |-
         * `citoyen` - Citoyen
         * `agent` - Agent de secours
+        * `superviseur` - Superviseur de structure
         * `superadmin` - Superadministrateur
     Service:
       type: object
@@ -5425,6 +5370,14 @@ components:
       required:
       - code
       - nom
+    SourceEnum:
+      enum:
+      - osm
+      - manuel
+      type: string
+      description: |-
+        * `osm` - OpenStreetMap
+        * `manuel` - Saisie manuelle
     SourcePositionEnum:
       enum:
       - gps
@@ -5469,6 +5422,106 @@ components:
         * `non_configure` - Push non configuré
         * `aucun_appareil` - Aucun appareil enregistré
         * `desactivee` - Désactivée par l’utilisateur
+    Structure:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nom:
+          type: string
+          maxLength: 150
+        service:
+          type: integer
+        service_nom:
+          type: string
+          readOnly: true
+        service_code:
+          type: string
+          readOnly: true
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        region:
+          $ref: '#/components/schemas/RegionEnum'
+        region_libelle:
+          type: string
+          readOnly: true
+        adresse:
+          type: string
+          maxLength: 255
+        telephone:
+          type: string
+          maxLength: 30
+        position_approximative:
+          type: boolean
+          description: Position provisoire (chef-lieu de région) à corriger par le
+            superadministrateur.
+        source:
+          allOf:
+          - $ref: '#/components/schemas/SourceEnum'
+          readOnly: true
+        actif:
+          type: boolean
+        distance_m:
+          type: integer
+          nullable: true
+          readOnly: true
+        nb_agents_disponibles:
+          type: integer
+          nullable: true
+          readOnly: true
+      required:
+      - distance_m
+      - id
+      - latitude
+      - longitude
+      - nb_agents_disponibles
+      - nom
+      - region
+      - region_libelle
+      - service
+      - service_code
+      - service_nom
+      - source
+    StructureRequest:
+      type: object
+      properties:
+        nom:
+          type: string
+          minLength: 1
+          maxLength: 150
+        service:
+          type: integer
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        region:
+          $ref: '#/components/schemas/RegionEnum'
+        adresse:
+          type: string
+          maxLength: 255
+        telephone:
+          type: string
+          maxLength: 30
+        position_approximative:
+          type: boolean
+          description: Position provisoire (chef-lieu de région) à corriger par le
+            superadministrateur.
+        actif:
+          type: boolean
+      required:
+      - latitude
+      - longitude
+      - nom
+      - region
+      - service
     TokenRefresh:
       type: object
       properties:
@@ -5549,6 +5602,13 @@ components:
         role_libelle:
           type: string
           readOnly: true
+        structure:
+          type: integer
+          readOnly: true
+          nullable: true
+        structure_nom:
+          type: string
+          readOnly: true
         preferences: {}
         doit_changer_mot_de_passe:
           type: boolean
@@ -5577,6 +5637,8 @@ components:
       - profil_agent
       - role
       - role_libelle
+      - structure
+      - structure_nom
       - username
     UtilisateurAdmin:
       type: object
@@ -5619,6 +5681,13 @@ components:
         role_libelle:
           type: string
           readOnly: true
+        structure:
+          type: integer
+          readOnly: true
+          nullable: true
+        structure_nom:
+          type: string
+          readOnly: true
         is_active:
           type: boolean
           readOnly: true
@@ -5656,6 +5725,8 @@ components:
       - region
       - role
       - role_libelle
+      - structure
+      - structure_nom
       - telephone
       - username
     UtilisateurRequest:

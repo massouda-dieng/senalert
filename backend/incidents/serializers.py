@@ -3,9 +3,10 @@ from datetime import timedelta
 from django.utils import timezone
 from rest_framework import serializers
 
-from core.constants import ACCEPTE, AFFECTE, EN_COURS, GRAVITE_CHOICES, NOUVEAU, REGIONS, ROLE_SUPERADMIN
+from core.constants import ACCEPTE, AFFECTE, EN_COURS, GRAVITE_CHOICES, NOUVEAU, REGIONS, ROLE_AGENT, ROLES_SUPERVISION
 from core.geo import dans_senegal, distance_m, region_la_plus_proche
-from core.models import Categorie, Parametre
+from accounts.models import User
+from core.models import Categorie, Parametre, Structure
 
 from . import workflow
 from .models import EvenementDossier, Incident, Intervention, PieceJointe
@@ -84,6 +85,7 @@ class DossierLectureMixin(serializers.Serializer):
     region_libelle = serializers.CharField(source='get_region_display', read_only=True)
     statut_libelle = serializers.CharField(source='get_statut_display', read_only=True)
     service_nom = serializers.CharField(source='service.nom', default=None, read_only=True)
+    structure_nom = serializers.CharField(source='structure.nom', default=None, read_only=True)
     en_retard = serializers.SerializerMethodField()
     intervention = serializers.SerializerMethodField()
     citoyen_contact = serializers.SerializerMethodField()
@@ -101,7 +103,7 @@ class DossierLectureMixin(serializers.Serializer):
             return None
         data = InterventionSerializer(inter).data
         user = self.context['request'].user
-        if user.role not in ('agent', 'superadmin'):
+        if user.role not in ('agent', 'superviseur', 'superadmin'):
             # Minimisation : le citoyen voit le service, pas l'identité de l'agent.
             data.pop('agent', None)
             data['agent_nom'] = 'Agent de secours' if inter.agent_id else None
@@ -112,7 +114,7 @@ class DossierLectureMixin(serializers.Serializer):
         """Coordonnées du déclarant, visibles seulement par l'agent affecté et le superadmin."""
         user = self.context['request'].user
         inter = getattr(obj, 'intervention', None)
-        autorise = user.role == ROLE_SUPERADMIN or (inter is not None and inter.agent_id == user.pk)
+        autorise = user.role in ROLES_SUPERVISION or (inter is not None and inter.agent_id == user.pk)
         if not autorise or obj.citoyen is None:
             return None
         return {'nom': obj.citoyen.nom_affiche, 'telephone': obj.citoyen.telephone}
@@ -133,7 +135,8 @@ class IncidentSerializer(DossierLectureMixin, serializers.ModelSerializer):
         fields = [
             'id', 'uuid', 'reference', 'type_incident', 'categorie_libelle', 'description', 'infos_complementaires',
             'latitude', 'longitude', 'precision_gps', 'region', 'region_libelle', 'adresse', 'date_incident',
-            'statut', 'statut_libelle', 'gravite', 'service', 'service_nom', 'date_creation', 'date_modification',
+            'statut', 'statut_libelle', 'gravite', 'service', 'service_nom', 'structure', 'structure_nom',
+            'date_creation', 'date_modification',
             'date_prise_en_charge', 'date_cloture', 'motif_cloture', 'en_retard', 'intervention', 'photos',
             'citoyen_contact', 'est_proprietaire', 'doublon_potentiel_de', 'doublon_potentiel_reference',
             'nb_confirmations',
@@ -148,7 +151,7 @@ class IncidentSerializer(DossierLectureMixin, serializers.ModelSerializer):
 
     def to_representation(self, obj):
         data = super().to_representation(obj)
-        if self.context['request'].user.role != ROLE_SUPERADMIN:
+        if self.context['request'].user.role not in ROLES_SUPERVISION:
             data.pop('doublon_potentiel_de', None)
             data.pop('doublon_potentiel_reference', None)
         return data
@@ -179,11 +182,17 @@ class IncidentCreationSerializer(PositionMixin, serializers.ModelSerializer):
     adresse = serializers.CharField(required=False, allow_blank=True, max_length=255)
     infos_complementaires = serializers.CharField(required=False, allow_blank=True, max_length=1000)
     client_request_id = serializers.UUIDField(required=False, allow_null=True)
+    # Choix du citoyen : structure proposée près du lieu, puis un agent disponible de cette structure.
+    # Sans choix, le serveur oriente vers la structure compétente la plus proche (son superviseur affecte).
+    structure = serializers.PrimaryKeyRelatedField(queryset=Structure.objects.filter(actif=True), required=False,
+                                                   allow_null=True)
+    agent = serializers.PrimaryKeyRelatedField(queryset=User.objects.filter(role=ROLE_AGENT, is_active=True),
+                                               required=False, allow_null=True)
 
     class Meta:
         model = Incident
         fields = ['type_incident', 'description', 'latitude', 'longitude', 'precision_gps', 'region', 'adresse',
-                  'date_incident', 'infos_complementaires', 'client_request_id']
+                  'date_incident', 'infos_complementaires', 'client_request_id', 'structure', 'agent']
 
     def validate_type_incident(self, value):
         if not Categorie.objects.filter(code=value, actif=True).exists():
@@ -208,6 +217,13 @@ class IncidentCreationSerializer(PositionMixin, serializers.ModelSerializer):
             raise serializers.ValidationError({'latitude': 'La position indiquée est hors du Sénégal.'})
         if attrs['type_incident'] == 'autre' and len((attrs.get('description') or '').strip()) < 10:
             raise serializers.ValidationError({'description': 'Décrivez l’incident (10 caractères minimum).'})
+        structure, agent = attrs.get('structure'), attrs.get('agent')
+        if agent is not None:
+            if structure is None or agent.structure_id != structure.pk:
+                raise serializers.ValidationError({'agent': "Cet agent n'appartient pas à la structure choisie."})
+            profil = getattr(agent, 'profil_agent', None)
+            if profil is None or not profil.disponible:
+                raise serializers.ValidationError({'agent': "Cet agent n'est plus disponible : choisissez-en un autre."})
         return attrs
 
 

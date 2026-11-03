@@ -11,7 +11,7 @@ from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
-from core.constants import ROLE_AGENT, ROLE_SUPERADMIN, RESOLU
+from core.constants import ROLE_SUPERADMIN, ROLE_SUPERVISEUR, RESOLU
 
 from .models import Notification
 
@@ -126,20 +126,11 @@ def _nom_dossier(dossier):
     return f'Alerte SOS {dossier.reference}'
 
 
-def agents_concernes(dossier):
+def superviseurs_structure(dossier):
     from accounts.models import User
-    from incidents.models import Incident
-
-    qs = User.objects.filter(role=ROLE_AGENT, is_active=True).select_related('profil_agent')
-    elus = []
-    for agent in qs:
-        profil = getattr(agent, 'profil_agent', None)
-        if not profil or dossier.region not in (profil.zones or []):
-            continue
-        if isinstance(dossier, Incident) and profil.service_id != dossier.service_id:
-            continue
-        elus.append(agent)
-    return elus
+    if not dossier.structure_id:
+        return []
+    return list(User.objects.filter(role=ROLE_SUPERVISEUR, is_active=True, structure_id=dossier.structure_id))
 
 
 def superadmins():
@@ -153,10 +144,11 @@ def notifier_nouveau_dossier(dossier):
         sos = not isinstance(dossier, Incident)
         titre = 'Nouvelle alerte SOS' if sos else f'Nouveau signalement : {dossier.type_incident}'
         zone = dossier.get_region_display() if dossier.region else 'zone inconnue'
-        agents = agents_concernes(dossier)
-        # Le superviseur reçoit tous les SOS, et tout signalement qu'aucun agent ne couvre :
-        # sans cela, ce dossier resterait sans destinataire.
-        destinataires = agents + (superadmins() if sos or not agents else [])
+        # L'agent choisi est prévenu par la transmission elle-même (notifier_affectation).
+        # Le superviseur de la structure reçoit tout nouveau dossier ; le superadministrateur reçoit
+        # les SOS et les dossiers qu'aucun superviseur de structure ne couvre.
+        superviseurs = superviseurs_structure(dossier)
+        destinataires = superviseurs + (superadmins() if sos or not superviseurs else [])
         notifier(destinataires, 'nouvelle_alerte', titre, f'{dossier.reference} — {zone}', dossier, f'nouveau:{dossier.reference}')
     except Exception:
         logger.exception('Notification de nouveau dossier impossible')
@@ -198,6 +190,14 @@ def notifier_superadmins(dossier, type_, titre, message, cle):
         notifier(superadmins(), type_, titre, message, dossier, cle)
     except Exception:
         logger.exception('Notification des superadministrateurs impossible')
+
+
+def notifier_supervision(dossier, type_, titre, message, cle):
+    """Superviseur de la structure du dossier, ou superadministrateur s'il n'y en a pas."""
+    try:
+        notifier(superviseurs_structure(dossier) or superadmins(), type_, titre, message, dossier, cle)
+    except Exception:
+        logger.exception('Notification de la supervision impossible')
 
 
 def notifier_alerte_zone(alerte):

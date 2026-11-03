@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { ilYa } from '../lib/format';
+import { estSupervision } from '../auth/AuthContext';
 
 const INTERVALLE = 5000;
 const CLE_SON = 'senalert.son-alertes';
@@ -46,7 +47,7 @@ export default function AlertesTempsReel({ role }) {
   const sonRef = useRef(son);
   sonRef.current = son;
 
-  const chemin = useCallback((d, sos) => (role === 'superadmin'
+  const chemin = useCallback((d, sos) => (estSupervision(role)
     ? `/supervision/${sos ? 'sos' : 'incidents'}?dossier=${d.id}`
     : `/agent/interventions?${sos ? 'type=sos&' : ''}dossier=${d.id}`), [role]);
 

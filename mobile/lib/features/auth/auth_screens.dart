@@ -111,8 +111,8 @@ class ConnexionScreen extends StatefulWidget {
 
 const _espaces = {
   'citoyen': ('Citoyen', Icons.person_outline, 'Signalez un incident, lancez un SOS et suivez vos dossiers.', 'E-mail ou identifiant'),
-  'agent': ('Agent', Icons.badge_outlined, 'Police, pompiers, santé, SENELEC, ONAS : traitez les interventions de votre service.', 'E-mail professionnel'),
-  'superadmin': ('Superviseur', Icons.admin_panel_settings_outlined, 'Supervisez les dossiers, les agents et la plateforme.', 'E-mail ou identifiant'),
+  'agent': ('Agent', Icons.badge_outlined, 'Police, pompiers, santé, SENELEC, ONAS : traitez les interventions qui vous sont transmises.', 'E-mail professionnel'),
+  'superadmin': ('Superviseur', Icons.admin_panel_settings_outlined, 'Superviseur de structure ou national : suivez les dossiers et vos agents.', 'E-mail ou identifiant'),
 };
 
 class _ConnexionScreenState extends State<ConnexionScreen> {
@@ -170,22 +170,21 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
               : Text('Se connecter en tant que ${e.$1.toLowerCase()}')),
       const SizedBox(height: 12),
       if (_espace == 'citoyen') TextButton(onPressed: () => context.push('/inscription'), child: const Text('Pas de compte ? Créer un compte citoyen')),
-      if (_espace == 'agent') ...[
-        TextButton.icon(onPressed: () => context.push('/demande-agent'), icon: const Icon(Icons.badge_outlined, size: 18), label: const Text('Pas de compte ? Demander un compte agent')),
-        Text('Activé après vérification par un superviseur.', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppColors.textGrey)),
-      ],
+      if (_espace == 'agent')
+        Text('Pas encore de compte ? Il est créé par le superviseur de votre structure (caserne, commissariat, hôpital, agence).',
+            textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: AppColors.textGrey)),
       if (_espace == 'superadmin')
-        Text('Les comptes superviseur ne se créent pas dans l’application : ils sont attribués par l’administrateur du serveur.',
+        Text('Les comptes superviseur ne se créent pas dans l’application : ils sont attribués par le superviseur national.',
             textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: AppColors.textGrey)),
     ]);
   }
 }
 
-/// Choix du type de compte à créer : citoyen (libre), agent (sur demande), superviseur (jamais dans l'application).
+/// Choix du type de compte à créer : citoyen (libre) ; agent et superviseur ne se créent jamais dans l'application.
 class _ChoixCompte extends StatelessWidget {
   final String actif;
   const _ChoixCompte(this.actif);
-  static const _chemins = {'citoyen': '/inscription', 'agent': '/demande-agent', 'superadmin': '/compte-superviseur'};
+  static const _chemins = {'citoyen': '/inscription', 'agent': '/compte-agent', 'superadmin': '/compte-superviseur'};
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(bottom: 20),
@@ -204,7 +203,7 @@ class CompteSuperviseurScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _Cadre(titreEcran: 'Compte superviseur', sousTitre: 'Accès réservé aux responsables de la plateforme.', enfants: [
         const _ChoixCompte('superadmin'),
-        const Bandeau.alerte('Pour protéger les données des citoyens, un compte superviseur n’est jamais créé dans l’application : il est attribué par l’administrateur du serveur.'),
+        const Bandeau.alerte('Pour protéger les données des citoyens, un compte superviseur n’est jamais créé dans l’application : chaque structure reçoit son superviseur du superviseur national.'),
         const SizedBox(height: 12),
         TextButton(onPressed: () => context.go('/connexion'), child: const Text('J’ai déjà un compte')),
       ]);
@@ -306,92 +305,15 @@ class _MotDePasseOublieScreenState extends State<MotDePasseOublieScreen> {
       ]);
 }
 
-/// Demande d'accès agent : le compte n'existe qu'après validation par un superadministrateur.
-class DemandeAgentScreen extends StatefulWidget {
-  const DemandeAgentScreen({super.key});
+/// Compte agent : jamais créé dans l'application, c'est le superviseur de la structure qui l'ajoute.
+class CompteAgentScreen extends StatelessWidget {
+  const CompteAgentScreen({super.key});
   @override
-  State<DemandeAgentScreen> createState() => _DemandeAgentScreenState();
-}
-
-class _DemandeAgentScreenState extends State<DemandeAgentScreen> {
-  final _c = {for (final k in ['prenom', 'nom', 'email', 'telephone', 'matricule', 'structure', 'fonction', 'message', 'mot_de_passe']) k: TextEditingController()};
-  int? _service;
-  final Set<String> _zones = {};
-  bool _envoi = false;
-  ApiException? _erreur;
-  String? _ok;
-
-  Future<void> _valider() async {
-    setState(() { _envoi = true; _erreur = null; });
-    try {
-      final r = await Api.instance.post('/auth/demandes-agent/', auth: false, data: {
-        for (final e in _c.entries) e.key: e.key == 'mot_de_passe' ? e.value.text : e.value.text.trim(),
-        'service': _service,
-        'zones': _zones.toList(),
-      });
-      setState(() => _ok = r['detail']);
-    } on ApiException catch (e) {
-      setState(() => _erreur = e);
-    } finally {
-      if (mounted) setState(() => _envoi = false);
-    }
-  }
-
-  Widget _champ(String cle, String libelle, {TextInputType? clavier, bool secret = false, String? aide, int lignes = 1}) => Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: TextField(controller: _c[cle], keyboardType: clavier, obscureText: secret, maxLines: lignes,
-            decoration: InputDecoration(labelText: libelle, helperText: aide, helperMaxLines: 2, errorText: _erreur?.erreurChamp(cle))),
-      );
-
-  @override
-  Widget build(BuildContext context) {
-    final config = context.watch<Configuration>();
-    if (_ok != null) {
-      return _Cadre(titreEcran: 'Demande envoyée', enfants: [
-        Bandeau.succes(_ok!),
-        const SizedBox(height: 12),
-        Text('Un superviseur vérifie votre service, votre matricule et votre structure. Tant que la demande n’est pas validée, la connexion est impossible.',
-            style: TextStyle(color: AppColors.textGrey)),
-        const SizedBox(height: 12),
-        FilledButton(onPressed: () => context.go('/connexion'), child: const Text('Retour à la connexion')),
-      ]);
-    }
-    return _Cadre(
-      titreEcran: 'Demander un compte agent',
-      sousTitre: 'Réservé aux agents des services de secours et d’intervention. Chaque demande est vérifiée avant activation.',
-      enfants: [
+  Widget build(BuildContext context) => _Cadre(titreEcran: 'Compte agent', sousTitre: 'Police, pompiers, santé, SENELEC, ONAS.', enfants: [
         const _ChoixCompte('agent'),
-        Row(children: [Expanded(child: _champ('prenom', 'Prénom')), const SizedBox(width: 10), Expanded(child: _champ('nom', 'Nom'))]),
-        _champ('email', 'E-mail professionnel', clavier: TextInputType.emailAddress, aide: 'Servira d’identifiant de connexion.'),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: DropdownButtonFormField<int>(
-            value: _service, isExpanded: true,
-            decoration: InputDecoration(labelText: 'Service', errorText: _erreur?.erreurChamp('service')),
-            items: [for (final (id, nom) in config.services) DropdownMenuItem(value: id, child: Text(nom))],
-            onChanged: (v) => setState(() => _service = v),
-          ),
-        ),
-        _champ('matricule', 'Matricule'),
-        _champ('structure', 'Structure d’affectation', aide: 'Commissariat, caserne, district sanitaire, agence…'),
-        Row(children: [Expanded(child: _champ('fonction', 'Fonction / grade')), const SizedBox(width: 10),
-          Expanded(child: _champ('telephone', 'Téléphone', clavier: TextInputType.phone))]),
-        Text('Zones d’intervention', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textDark)),
-        const SizedBox(height: 6),
-        Wrap(spacing: 6, runSpacing: 6, children: [
-          for (final r in config.regions)
-            FilterChip(label: Text(r.libelle), selected: _zones.contains(r.code),
-                onSelected: (v) => setState(() => v ? _zones.add(r.code) : _zones.remove(r.code))),
-        ]),
-        if (_erreur?.erreurChamp('zones') != null)
-          Padding(padding: const EdgeInsets.only(top: 4), child: Text(_erreur!.erreurChamp('zones')!, style: const TextStyle(color: Jetons.rougeFonce, fontSize: 12))),
-        const SizedBox(height: 14),
-        _champ('message', 'Message au superviseur (facultatif)', lignes: 2),
-        _champ('mot_de_passe', 'Mot de passe', secret: true, aide: 'Choisi par vous, stocké chiffré : le superviseur ne le voit jamais.'),
-        if (_erreur != null) Padding(padding: const EdgeInsets.only(bottom: 12), child: Bandeau.erreur(_erreur!.message)),
-        FilledButton(onPressed: _envoi ? null : _valider, child: _envoi ? const CircularProgressIndicator(color: Colors.white) : const Text('Envoyer ma demande')),
-        TextButton(onPressed: () => context.pop(), child: const Text('Retour')),
-      ],
-    );
-  }
+        const Bandeau('Votre compte agent est créé par le superviseur de votre structure (caserne, commissariat, hôpital, agence). '
+            'Il vous remet un mot de passe provisoire, que vous changez à la première connexion.'),
+        const SizedBox(height: 12),
+        TextButton(onPressed: () => context.go('/connexion'), child: const Text('J’ai déjà un compte')),
+      ]);
 }

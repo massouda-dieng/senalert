@@ -12,6 +12,7 @@ from rest_framework.throttling import ScopedRateThrottle
 
 from core.constants import RESOLU, ROLE_AGENT, STATUTS_ACTIFS
 from core.models import Categorie, Parametre
+from core.structures import structures_proches
 from core.params import entier
 from core.permissions import est_citoyen, est_superadmin
 
@@ -81,11 +82,19 @@ class IncidentViewSet(ActionsDossierMixin, mixins.ListModelMixin, mixins.Retriev
 
         photos = valider_photos(request.FILES.getlist('photos'))
         categorie = Categorie.objects.get(code=s.validated_data['type_incident'])
+        donnees = s.validated_data
+        agent = donnees.pop('agent', None)
+        structure = donnees.pop('structure', None)
+        if structure is None and categorie.service_defaut_id:
+            # Pas de choix du citoyen : structure compétente la plus proche ; son superviseur affectera.
+            proches = structures_proches(donnees['latitude'], donnees['longitude'], [categorie.service_defaut.code], 1)
+            structure = proches[0][0] if proches else None
+        service = structure.service if structure else categorie.service_defaut
         try:
             with transaction.atomic():
-                incident = s.save(citoyen=user, service=categorie.service_defaut, gravite=categorie.gravite_defaut)
+                incident = s.save(citoyen=user, service=service, structure=structure, gravite=categorie.gravite_defaut)
                 enregistrer_photos(incident, photos, user)
-                workflow.apres_creation(incident, user)
+                workflow.apres_creation(incident, user, agent=agent)
         except IntegrityError:
             existant = Incident.objects.filter(citoyen=user, client_request_id=cle).first()
             if existant is None:

@@ -2,7 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models.functions import Lower
 
-from core.constants import REGION_CHOICES, ROLE_AGENT, ROLE_CHOICES, ROLE_CITOYEN, ROLE_SUPERADMIN
+from core.constants import REGION_CHOICES, ROLE_AGENT, ROLE_CHOICES, ROLE_CITOYEN, ROLE_SUPERADMIN, ROLE_SUPERVISEUR
 
 PREFERENCES_DEFAUT = {
     'notifications_push': True,
@@ -25,6 +25,8 @@ class User(AbstractUser):
     preferences = models.JSONField(default=preferences_defaut, blank=True)
     doit_changer_mot_de_passe = models.BooleanField(default=False)
     date_anonymisation = models.DateTimeField(null=True, blank=True)
+    # Structure de rattachement d'un agent ou d'un superviseur de structure (vide pour les autres rôles).
+    structure = models.ForeignKey('core.Structure', null=True, blank=True, on_delete=models.SET_NULL, related_name='membres')
 
     class Meta:
         constraints = [
@@ -46,6 +48,10 @@ class User(AbstractUser):
         return self.role == ROLE_AGENT
 
     @property
+    def est_superviseur(self):
+        return self.role == ROLE_SUPERVISEUR
+
+    @property
     def nom_affiche(self):
         return self.get_full_name() or self.username
 
@@ -58,6 +64,8 @@ class AgentProfil(models.Model):
     zones = models.JSONField(default=list, blank=True, help_text='Codes des régions couvertes.')
     matricule = models.CharField(max_length=40, blank=True)
     fonction = models.CharField(max_length=80, blank=True)
+    # L'agent se déclare disponible ou non : seuls les agents disponibles sont proposés au citoyen.
+    disponible = models.BooleanField(default=True)
 
     class Meta:
         verbose_name = "Profil d'agent"
@@ -103,7 +111,9 @@ class DeviceToken(models.Model):
 
 
 class DemandeCompteAgent(models.Model):
-    """Demande d'accès d'un agent (policier, pompier…) validée ou refusée par le superadministrateur.
+    """Ancienne demande d'accès d'un agent, conservée pour l'historique (consultable dans l'admin Django).
+
+    Ce parcours n'existe plus : c'est le superviseur de la structure qui crée ses agents.
 
     Le demandeur choisit son mot de passe : seul son empreinte (hash) est conservée.
     Aucun compte n'existe tant que la demande n'est pas validée.

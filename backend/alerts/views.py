@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 
 from core.constants import STATUTS_ACTIFS
+from core.structures import SERVICES_SOS, choix_automatique
 from incidents import workflow
 from incidents.dossier_views import ActionsDossierMixin, FiltreDossier
 
@@ -69,10 +70,15 @@ class AlerteSOSViewSet(ActionsDossierMixin, mixins.ListModelMixin, mixins.Retrie
         donnees = s.validated_data
         if not donnees.get('region') and user.region:
             donnees['region'] = user.region
+        # En urgence le citoyen ne choisit rien : structure de secours la plus proche ayant un agent
+        # disponible, et l'agent le moins chargé de cette structure.
+        structure, agent = choix_automatique(donnees.get('latitude'), donnees.get('longitude'),
+                                             donnees.get('region'), SERVICES_SOS)
         try:
             with transaction.atomic():
-                alerte = AlerteSOS.objects.create(citoyen=user, gravite='critique', **donnees)
-                workflow.apres_creation(alerte, user)
+                alerte = AlerteSOS.objects.create(citoyen=user, gravite='critique', structure=structure,
+                                                  service=structure.service if structure else None, **donnees)
+                workflow.apres_creation(alerte, user, agent=agent)
         except IntegrityError:
             existant = AlerteSOS.objects.filter(citoyen=user, client_request_id=cle).first()
             if existant is None:

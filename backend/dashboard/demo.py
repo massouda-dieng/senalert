@@ -29,10 +29,10 @@ CITOYEN = 'citoyen.test@senalert.local'
 AGENT = 'agent.pompiers@senalert.local'
 
 ETAPES = {
-    1: ('Une habitante déclenche un SOS', "Awa appuie sur le bouton SOS : sa position GPS part immédiatement. La supervision reçoit l'alerte en direct."),
-    2: ('Elle signale un incendie', "Elle précise la situation : incendie dans un entrepôt, avec sa position. Le dossier est orienté automatiquement vers les sapeurs-pompiers."),
-    3: ('La supervision affecte le dossier', "Le superviseur affecte l'incendie à l'agent sapeur-pompier de la zone. L'agent et la citoyenne sont notifiés."),
-    4: ("L'agent accepte", "L'agent accepte l'intervention et prend aussi en charge le SOS : le délai de prise en charge est mesuré."),
+    1: ('Une habitante déclenche un SOS', "Awa appuie sur le bouton SOS : sa position GPS part immédiatement vers l'agent disponible de la structure de secours la plus proche, et son superviseur est prévenu."),
+    2: ('Elle signale un incendie', "Elle précise la situation : incendie dans un entrepôt. L'application lui propose la caserne la plus proche, qu'elle choisit."),
+    3: ('La caserne affecte le dossier', "Le superviseur de la caserne affecte l'incendie à un de ses agents. L'agent et la citoyenne sont notifiés."),
+    4: ("L'agent accepte", "L'agent accepte l'intervention et le SOS qui lui ont été transmis : le délai de prise en charge est mesuré."),
     5: ("Les secours sont en route", "L'agent démarre et partage sa position : la citoyenne voit « Les secours sont en route » et la distance sur son téléphone."),
     6: ("L'agent approche", "La position se met à jour : l'agent n'est plus qu'à quelques centaines de mètres."),
     7: ("Intervention terminée", "L'agent clôture avec un compte rendu ; sa position est effacée. Les indicateurs de supervision sont mis à jour."),
@@ -76,20 +76,22 @@ class DemoView(APIView):
             if etape == 1:
                 sos = AlerteSOS.objects.create(citoyen=citoyen, latitude=14.6731, longitude=-17.4369, precision_gps=12,
                                                region='dakar', gravite='critique', source_position='gps',
+                                               structure=agent.structure, service=agent.structure.service,
                                                message='[DÉMO] SOS déclenché depuis l’application')
-                workflow.apres_creation(sos, citoyen)
+                workflow.apres_creation(sos, citoyen, agent=agent)
             elif etape == 2:
                 cat = Categorie.objects.get(code='incendie')
                 inc = Incident.objects.create(
                     citoyen=citoyen, type_incident='incendie', region='dakar', latitude=14.6737, longitude=-17.4378,
                     precision_gps=15, adresse='Marché (scénario de démonstration)', service=cat.service_defaut, gravite='elevee',
+                    structure=agent.structure,
                     description='[DÉMO] Fumée épaisse et flammes dans un entrepôt, personnes évacuées.')
                 workflow.apres_creation(inc, citoyen)
             elif etape == 3:
                 inc = workflow.affecter(inc, request.user, agent=agent, message='Intervention prioritaire (démonstration).')
             elif etape == 4:
                 inc = workflow.accepter(inc, agent)
-                sos = workflow.prendre_en_charge(sos, agent)
+                sos = workflow.accepter(sos, agent)
             elif etape == 5:
                 inc = workflow.demarrer(inc, agent)
                 sos = workflow.demarrer(sos, agent)
