@@ -63,3 +63,14 @@ GRAVITE_CHOICES = [
     ('critique', 'Critique'),
 ]
 GRAVITE_ORDRE = {'faible': 0, 'moyenne': 1, 'elevee': 2, 'critique': 3}
+
+# Type d'urgence choisi (facultatif) au déclenchement d'un SOS → services de secours sollicités.
+# Sans choix, le SOS part vers la structure de secours la plus proche, tous services confondus.
+TYPES_URGENCE = {
+    'medicale':    {'libelle': 'Urgence médicale', 'services': ('sante',)},
+    'incendie':    {'libelle': 'Incendie', 'services': ('pompiers',)},
+    'accident':    {'libelle': 'Accident', 'services': ('pompiers', 'sante')},
+    'agression':   {'libelle': 'Agression ou danger', 'services': ('police',)},
+    'non_precise': {'libelle': 'Non précisée', 'services': ('pompiers', 'sante', 'police')},
+}
+TYPE_URGENCE_CHOICES = [(code, t['libelle']) for code, t in TYPES_URGENCE.items()]

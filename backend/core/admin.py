@@ -26,8 +26,8 @@ class FicheSecoursAdmin(admin.ModelAdmin):
 
 @admin.register(JournalAudit)
 class JournalAuditAdmin(admin.ModelAdmin):
-    list_display = ['date', 'acteur', 'action', 'cible_type', 'cible_id', 'adresse_ip']
-    list_filter = ['action']
+    list_display = ['date', 'acteur', 'acteur_role', 'action', 'cible_libelle', 'adresse_ip']
+    list_filter = ['action', 'acteur_role']
 
     def has_add_permission(self, request):
         return False

@@ -18,11 +18,11 @@ L'écran de connexion propose trois onglets : **Citoyen**, **Agent**, **Supervis
 
 **Déclencher un SOS**
 1. Touchez le grand bouton rouge **SOS**.
-2. Un compte à rebours de 5 secondes démarre : **Annuler** si c'est une erreur, **Envoyer maintenant** pour gagner du temps. Votre position est recherchée en parallèle et sa précision est affichée.
-3. À la confirmation, la référence `SOS-AAAA-NNNNNN` et le statut actuel s'affichent. Le SOS part automatiquement vers la structure de secours la plus proche ayant un agent disponible, et cet agent le reçoit directement ; sans agent disponible, le superviseur de la structure l'affecte. Tant qu'un agent n'a pas accepté l'alerte, aucune intervention n'est garantie : en cas de danger vital, appelez aussi les secours.
+2. Un compte à rebours de 5 secondes démarre : **Annuler** si c'est une erreur, **Envoyer maintenant** pour gagner du temps. Votre position est recherchée en parallèle et sa précision est affichée. Facultatif : touchez le **type d'urgence** (Urgence médicale, Incendie, Accident, Agression ou danger) pour envoyer aussitôt vers le bon service.
+3. La confirmation ne s'affiche qu'une fois l'alerte enregistrée par le serveur : référence `SOS-AAAA-NNNNNN`, type d'urgence, date et heure, position, **structure destinataire** et statut. Le SOS part automatiquement vers la structure du service concerné (tous les services de secours si le type n'est pas précisé) la plus proche ayant un agent disponible, et cet agent le reçoit directement ; sans agent disponible, le superviseur de la structure l'affecte. Chaque SOS est conservé : « Historique de mes SOS » (onglet Alertes SOS de « Mes dossiers ») et sa page de détail. Tant qu'un agent n'a pas accepté l'alerte, aucune intervention n'est garantie : en cas de danger vital, appelez aussi les secours.
 4. Si l'envoi échoue, l'écran l'indique clairement (« L'alerte n'a PAS été transmise ») avec les boutons d'appel et « Réessayer » (un nouvel essai ne crée jamais de doublon).
 
-**Signaler un incident** — 5 étapes : catégorie → lieu (« Utiliser ma position » ou toucher la carte, repère facultatif) → **structure** (les structures du service compétent les plus proches, avec leur distance ; puis un agent disponible de la structure choisie, présenté par son prénom et sa fonction, ou « Laisser le superviseur choisir ») → détails (description, photos ≤ 5) → vérification → envoi. Le dossier n'est visible que par l'agent choisi et par le superviseur de la structure. Le brouillon est conservé sur l'appareil en cas de coupure. Vous recevez une référence `INC-AAAA-NNNNNN`.
+**Signaler un incident** — 5 étapes : **type** → **détails** (description, photo facultative prise ou choisie dans la galerie, avec aperçu, remplacement et suppression ; JPEG, PNG ou WEBP, 5 Mo) → **lieu** (le repère rouge reste au centre : on déplace la carte dessous ; « Utiliser ma position actuelle » ou recherche d'une adresse ; si la localisation est refusée, la recherche et la carte restent utilisables ; « Confirmer ce lieu ») → **structure** (les structures du service compétent les plus proches, celles de la région du lieu d'abord, avec adresse et distance ; pour « Autre incident », on choisit d'abord le service ; puis, facultatif, un agent disponible présenté par son prénom et sa fonction) → **envoi**. La date, l'heure et la région sont enregistrées automatiquement : elles ne sont jamais demandées. Le dossier n'est visible que par l'agent choisi et par le superviseur de la structure. Le brouillon est conservé sur l'appareil en cas de coupure. Vous recevez une référence `INC-AAAA-NNNNNN`.
 
 **Suivre mes dossiers** — « Mes dossiers » : recherche par référence, vues **Tous** et **En cours**. L'accueil rappelle uniquement les dossiers en cours. Le détail montre l'historique horodaté (Nouveau → Affecté → Pris en charge → En cours → Résolu), le service intervenant et, à la clôture, le compte rendu. Vous pouvez **compléter** un dossier ouvert (texte, photos) ou l'**annuler** tant qu'il n'est pas pris en charge.
 
@@ -30,13 +30,11 @@ L'écran de connexion propose trois onglets : **Citoyen**, **Agent**, **Supervis
 
 **Autour de moi** — incidents récents près de chez vous (après localisation), triés par distance. « Je le vois aussi » confirme un incident et aide les secours à prioriser ; les messages sont publics : n'y mettez aucune donnée personnelle.
 
-**Carte interactive** — bouton « Couches » : fond plan / clair / satellite, incidents, carte de chaleur, zones à risque, alertes de zone. Les services proches ont leur propre page. Barre de recherche pour trouver un lieu, bouton « Me localiser ».
+**Carte** — un seul choix en haut : **Incidents récents** ou un **service** (santé, police, pompiers, SENELEC, ONAS). Pour un service, les structures les plus proches s'affichent sur la carte et dans une liste triée par distance (appel et itinéraire). Bouton de recherche d'un lieu et bouton « Utiliser ma position actuelle » ; sans localisation, la liste se calcule autour du centre de la carte. (Mobile ; la carte web garde ses couches.)
 
 **Alertes de zone** — les alertes officielles de votre région apparaissent en bandeau (jaune : vigilance, rouge : danger) et en notification.
 
 ## Agent de secours (web : `/app/agent`, mobile)
-
-**Obtenir un compte** — sur l'écran de connexion, « Demander un compte agent » (web : `/app/demande-agent`) : identité, e-mail professionnel, service, matricule, structure (commissariat, caserne…), zones d'intervention et mot de passe choisi. La demande est examinée par un superadministrateur ; la connexion n'est possible qu'après validation (un e-mail informe de la décision). Un superadministrateur peut aussi créer le compte directement depuis **Utilisateurs**.
 
 Le compte est créé par le **superviseur de votre structure** (caserne, commissariat, hôpital, agence SENELEC ou ONAS) avec un mot de passe initial, à changer à la première connexion (bandeau d’invitation). Vous ne voyez que les dossiers qui vous sont **transmis** : choisis par un citoyen, désignés automatiquement pour un SOS, ou affectés par votre superviseur. Le bouton **Disponible / Indisponible** du tableau de bord indique si les citoyens peuvent vous choisir.
 
@@ -47,11 +45,11 @@ Le compte est créé par le **superviseur de votre structure** (caserne, commiss
 **Traiter une intervention**
 | Situation | Action |
 |---|---|
-| Dossier **affecté** à vous | **Accepter** ou **Décliner** (motif obligatoire, le superviseur est prévenu) |
+| Dossier **affecté** à vous | **Prendre en charge** ou **Décliner** (motif obligatoire, le superviseur est prévenu) |
 | **Pris en charge** | **Démarrer l'intervention** (équipe en route / sur place) |
 | **En cours** | **Clôturer** avec un compte rendu (visible du citoyen) et les difficultés éventuelles (internes) |
 
-**Partager ma position** (dossier accepté ou en cours) : le déclarant voit votre progression ; arrêt à tout moment, position effacée à la clôture. Le détail donne aussi la position et sa précision, l'**itinéraire** (Google Maps), les photos, le contact du déclarant (une fois le dossier pris en charge) et l'historique. Vous pouvez ajouter des **notes** (internes ou visibles du citoyen) et ajuster la **gravité**. Si un autre agent a agi entre-temps, un message « dossier modifié entre-temps » s'affiche et la fiche se recharge.
+**Partager ma position** (dossier accepté ou en cours) : le déclarant voit votre progression ; arrêt à tout moment, position effacée à la clôture. Le détail donne aussi la position et sa précision, l'**itinéraire** (Google Maps), les photos, le contact du déclarant (une fois le dossier pris en charge) et l'historique. Vous pouvez ajouter des **commentaires** (internes ou visibles du citoyen) et ajuster la **gravité**. L'espace agent ne contient pas les fiches de premiers secours (réservées aux citoyens). Si un autre agent a agi entre-temps, un message « dossier modifié entre-temps » s'affiche et la fiche se recharge.
 
 ## Superviseur de structure (web : `/app/supervision`)
 
@@ -85,6 +83,6 @@ Chaque structure (caserne, commissariat, hôpital, agence) a son superviseur. Il
 
 **Paramètres** — numéros d'urgence (seuls les numéros « Vérifié » sont affichés aux citoyens), délais de prise en charge (retards), détection des doublons, règles du cycle de vie, conservation des données, fonctionnalités (assistant, Google, carte publique). Toute modification est journalisée.
 
-**Journal d'audit** — opérations sensibles filtrables par type et par date.
+**Journal d'audit** — pour chaque opération : date et heure (Dakar), utilisateur et son rôle, action en clair, élément concerné. Rubriques : connexions, comptes et permissions, signalements et SOS (créations, envois), traitement des dossiers (affectations, prises en charge, changements de statut, clôtures), structures et configuration. Consultable par le superadministrateur seulement ; aucune entrée ne peut être modifiée ni supprimée.
 
 L'**administration technique** Django (`/admin/`) reste disponible pour la maintenance (journal en lecture seule).

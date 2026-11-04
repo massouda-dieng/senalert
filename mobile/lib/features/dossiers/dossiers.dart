@@ -19,13 +19,15 @@ import '../../state/langue.dart';
 /// Liste paginée de dossiers (incidents ou SOS) avec recherche et vues simples.
 class ListeDossiersScreen extends StatefulWidget {
   final bool agent;
-  const ListeDossiersScreen({super.key, this.agent = false});
+  /// Ouvre directement l'onglet « Alertes SOS » (historique des SOS).
+  final bool sos;
+  const ListeDossiersScreen({super.key, this.agent = false, this.sos = false});
   @override
   State<ListeDossiersScreen> createState() => _ListeDossiersScreenState();
 }
 
 class _ListeDossiersScreenState extends State<ListeDossiersScreen> with SingleTickerProviderStateMixin {
-  late final TabController _onglets = TabController(length: 2, vsync: this)..addListener(() { if (!_onglets.indexIsChanging) _recharger(); });
+  late final TabController _onglets = TabController(length: 2, vsync: this, initialIndex: widget.sos ? 1 : 0)..addListener(() { if (!_onglets.indexIsChanging) _recharger(); });
   final _recherche = TextEditingController();
   int _vue = 0;
   Map<String, int> _compteurs = {};
@@ -262,6 +264,27 @@ class _DossierScreenState extends State<DossierScreen> {
     if (motif != null && motif.isNotEmpty) await _agir('completer', 'Complément envoyé.', {'message': motif});
   }
 
+  Future<void> _commenter() async {
+    final texte = TextEditingController();
+    var visible = true;
+    final ok = await showModalBottomSheet<bool>(
+      context: context, isScrollControlled: true,
+      builder: (c) => Padding(
+        padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(c).viewInsets.bottom + 20),
+        child: StatefulBuilder(builder: (c, maj) => Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text('Ajouter un commentaire', style: titre(19)),
+          const SizedBox(height: 12),
+          TextField(controller: texte, maxLines: 3, maxLength: 2000, autofocus: true, onChanged: (_) => maj(() {}),
+              decoration: const InputDecoration(labelText: 'Commentaire', hintText: 'Ex. : équipe sur place, accès difficile…')),
+          SwitchListTile(value: visible, onChanged: (v) => maj(() => visible = v), contentPadding: EdgeInsets.zero,
+              title: const Text('Visible par le citoyen'), subtitle: const Text('Sinon, seule la structure le voit.')),
+          FilledButton(onPressed: texte.text.trim().isEmpty ? null : () => Navigator.pop(c, true), child: const Text('Enregistrer')),
+        ])),
+      ),
+    );
+    if (ok == true) await _agir('note', 'Commentaire ajouté à l’historique.', {'message': texte.text.trim(), 'visible_citoyen': visible});
+  }
+
   List<Widget> _actions(Utilisateur u, Dossier d) {
     final mien = d.agentId == u.id;
     final b = <Widget>[];
@@ -281,7 +304,7 @@ class _DossierScreenState extends State<DossierScreen> {
     if (u.estAgent) {
       if (d.statut == 'nouveau') b.add(bouton('Prendre en charge', Icons.how_to_reg, () => _agir('prendre-en-charge', 'Dossier pris en charge.')));
       if (d.statut == 'affecte' && mien) {
-        b.add(bouton('Accepter', Icons.check, () => _agir('accepter', 'Intervention acceptée.')));
+        b.add(bouton('Prendre en charge', Icons.check, () => _agir('accepter', 'Dossier pris en charge.')));
         b.add(bouton('Décliner', Icons.close, () async {
           final m = await confirmer(context, titre: 'Décliner l’affectation', message: 'Le superviseur sera prévenu.', motif: 'Raison', action: 'Décliner');
           if (m != null) await _agir('decliner', 'Affectation déclinée.', {'motif': m});
@@ -289,6 +312,7 @@ class _DossierScreenState extends State<DossierScreen> {
       }
       if (d.statut == 'accepte' && mien) b.add(bouton('Démarrer l’intervention', Icons.play_arrow_rounded, () => _agir('demarrer', 'Intervention démarrée.')));
       if (const {'accepte', 'en_cours'}.contains(d.statut) && mien) b.add(bouton('Clôturer', Icons.flag_rounded, _cloturer, couleur: AppColors.success));
+      if (!d.estClos && mien) b.add(bouton('Commenter', Icons.chat_bubble_outline_rounded, _commenter, plein: false));
       if (d.lat != null) b.add(bouton('Itinéraire', Icons.navigation_rounded, () => itineraire(d.lat!, d.lng!), plein: false));
     }
     return b;
@@ -342,7 +366,7 @@ class _DossierScreenState extends State<DossierScreen> {
                       BadgeStatut(d.statut),
                     ]),
                     const SizedBox(height: 4),
-                    Text('${d.regionLibelle.isEmpty ? 'Région inconnue' : d.regionLibelle} · ${dateHeure(d.creation)}',
+                    SelectableText('${d.reference} · ${d.regionLibelle.isEmpty ? 'Région inconnue' : d.regionLibelle}',
                         style: TextStyle(color: AppColors.textGrey)),
                     if (d.enRetard) const Padding(padding: EdgeInsets.only(top: 10), child: Bandeau.alerte('Pas encore pris en charge dans le délai prévu.')),
                     const SizedBox(height: 14),
@@ -359,28 +383,37 @@ class _DossierScreenState extends State<DossierScreen> {
                       Carte(couleur: AppColors.surfaceSubtle, child: Text(d.description)),
                     ],
                     const SizedBox(height: 12),
+                    // Tout ce qui a été enregistré à la création et pendant le traitement : rien n'est redemandé.
                     Carte(child: Column(children: [
+                      LigneInfo('Référence', d.reference),
+                      if (d.estSos) LigneInfo('Urgence', d.typeUrgenceLibelle ?? 'Non précisée')
+                      else LigneInfo('Type', Langue.instance.categorie(d.typeIncident, d.titre)),
+                      LigneInfo('Statut', statut(d.statut).libelle),
                       LigneInfo('Gravité', gravites[d.gravite] ?? d.gravite),
-                      if (d.serviceNom != null) LigneInfo('Service', d.serviceNom!),
+                      LigneInfo('Structure', d.structureNom ?? 'En attente d’orientation'),
+                      LigneInfo('Agent', d.intervention?['agent_nom'] ?? 'Pas encore désigné'),
+                      LigneInfo('Position', d.lat == null ? 'Non jointe' : '${d.lat!.toStringAsFixed(5)}, ${d.lng!.toStringAsFixed(5)}${d.precision != null ? ' (± ${d.precision!.round()} m)' : ''}'),
                       if (d.adresse.isNotEmpty) LigneInfo('Repère', d.adresse),
-                      LigneInfo('Position', d.lat == null ? 'Indisponible' : '${d.lat!.toStringAsFixed(5)}, ${d.lng!.toStringAsFixed(5)}${d.precision != null ? ' (± ${d.precision!.round()} m)' : ''}'),
-                      if (d.priseEnCharge != null) LigneInfo('Prise en charge', dateHeure(d.priseEnCharge)),
-                      if (d.intervention != null) LigneInfo('Intervenant', '${d.intervention!['agent_nom'] ?? 'Non affecté'}${d.intervention!['service_nom'] != null ? ' · ${d.intervention!['service_nom']}' : ''}'),
-                      if (d.cloture != null) LigneInfo('Clôture', dateHeure(d.cloture)),
+                      LigneInfo('Créé le', dateHeure(d.creation)),
+                      if (d.priseEnCharge != null) LigneInfo('Pris en charge le', dateHeure(d.priseEnCharge)),
+                      if (d.cloture != null) LigneInfo('Clôturé le', dateHeure(d.cloture)),
+                      LigneInfo('Mis à jour le', dateHeure(d.modification)),
                       if (d.motifCloture.isNotEmpty) LigneInfo('Motif', d.motifCloture),
                     ])),
                     if (d.contact != null) Padding(padding: const EdgeInsets.only(top: 12), child: Carte(child: Row(children: [
                       const Icon(Icons.person_outline),
                       const SizedBox(width: 8),
-                      Expanded(child: Text('Déclarant : ${d.contact!['nom']}')),
+                      Expanded(child: Text('Citoyen : ${d.contact!['nom']}')),
                       if ((d.contact!['telephone'] ?? '').toString().isNotEmpty)
                         TextButton.icon(onPressed: () => appeler(d.contact!['telephone']), icon: const Icon(Icons.call), label: Text(d.contact!['telephone'])),
                     ]))),
                     if ((d.intervention?['compte_rendu'] ?? '').toString().isNotEmpty) Padding(padding: const EdgeInsets.only(top: 12),
                         child: Bandeau.succes(d.intervention!['compte_rendu'], titre: 'Compte rendu')),
                     if (d.photos.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      SizedBox(height: 96, child: ListView.separated(scrollDirection: Axis.horizontal, itemCount: d.photos.length,
+                      const SizedBox(height: 16),
+                      Text('Photos (${d.photos.length}) · touchez pour agrandir', style: const TextStyle(fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 8),
+                      SizedBox(height: 110, child: ListView.separated(scrollDirection: Axis.horizontal, itemCount: d.photos.length,
                           separatorBuilder: (_, __) => const SizedBox(width: 8), itemBuilder: (_, i) => _Photo(d.photos[i]['url']))),
                     ],
                     if (d.lat != null) ...[
@@ -476,7 +509,7 @@ class _LigneEvenement extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = statut(e.statutApres);
-    const libelles = {'creation': 'Création', 'affectation': 'Affectation', 'complement': 'Complément', 'note': 'Note', 'gravite': 'Gravité', 'doublon': 'Doublon potentiel'};
+    const libelles = {'creation': 'Création', 'affectation': 'Affectation', 'complement': 'Complément', 'note': 'Commentaire', 'gravite': 'Gravité', 'doublon': 'Doublon potentiel'};
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -492,17 +525,40 @@ class _LigneEvenement extends StatelessWidget {
   }
 }
 
-class _Photo extends StatelessWidget {
+/// Photo jointe, servie par l'API après contrôle d'accès (jamais d'URL publique). Touchez pour l'agrandir.
+class _Photo extends StatefulWidget {
   final String url;
   const _Photo(this.url);
   @override
+  State<_Photo> createState() => _PhotoState();
+}
+
+class _PhotoState extends State<_Photo> {
+  late Future<List<int>> _octets = Api.instance.octets(widget.url);
+
+  void _agrandir(Uint8List o) => showDialog(context: context, builder: (c) => Dialog(
+        insetPadding: const EdgeInsets.all(12), backgroundColor: Colors.black,
+        child: Stack(children: [
+          InteractiveViewer(maxScale: 5, child: Center(child: Image.memory(o, semanticLabel: 'Photo jointe agrandie'))),
+          Positioned(top: 4, right: 4, child: IconButton(tooltip: 'Fermer', onPressed: () => Navigator.pop(c),
+              icon: const Icon(Icons.close, color: Colors.white))),
+        ]),
+      ));
+
+  @override
   Widget build(BuildContext context) => FutureBuilder<List<int>>(
-        future: Api.instance.octets(url),
+        future: _octets,
         builder: (_, s) => ClipRRect(
           borderRadius: BorderRadius.circular(12),
-          child: SizedBox(width: 96, height: 96, child: s.hasData
-              ? Image.memory(Uint8List.fromList(s.data!), fit: BoxFit.cover, semanticLabel: 'Photo jointe')
-              : Container(color: AppColors.surfaceSubtle, child: s.hasError ? const Icon(Icons.broken_image_outlined) : null)),
+          child: SizedBox(width: 110, height: 110, child: s.hasData
+              ? GestureDetector(onTap: () => _agrandir(Uint8List.fromList(s.data!)),
+                  child: Image.memory(Uint8List.fromList(s.data!), fit: BoxFit.cover, semanticLabel: 'Photo jointe'))
+              : s.hasError
+                  ? InkWell(onTap: () => setState(() => _octets = Api.instance.octets(widget.url)),
+                      child: Container(color: AppColors.surfaceSubtle, child: const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        Icon(Icons.broken_image_outlined), SizedBox(height: 4), Text('Réessayer', style: TextStyle(fontSize: 11)),
+                      ])))
+                  : Container(color: AppColors.surfaceSubtle, child: const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))))),
         ),
       );
 }

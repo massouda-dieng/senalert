@@ -99,7 +99,13 @@ class Dossier {
   final String regionLibelle;
   final String adresse;
   final String? serviceNom;
+  final int? structureId;
+  final String? structureNom;
+  final String? typeUrgence;
+  final String? typeUrgenceLibelle;
+  final String infos;
   final DateTime? creation;
+  final DateTime? modification;
   final DateTime? priseEnCharge;
   final DateTime? cloture;
   final String motifCloture;
@@ -124,7 +130,13 @@ class Dossier {
         regionLibelle = j['region_libelle'] ?? '',
         adresse = j['adresse'] ?? '',
         serviceNom = j['service_nom'],
+        structureId = j['structure'],
+        structureNom = j['structure_nom'],
+        typeUrgence = j['type_urgence'],
+        typeUrgenceLibelle = j['type_urgence_libelle'],
+        infos = (j['infos_complementaires'] ?? '').toString(),
         creation = lireDate(j['date_creation']),
+        modification = lireDate(j['date_modification']),
         priseEnCharge = lireDate(j['date_prise_en_charge']),
         cloture = lireDate(j['date_cloture']),
         motifCloture = j['motif_cloture'] ?? '',

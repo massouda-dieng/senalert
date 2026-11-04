@@ -12,6 +12,7 @@ from rest_framework.throttling import ScopedRateThrottle
 
 from core.constants import RESOLU, ROLE_AGENT, STATUTS_ACTIFS
 from core.models import Categorie, Parametre
+from core.audit import journaliser
 from core.structures import structures_proches
 from core.params import entier
 from core.permissions import est_citoyen, est_superadmin
@@ -87,7 +88,8 @@ class IncidentViewSet(ActionsDossierMixin, mixins.ListModelMixin, mixins.Retriev
         structure = donnees.pop('structure', None)
         if structure is None and categorie.service_defaut_id:
             # Pas de choix du citoyen : structure compétente la plus proche ; son superviseur affectera.
-            proches = structures_proches(donnees['latitude'], donnees['longitude'], [categorie.service_defaut.code], 1)
+            proches = structures_proches(donnees['latitude'], donnees['longitude'], [categorie.service_defaut.code], 1,
+                                         region=donnees.get('region'))
             structure = proches[0][0] if proches else None
         service = structure.service if structure else categorie.service_defaut
         try:
@@ -95,6 +97,9 @@ class IncidentViewSet(ActionsDossierMixin, mixins.ListModelMixin, mixins.Retriev
                 incident = s.save(citoyen=user, service=service, structure=structure, gravite=categorie.gravite_defaut)
                 enregistrer_photos(incident, photos, user)
                 workflow.apres_creation(incident, user, agent=agent)
+                journaliser(request, 'incident.creation', incident, {
+                    'reference': incident.reference, 'categorie': incident.type_incident,
+                    'structure': structure.nom if structure else None, 'photos': len(photos)})
         except IntegrityError:
             existant = Incident.objects.filter(citoyen=user, client_request_id=cle).first()
             if existant is None:

@@ -17,10 +17,10 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from .audit import journaliser
+from .audit import ACTIONS, actions_de, journaliser, libelle_action
 from .constants import GRAVITE_CHOICES, REGIONS, ROLE_CHOICES, STATUT_CHOICES
 from .exceptions import ServiceIndisponible
-from .geo import dans_senegal, distance_m
+from .geo import dans_senegal, distance_m, region_la_plus_proche
 from .models import Categorie, FicheSecours, JournalAudit, Parametre, Service, Structure
 from .params import coordonnees, entier
 from .permissions import EstSuperAdmin
@@ -107,12 +107,13 @@ class StructureSerializer(serializers.ModelSerializer):
     region_libelle = serializers.CharField(source='get_region_display', read_only=True)
     distance_m = serializers.SerializerMethodField()
     nb_agents_disponibles = serializers.SerializerMethodField()
+    dans_la_zone = serializers.SerializerMethodField()
 
     class Meta:
         model = Structure
         fields = ['id', 'nom', 'service', 'service_nom', 'service_code', 'latitude', 'longitude', 'region',
                   'region_libelle', 'adresse', 'telephone', 'position_approximative', 'source', 'actif',
-                  'distance_m', 'nb_agents_disponibles']
+                  'distance_m', 'nb_agents_disponibles', 'dans_la_zone']
         read_only_fields = ['source']
 
     def get_distance_m(self, obj) -> int | None:
@@ -121,6 +122,11 @@ class StructureSerializer(serializers.ModelSerializer):
 
     def get_nb_agents_disponibles(self, obj) -> int | None:
         return self.context.get('agents', {}).get(obj.pk)
+
+    def get_dans_la_zone(self, obj) -> bool | None:
+        """Recherche par position : la structure est-elle compétente pour la région du lieu ?"""
+        region = self.context.get('region')
+        return obj.region == region if region else None
 
     def validate(self, attrs):
         lat = attrs.get('latitude', getattr(self.instance, 'latitude', None))
@@ -163,12 +169,15 @@ class StructureViewSet(ReferentielViewSet):
             return super().list(request, *args, **kwargs)
         lat, lng = coordonnees(p.get('lat'), p.get('lng'))
         services = [p['service']] if p.get('service') else None
+        if services and services[0].isdigit():  # identifiant du service (configuration publique) ou son code
+            services = list(Service.objects.filter(pk=int(services[0])).values_list('code', flat=True)) or ['?']
         if p.get('categorie'):
             cat = Categorie.objects.filter(code=p['categorie'], actif=True).select_related('service_defaut').first()
             if cat and cat.service_defaut_id:
                 services = [cat.service_defaut.code]
-        proches = structures_proches(lat, lng, services, entier(p.get('limite'), 8, 1, 20, 'limite'))
-        contexte = {**self.get_serializer_context(),
+        region = p.get('region') if p.get('region') in REGIONS else region_la_plus_proche(lat, lng)
+        proches = structures_proches(lat, lng, services, entier(p.get('limite'), 8, 1, 20, 'limite'), region=region)
+        contexte = {**self.get_serializer_context(), 'region': region,
                     'distances': {s.pk: d for s, d in proches},
                     'agents': {s.pk: agents_disponibles(s).count() for s, _ in proches}}
         return Response(StructureSerializer([s for s, _ in proches], many=True, context=contexte).data)
@@ -225,15 +234,44 @@ class ParametreViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.
 
 
 class JournalAuditSerializer(serializers.ModelSerializer):
-    acteur_nom = serializers.CharField(source='acteur.username', default=None, read_only=True)
+    """Entrée lisible : qui (nom et rôle), quoi (action en clair), quand et sur quel élément."""
+
+    acteur_nom = serializers.SerializerMethodField()
+    acteur_role_libelle = serializers.SerializerMethodField()
+    action_libelle = serializers.SerializerMethodField()
+    rubrique = serializers.SerializerMethodField()
+    element = serializers.SerializerMethodField()
 
     class Meta:
         model = JournalAudit
-        fields = ['id', 'date', 'acteur', 'acteur_nom', 'action', 'cible_type', 'cible_id', 'details', 'adresse_ip']
+        fields = ['id', 'date', 'acteur', 'acteur_nom', 'acteur_role', 'acteur_role_libelle', 'action', 'action_libelle',
+                  'rubrique', 'cible_type', 'cible_id', 'cible_libelle', 'element', 'details', 'adresse_ip']
+
+    def get_acteur_nom(self, obj) -> str:
+        return obj.acteur.nom_affiche if obj.acteur else 'Système'
+
+    def get_acteur_role_libelle(self, obj) -> str:
+        role = obj.acteur_role or (obj.acteur.role if obj.acteur else '')
+        return dict(ROLE_CHOICES).get(role, '—')
+
+    def get_action_libelle(self, obj) -> str:
+        return libelle_action(obj.action)[0]
+
+    def get_rubrique(self, obj) -> str:
+        return libelle_action(obj.action)[1]
+
+    def get_element(self, obj) -> str:
+        types = {'Incident': 'Incident', 'AlerteSOS': 'Alerte SOS', 'User': 'Compte', 'Structure': 'Structure',
+                 'Service': 'Service', 'Categorie': 'Catégorie', 'Parametre': 'Paramètre', 'AlerteZone': 'Alerte de zone'}
+        if not obj.cible_type:
+            return '—'
+        nature = types.get(obj.cible_type, obj.cible_type)
+        return f'{nature} · {obj.cible_libelle}' if obj.cible_libelle else f'{nature} #{obj.cible_id}'
 
 
 class FiltreAudit(filters.FilterSet):
     action = filters.CharFilter(lookup_expr='startswith')
+    rubrique = filters.CharFilter(method='filtre_rubrique')
     acteur = filters.NumberFilter()
     date_debut = filters.DateFilter(field_name='date', lookup_expr='date__gte')
     date_fin = filters.DateFilter(field_name='date', lookup_expr='date__lte')
@@ -242,8 +280,15 @@ class FiltreAudit(filters.FilterSet):
         model = JournalAudit
         fields = []
 
+    def filtre_rubrique(self, qs, name, value):
+        if value == 'autres':
+            return qs.exclude(action__in=list(ACTIONS))
+        return qs.filter(action__in=actions_de(value))
+
 
 class JournalAuditViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """Journal d'audit en lecture seule, réservé au superadministrateur (aucune modification ni suppression)."""
+
     permission_classes = [EstSuperAdmin]
     serializer_class = JournalAuditSerializer
     queryset = JournalAudit.objects.select_related('acteur')

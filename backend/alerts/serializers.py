@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from core.constants import REGIONS
+from core.constants import REGIONS, TYPES_URGENCE
 from incidents.serializers import DossierLectureMixin, PositionMixin
 
 from .models import AlerteSOS
@@ -8,11 +8,12 @@ from .models import AlerteSOS
 
 class AlerteSOSSerializer(DossierLectureMixin, serializers.ModelSerializer):
     est_sos = True
+    type_urgence_libelle = serializers.CharField(source='get_type_urgence_display', read_only=True)
 
     class Meta:
         model = AlerteSOS
         fields = [
-            'id', 'uuid', 'reference', 'message', 'latitude', 'longitude', 'precision_gps', 'source_position',
+            'id', 'uuid', 'reference', 'type_urgence', 'type_urgence_libelle', 'message', 'latitude', 'longitude', 'precision_gps', 'source_position',
             'region', 'region_libelle', 'adresse', 'statut', 'statut_libelle', 'gravite', 'service', 'service_nom',
             'structure', 'structure_nom', 'date_creation', 'date_modification', 'date_prise_en_charge', 'date_cloture', 'motif_cloture',
             'en_retard', 'intervention', 'citoyen_contact', 'est_proprietaire',
@@ -27,10 +28,11 @@ class AlerteSOSCreationSerializer(PositionMixin, serializers.ModelSerializer):
     message = serializers.CharField(required=False, allow_blank=True, max_length=280)
     adresse = serializers.CharField(required=False, allow_blank=True, max_length=255)
     client_request_id = serializers.UUIDField(required=False, allow_null=True)
+    type_urgence = serializers.ChoiceField(choices=list(TYPES_URGENCE), required=False, default='non_precise')
 
     class Meta:
         model = AlerteSOS
-        fields = ['latitude', 'longitude', 'precision_gps', 'region', 'message', 'adresse', 'client_request_id']
+        fields = ['type_urgence', 'latitude', 'longitude', 'precision_gps', 'region', 'message', 'adresse', 'client_request_id']
 
     def validate_region(self, value):
         if value and value not in REGIONS:

@@ -38,6 +38,7 @@ GoRouter creerRouteur(Session session) => GoRouter(
         if (lieu == '/' || const {'/bienvenue', '/connexion', '/inscription', '/compte-agent', '/compte-superviseur', '/mot-de-passe-oublie'}.contains(lieu)) return accueilPour(u.role);
         if (_citoyen.contains(lieu) && !u.estCitoyen) return accueilPour(u.role);
         if (_agent.contains(lieu) && !u.estAgent) return accueilPour(u.role);
+        if (lieu == '/secours' && u.estAgent) return '/agent';
         if (lieu == '/supervision' && !u.estSupervision) return accueilPour(u.role);
         return null;
       },
@@ -60,7 +61,7 @@ GoRouter creerRouteur(Session session) => GoRouter(
           builder: (_, state, enfant) => _Coquille(lieu: state.matchedLocation, child: enfant),
           routes: [
             GoRoute(path: '/accueil', builder: (_, __) => const AccueilCitoyen()),
-            GoRoute(path: '/dossiers', builder: (_, __) => const ListeDossiersScreen()),
+            GoRoute(path: '/dossiers', builder: (_, s) => ListeDossiersScreen(sos: s.uri.queryParameters['type'] == 'sos')),
             GoRoute(path: '/carte', builder: (_, __) => const CarteScreen()),
             GoRoute(path: '/secours', builder: (_, __) => const PremiersSecoursScreen()),
             GoRoute(path: '/communaute', builder: (_, __) => const CommunauteScreen()),
@@ -85,7 +86,7 @@ class _Coquille extends StatelessWidget {
     Langue.instance.role = u.role;
     final onglets = u.estAgent
         ? const [('/agent', Icons.space_dashboard_outlined, 'Tableau'), ('/interventions', Icons.assignment_outlined, 'Interventions'),
-            ('/carte-agent', Icons.map_outlined, 'Carte'), ('/secours', Icons.healing_outlined, 'Secours'), ('/profil', Icons.person_outline, 'Profil')]
+            ('/carte-agent', Icons.map_outlined, 'Carte'), ('/profil', Icons.person_outline, 'Profil')]
         : [('/accueil', Icons.home_outlined, tr('Accueil')), ('/dossiers', Icons.folder_open_outlined, tr('Dossiers')),
             ('/communaute', Icons.groups_outlined, tr('Autour')), ('/carte', Icons.map_outlined, tr('Carte')), ('/profil', Icons.person_outline, tr('Profil'))];
     final index = onglets.indexWhere((o) => o.$1 == lieu);

@@ -64,7 +64,7 @@ export default function DossierDetail({ type = 'incident', id, onFermer, onModif
   if (role === 'agent') {
     if (s === 'nouveau') actions.push(<Bouton key="pec" icone={CheckCircle2} onClick={() => agir('prendre-en-charge', undefined, 'Dossier pris en charge.').catch(() => {})}>Prendre en charge</Bouton>);
     if (s === 'affecte' && estMien) {
-      actions.push(<Bouton key="acc" icone={CheckCircle2} onClick={() => agir('accepter', undefined, 'Intervention acceptée.').catch(() => {})}>Accepter</Bouton>);
+      actions.push(<Bouton key="acc" icone={CheckCircle2} onClick={() => agir('accepter', undefined, 'Dossier pris en charge.').catch(() => {})}>Prendre en charge</Bouton>);
       actions.push(<Bouton key="dec" variante="secondaire" icone={X} onClick={() => setDialogue('decliner')}>Décliner</Bouton>);
     }
     if (s === 'accepte' && estMien) actions.push(<Bouton key="dem" icone={Play} onClick={() => agir('demarrer', undefined, 'Intervention démarrée.').catch(() => {})}>Démarrer l’intervention</Bouton>);
@@ -122,19 +122,21 @@ export default function DossierDetail({ type = 'incident', id, onFermer, onModif
         <div className="space-y-4">
           {(d.description || d.message) && <p className="whitespace-pre-wrap rounded-2xl bg-surface-douce p-4 text-sm leading-relaxed">{d.description || d.message}</p>}
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+            {type === 'sos' && <Info libelle="Type d’urgence">{d.type_urgence_libelle || 'Non précisée'}</Info>}
             {d.service_nom && <Info libelle="Service">{d.service_nom}</Info>}
-            {d.structure_nom && <Info libelle="Structure">{d.structure_nom}</Info>}
+            <Info libelle="Structure destinataire">{d.structure_nom || 'En attente d’orientation'}</Info>
+            <Info libelle="Agent responsable">{inter?.agent_nom || 'Pas encore désigné'}</Info>
             {d.adresse && <Info libelle="Adresse / repère">{d.adresse}</Info>}
             <Info libelle="Position">{d.latitude != null ? `${d.latitude.toFixed(5)}, ${d.longitude.toFixed(5)}${d.precision_gps != null ? ` (± ${Math.round(d.precision_gps)} m)` : ''}` : 'Indisponible (GPS non fourni)'}</Info>
             {d.date_prise_en_charge && <Info libelle="Prise en charge">{`${dateHeure(d.date_prise_en_charge)} (${duree((new Date(d.date_prise_en_charge) - new Date(d.date_creation)) / 60000)})`}</Info>}
             {d.date_cloture && <Info libelle="Clôture">{dateHeure(d.date_cloture)}</Info>}
-            {inter && <Info libelle="Intervenant">{inter.agent_nom || 'Non affecté'}{inter.service_nom ? ` · ${inter.service_nom}` : ''}</Info>}
+            {d.date_modification && <Info libelle="Dernière mise à jour">{dateHeure(d.date_modification)}</Info>}
             {d.motif_cloture && <Info libelle="Motif">{d.motif_cloture}</Info>}
           </dl>
 
           {d.citoyen_contact && (
             <div className="flex items-center justify-between rounded-2xl border border-surface-bord p-3 text-sm">
-              <span><span className="text-texte-doux">Déclarant :</span> <b>{d.citoyen_contact.nom}</b></span>
+              <span><span className="text-texte-doux">Citoyen :</span> <b>{d.citoyen_contact.nom}</b></span>
               {d.citoyen_contact.telephone && <a className="lien inline-flex items-center gap-1" href={`tel:${d.citoyen_contact.telephone}`}><Phone className="h-4 w-4" />{d.citoyen_contact.telephone}</a>}
             </div>
           )}

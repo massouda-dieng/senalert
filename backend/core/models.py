@@ -155,9 +155,12 @@ class JournalAudit(models.Model):
     """Trace des opérations sensibles. Ne contient jamais de mot de passe ni de jeton."""
 
     acteur = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    # Rôle au moment de l'action (il peut changer ensuite) et libellé lisible de l'élément concerné.
+    acteur_role = models.CharField(max_length=20, blank=True)
     action = models.CharField(max_length=60, db_index=True)
     cible_type = models.CharField(max_length=40, blank=True)
     cible_id = models.CharField(max_length=60, blank=True)
+    cible_libelle = models.CharField(max_length=150, blank=True)
     details = models.JSONField(default=dict, blank=True)
     adresse_ip = models.GenericIPAddressField(null=True, blank=True)
     date = models.DateTimeField(auto_now_add=True, db_index=True)
@@ -169,6 +172,15 @@ class JournalAudit(models.Model):
 
     def __str__(self):
         return f'{self.date:%Y-%m-%d %H:%M} {self.action}'
+
+    def save(self, *args, **kwargs):
+        # Journal en ajout seul : une trace enregistrée ne se modifie plus.
+        if not self._state.adding:
+            raise PermissionError("Le journal d'audit ne peut pas être modifié.")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise PermissionError("Le journal d'audit ne peut pas être supprimé.")
 
 
 class FicheSecours(models.Model):

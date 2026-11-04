@@ -1,9 +1,12 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:senalert_mobile/app.dart';
 import 'package:senalert_mobile/core/api.dart';
 import 'package:senalert_mobile/core/format.dart';
 import 'package:senalert_mobile/core/models.dart';
+import 'package:senalert_mobile/features/citoyen/report_screen.dart';
 import 'package:senalert_mobile/ui/credits_photos.dart';
 
 Map<String, dynamic> sos({double? lat}) => {
@@ -80,5 +83,27 @@ void main() {
 
   test('clés d’idempotence uniques', () {
     expect(nouvelleCle(), isNot(nouvelleCle()));
+  });
+
+  test('SOS : type d’urgence, structure destinataire et dates enregistrées par le serveur', () {
+    final d = Dossier.depuis({...sos(lat: 14.7), 'type_urgence': 'incendie', 'type_urgence_libelle': 'Incendie',
+        'structure': 179, 'structure_nom': 'Caserne Sapeurs Pompiers', 'date_modification': '2026-10-29T10:05:00Z'}, estSos: true);
+    expect(d.typeUrgenceLibelle, 'Incendie');
+    expect(d.structureNom, 'Caserne Sapeurs Pompiers');
+    expect(d.modification!.isAfter(d.creation!), isTrue);
+    expect(typesUrgence.keys, containsAll(['medicale', 'incendie', 'accident', 'agression']));
+  });
+
+  test('heures affichées à l’heure de Dakar, quel que soit le fuseau du téléphone', () {
+    expect(heureDakar(DateTime.parse('2026-10-29T10:00:00+02:00')).hour, 8);
+    expect(heureDakar(DateTime.parse('2026-10-29T10:00:00Z')).hour, 10);
+  });
+
+  test('photos : seuls JPEG, PNG et WEBP sont acceptés', () {
+    expect(formatImageAccepte(Uint8List.fromList([0xFF, 0xD8, 0xFF, 0xE0, 0])), isTrue);
+    expect(formatImageAccepte(Uint8List.fromList([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0])), isTrue);
+    expect(formatImageAccepte(Uint8List.fromList('RIFF\x00\x00\x00\x00WEBPVP8 '.codeUnits)), isTrue);
+    expect(formatImageAccepte(Uint8List.fromList('GIF89a......'.codeUnits)), isFalse);
+    expect(formatImageAccepte(Uint8List.fromList('%PDF-1.7....'.codeUnits)), isFalse);
   });
 }

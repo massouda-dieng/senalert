@@ -11,11 +11,15 @@ import CarteSenAlert, { CENTRE_SENEGAL } from '../../components/Carte';
 import Photo from '../../components/Photo';
 import { BadgeStatut, Bandeau, Bouton, Carte, Chargement, Fenetre, IconeNotification } from '../../components/ui';
 import { useConfig } from '../../lib/config';
-import { ilYa } from '../../lib/format';
+import { dateHeure, ilYa } from '../../lib/format';
 import { libelleCategorie, useLangue } from '../../lib/langue';
 import { COULEURS } from '../../lib/couleurs';
 
 const COMPTE_A_REBOURS = 5;
+// Type d'urgence facultatif (mêmes codes que le serveur) : un clic envoie aussitôt vers le service concerné.
+const TYPES_URGENCE = [
+  ['medicale', 'Urgence médicale'], ['incendie', 'Incendie'], ['accident', 'Accident'], ['agression', 'Agression ou danger'],
+];
 
 /** Position du navigateur, avec précision. Ne bloque jamais l'envoi du SOS. */
 export function lirePosition({ delai = 10000 } = {}) {
@@ -41,10 +45,14 @@ function SOS() {
   const minuteur = useRef(null);
   const suivi = useRessource(resultat ? `/alertes/sos/${resultat.id}/` : null, null, { intervalle: 10000, actif: Boolean(resultat) });
 
-  const envoyer = async (pos) => {
+  const envoi = useRef(false);
+  const envoyer = async (pos, typeUrgence = 'non_precise') => {
+    if (envoi.current) return; // un seul envoi à la fois (double clic, fin du compte à rebours)
+    envoi.current = true;
+    clearInterval(minuteur.current);
     setEtape('envoi');
     setErreur(null);
-    const corps = { client_request_id: cle.current };
+    const corps = { client_request_id: cle.current, type_urgence: typeUrgence };
     if (pos?.lat != null) Object.assign(corps, { latitude: pos.lat, longitude: pos.lng, precision_gps: Math.round(pos.precision) });
     try {
       const r = await api('/alertes/sos/', { methode: 'POST', corps });
@@ -53,7 +61,7 @@ function SOS() {
     } catch (e) {
       setErreur(e);
       setEtape('echec');
-    }
+    } finally { envoi.current = false; }
   };
 
   const demarrer = () => {
@@ -113,7 +121,13 @@ function SOS() {
             <p className="text-sm text-texte-doux">{t('Envoi automatique dans')}</p>
             <p className="my-2 font-titre text-7xl font-extrabold text-sos-fonce tabular-nums" aria-live="assertive">{reste}</p>
             <PositionInfo position={position} />
-            <div className="mt-6 grid grid-cols-2 gap-3">
+            <p className="mt-5 text-sm font-semibold">{t('Quelle urgence ? (facultatif, envoie aussitôt)')}</p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {TYPES_URGENCE.map(([code, libelle]) => (
+                <Bouton key={code} variante="secondaire" onClick={() => envoyer(position?.enCours ? null : position, code)}>{t(libelle)}</Bouton>
+              ))}
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3">
               <Bouton variante="secondaire" taille="lg" icone={X} onClick={fermer}>{t('Annuler')}</Bouton>
               <Bouton variante="danger" taille="lg" onClick={() => { clearInterval(minuteur.current); envoyer(position?.enCours ? null : position); }}>{t('Envoyer maintenant')}</Bouton>
             </div>
@@ -123,14 +137,24 @@ function SOS() {
         {etape === 'succes' && dossier && (
           <div className="space-y-4">
             <Bandeau type="succes" titre={`Dossier ${dossier.reference}`}>
-              {resultat.deja_enregistree ? 'Cette alerte avait déjà été reçue : voici son suivi.' : t('Votre alerte est enregistrée par SenAlert et transmise aux agents de votre zone.')}
+              {resultat.deja_enregistree ? 'Cette alerte avait déjà été reçue : voici son suivi.'
+                : dossier.statut === 'affecte' ? 'Un agent de la structure ci-dessous a été prévenu.' : 'Le superviseur de la structure ci-dessous a été prévenu.'}
             </Bandeau>
-            <div className="flex items-center justify-between rounded-2xl border border-surface-bord p-3">
-              <span className="text-sm text-texte-doux">{t('Statut actuel')}</span><BadgeStatut statut={dossier.statut} />
-            </div>
+            <dl className="divide-y divide-surface-bord rounded-2xl border border-surface-bord text-sm">
+              <div className="flex items-center justify-between px-3 py-2"><dt className="text-texte-doux">{t('Statut')}</dt><dd><BadgeStatut statut={dossier.statut} /></dd></div>
+              {[
+                ['Urgence', dossier.type_urgence_libelle || 'Non précisée'],
+                ['Envoyée le', dateHeure(dossier.date_creation)],
+                ['Position', dossier.latitude != null ? `${dossier.latitude.toFixed(5)}, ${dossier.longitude.toFixed(5)}${dossier.precision_gps != null ? ` (± ${Math.round(dossier.precision_gps)} m)` : ''}` : 'Non jointe'],
+                ['Destinataire', dossier.structure_nom || 'Supervision SenAlert'],
+              ].map(([k, v]) => <div key={k} className="grid grid-cols-[110px_1fr] gap-3 px-3 py-2"><dt className="text-texte-doux">{t(k)}</dt><dd className="font-medium">{v}</dd></div>)}
+            </dl>
             {dossier.latitude == null && <Bandeau type="alerte">Votre position n’a pas pu être jointe. Indiquez votre lieu exact aux secours par téléphone.</Bandeau>}
             <p className="text-xs text-texte-doux">Tant qu’un agent n’a pas pris en charge l’alerte, aucune intervention n’est garantie. Si le danger est immédiat, appelez directement {config.numeros_urgence.map((n) => n.numero).join(' ou ')}.</p>
-            <Link to={`/citoyen/dossiers?type=sos&dossier=${dossier.id}`} className="lien text-sm">{t('Suivre le dossier →')}</Link>
+            <div className="flex flex-wrap gap-4 text-sm">
+              <Link to={`/citoyen/dossiers?type=sos&dossier=${dossier.id}`} className="lien">{t('Voir le détail de l’alerte →')}</Link>
+              <Link to="/citoyen/dossiers?type=sos" className="lien">{t('Historique de mes SOS')}</Link>
+            </div>
           </div>
         )}
         {etape === 'echec' && (

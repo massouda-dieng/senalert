@@ -10,20 +10,14 @@ import '../../core/format.dart';
 import '../../core/location.dart';
 import '../../state/configuration.dart';
 import '../../ui/kit.dart';
+import '../../ui/selecteur_position.dart';
 
-const _fonds = {
-  'plan': ('Plan', 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', 'Fond © Esri · © contributeurs OpenStreetMap'),
-  'clair': ('Clair', 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', 'Fond © Esri · © OpenStreetMap'),
-  'satellite': ('Satellite', 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', 'Imagerie © Esri, Maxar'),
-};
-
-const _couleursNiveau = {'critique': AppColors.rouge, 'eleve': Jetons.orange, 'moyen': Jetons.marine500};
-const _couleursAlerte = {'danger': AppColors.rouge, 'vigilance': Jetons.orange, 'info': AppColors.marine700};
 /// Cadre de la carte nationale : le Sénégal et ses frontières.
 final _bornes = LatLngBounds(const LatLng(9, -22), const LatLng(20, -7));
-const _rayonProcheKm = 5;
+const _centreSenegal = LatLng(14.45, -14.9);
 
-/// Carte à couches. Citoyen : vue publique ; agent : dossiers ouverts et SOS en plus.
+/// Carte simple : ma position, la recherche d'un lieu et, au choix, les structures d'un service les plus
+/// proches (liste triée par distance). Citoyen : incidents récents publics ; agent : ses dossiers et SOS en plus.
 class CarteScreen extends StatefulWidget {
   final bool agent;
   const CarteScreen({super.key, this.agent = false});
@@ -33,15 +27,14 @@ class CarteScreen extends StatefulWidget {
 
 class _CarteScreenState extends State<CarteScreen> {
   final _carte = MapController();
-  String _fond = 'plan';
-  final Map<String, bool> _couches = {'incidents': true, 'risque': false, 'alertes': true, 'dossiers': true, 'sos': true};
-  List<Map<String, dynamic>> _incidents = [], _dossiers = [], _sos = [], _niveaux = [], _alertes = [];
-  LatLng? _moi;
-  double? _precision;
   bool _cartePrete = false;
+  List<Map<String, dynamic>> _incidents = [], _dossiers = [], _sos = [], _alertes = [];
+  List<Map<String, dynamic>>? _structures;
+  int? _service;
+  LatLng? _moi;
   ApiException? _erreur;
   bool _chargement = true;
-  DateTime? _synchro;
+  bool _localisation = false;
 
   @override
   void initState() {
@@ -59,65 +52,57 @@ class _CarteScreenState extends State<CarteScreen> {
       final r = await Future.wait([
         _liste('/incidents/carte/', {'jours': 30}, 'resultats'),
         _liste('/alertes/zones/', {'en_cours': 1}, 'results'),
-        _liste('/analyse/niveaux-regions/', {}, 'zones'),
         if (widget.agent) _liste('/incidents/', {'actifs': true, 'taille': 100}, 'results'),
         if (widget.agent) _liste('/alertes/sos/', {'actifs': true, 'taille': 100}, 'results'),
       ]);
-      _incidents = r[0]; _alertes = r[1]; _niveaux = r[2];
-      if (widget.agent) { _dossiers = r[3]; _sos = r[4]; }
+      _incidents = r[0]; _alertes = r[1];
+      if (widget.agent) { _dossiers = r[2]; _sos = r[3]; }
       _erreur = null;
-      _synchro = DateTime.now();
     } on ApiException catch (e) {
       _erreur = e;
     }
     if (mounted) setState(() => _chargement = false);
   }
 
-  /// `auto` : tentative à l'ouverture de la carte, sans message si la position est refusée.
+  void _aller(LatLng p, double zoom) { if (_cartePrete) _carte.move(p, zoom); }
+
+  /// `auto` : tentative à l'ouverture, sans message si la position est refusée (la carte reste utilisable).
   Future<void> _localiser({bool auto = false}) async {
+    setState(() => _localisation = true);
     final p = await Localisation.lire();
     if (!mounted) return;
-    if (!p.ok) { if (!auto) afficherMessage(context, p.erreur ?? 'Position indisponible.', erreur: true); return; }
-    final position = LatLng(p.lat!, p.lng!);
-    if (!_bornes.contains(position)) {
-      if (!auto) afficherMessage(context, 'Votre position est hors du Sénégal : elle ne peut pas être affichée sur cette carte.', erreur: true);
+    setState(() => _localisation = false);
+    if (!p.ok) {
+      if (!auto) afficherMessage(context, '${p.erreur ?? 'Position indisponible.'} Recherchez un lieu ou déplacez la carte.', erreur: true);
       return;
     }
-    setState(() { _moi = position; _precision = p.precision; });
-    if (_cartePrete) _carte.move(position, 13);
+    final position = LatLng(p.lat!, p.lng!);
+    if (!_bornes.contains(position)) {
+      if (!auto) afficherMessage(context, 'Votre position est hors du Sénégal.', erreur: true);
+      return;
+    }
+    setState(() => _moi = position);
+    _aller(position, 14);
+    if (_service != null) _chargerStructures();
   }
 
-  List<double> get _distances => _moi == null ? [] : [for (final p in _autresIncidents) const Distance().as(LengthUnit.Kilometer, _moi!, _ll(p))];
-  int get _proches => _distances.where((d) => d <= _rayonProcheKm).length;
-  double? get _plusProche => _distances.isEmpty ? null : _distances.reduce((a, b) => a < b ? a : b);
-  String get _resumeAutour {
-    final n = _proches;
-    if (n > 0) return '$n signalement${n > 1 ? 's' : ''} récent${n > 1 ? 's' : ''} à moins de $_rayonProcheKm km';
-    final d = _plusProche;
-    return 'aucun signalement récent à moins de $_rayonProcheKm km${d == null ? '' : ' · le plus proche à ${d.round()} km'}';
-  }
-
-  /// Point bleu au centre exact de la position, étiquette « Vous êtes ici » au-dessus.
-  Marker _marqueurMoi() => Marker(
-        point: _moi!, width: 140, height: 84,
-        child: Stack(alignment: Alignment.center, children: [
-          Positioned(top: 0, child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(color: AppColors.marine800, borderRadius: BorderRadius.circular(99),
-                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)]),
-            child: const Text('Vous êtes ici', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
-          )),
-          Container(width: 20, height: 20, decoration: BoxDecoration(
-              shape: BoxShape.circle, color: AppColors.info, border: Border.all(color: Colors.white, width: 3),
-              boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 6)])),
-        ]),
-      );
-
-  /// Un dossier ouvert a déjà son point dans la couche Dossiers : il n'est pas dessiné deux fois.
-  List<Map<String, dynamic>> get _autresIncidents {
-    if (!widget.agent || !_couches['dossiers']!) return _incidents;
-    final ouverts = _dossiers.map((d) => d['id']).toSet();
-    return _incidents.where((p) => !ouverts.contains(p['id'])).toList();
+  /// Structures du service choisi autour de ma position, ou du centre de la carte si elle est inconnue.
+  Future<void> _chargerStructures() async {
+    final centre = _moi ?? (_cartePrete ? _carte.camera.center : _centreSenegal);
+    setState(() => _structures = null);
+    try {
+      final r = await Api.instance.get<List<dynamic>>('/structures/', params: {
+        'lat': centre.latitude, 'lng': centre.longitude, 'service': _service, 'limite': 10});
+      if (!mounted) return;
+      setState(() => _structures = r.cast<Map<String, dynamic>>());
+      if (_structures!.isNotEmpty && _cartePrete) {
+        _carte.fitCamera(CameraFit.coordinates(padding: const EdgeInsets.fromLTRB(40, 120, 40, 260), maxZoom: 15, coordinates: [
+          centre, for (final s in _structures!.take(5)) LatLng((s['latitude'] as num).toDouble(), (s['longitude'] as num).toDouble()),
+        ]));
+      }
+    } on ApiException catch (e) {
+      if (mounted) { setState(() => _structures = []); afficherMessage(context, e.message, erreur: true); }
+    }
   }
 
   Future<void> _rechercher() async {
@@ -125,7 +110,7 @@ class _CarteScreenState extends State<CarteScreen> {
     final q = await showDialog<String>(context: context, builder: (c) => AlertDialog(
       title: const Text('Rechercher un lieu'),
       content: TextField(controller: ctrl, autofocus: true, textInputAction: TextInputAction.search,
-          onSubmitted: (v) => Navigator.pop(c, v), decoration: const InputDecoration(hintText: 'Quartier, adresse, établissement…')),
+          onSubmitted: (v) => Navigator.pop(c, v), decoration: const InputDecoration(hintText: 'Quartier, adresse, ville…')),
       actions: [TextButton(onPressed: () => Navigator.pop(c), child: const Text('Annuler')), FilledButton(onPressed: () => Navigator.pop(c, ctrl.text), child: const Text('Rechercher'))],
     ));
     if (q == null || q.trim().length < 3 || !mounted) return;
@@ -133,51 +118,47 @@ class _CarteScreenState extends State<CarteScreen> {
       final r = await Api.instance.get<Map<String, dynamic>>('/geocodage/', params: {'q': q.trim()});
       final res = List<Map<String, dynamic>>.from(r['resultats']);
       if (!mounted) return;
-      if (res.isEmpty) { afficherMessage(context, 'Aucun lieu trouvé.', erreur: true); return; }
+      if (res.isEmpty) return afficherMessage(context, 'Aucun lieu trouvé.', erreur: true);
       final choix = res.length == 1 ? res.first : await showModalBottomSheet<Map<String, dynamic>>(context: context, builder: (c) => ListView(shrinkWrap: true, children: [
         for (final x in res) ListTile(leading: const Icon(Icons.place_outlined), title: Text(x['nom'], maxLines: 2, overflow: TextOverflow.ellipsis), onTap: () => Navigator.pop(c, x)),
       ]));
-      if (choix != null) _carte.move(LatLng(choix['latitude'], choix['longitude']), 15);
+      if (choix == null) return;
+      _aller(LatLng(choix['latitude'], choix['longitude']), 15);
+      if (_service != null && _moi == null) _chargerStructures();
     } on ApiException catch (e) {
-      if (mounted) afficherMessage(context, e.message, erreur: true);
+      if (mounted) afficherMessage(context, '${e.message} Déplacez la carte jusqu’au lieu.', erreur: true);
     }
   }
 
-  void _panneau() => showModalBottomSheet(
-        context: context,
-        builder: (c) => StatefulBuilder(builder: (c, maj) {
-          void bascule(String k, bool v) { setState(() => _couches[k] = v); maj(() {}); }
-          return ListView(shrinkWrap: true, padding: const EdgeInsets.all(16), children: [
-            Text('Fond de carte', style: titre(16)),
-            const SizedBox(height: 8),
-            SegmentedButton<String>(
-              segments: [for (final e in _fonds.entries) ButtonSegment(value: e.key, label: Text(e.value.$1))],
-              selected: {_fond},
-              onSelectionChanged: (s) { setState(() => _fond = s.first); maj(() {}); },
-            ),
-            const SizedBox(height: 12),
-            Text('Couches', style: titre(16)),
-            SwitchListTile(value: _couches['incidents']!, onChanged: (v) => bascule('incidents', v), title: Text('${widget.agent ? 'Autres incidents récents' : 'Incidents récents'} (${_autresIncidents.length})')),
-            SwitchListTile(value: _couches['risque']!, onChanged: (v) => bascule('risque', v), title: const Text('Zones à risque')),
-            SwitchListTile(value: _couches['alertes']!, onChanged: (v) => bascule('alertes', v), title: Text('Alertes de zone (${_alertes.length})')),
-            if (widget.agent) SwitchListTile(value: _couches['dossiers']!, onChanged: (v) => bascule('dossiers', v), title: Text('Dossiers ouverts (${_dossiers.length})')),
-            if (widget.agent) SwitchListTile(value: _couches['sos']!, onChanged: (v) => bascule('sos', v), title: Text('SOS actifs (${_sos.length})')),
-            const SizedBox(height: 8),
-            Text('L’absence d’incident ne signifie pas qu’une zone est sans danger. Positions publiques arrondies à ~100 m.',
-                style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
-          ]);
-        }),
-      );
+  void _ficheStructure(Map<String, dynamic> s) => showModalBottomSheet(context: context, builder: (c) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text('${s['nom']}', style: titre(18)),
+          const SizedBox(height: 4),
+          Text([s['service_nom'], if ((s['adresse'] ?? '').toString().isNotEmpty) s['adresse'], s['region_libelle']].join(' · '),
+              style: TextStyle(color: AppColors.textGrey)),
+          const SizedBox(height: 4),
+          Text('À ${distance(s['distance_m'])}${_moi == null ? ' du centre de la carte' : ' de vous'}', style: const TextStyle(fontWeight: FontWeight.w700)),
+          if (s['position_approximative'] == true) Text('Position approximative', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+          const SizedBox(height: 14),
+          Row(children: [
+            if ((s['telephone'] ?? '').toString().isNotEmpty) ...[
+              Expanded(child: FilledButton.icon(onPressed: () => appeler(s['telephone']), icon: const Icon(Icons.call), label: const Text('Appeler'))),
+              const SizedBox(width: 10),
+            ],
+            Expanded(child: OutlinedButton.icon(onPressed: () => itineraire((s['latitude'] as num).toDouble(), (s['longitude'] as num).toDouble()),
+                icon: const Icon(Icons.directions), label: const Text('Itinéraire'))),
+          ]),
+        ]),
+      ));
 
-  Marker _point(LatLng p, Color couleur, {double taille = 22, VoidCallback? onTap, String? label}) => Marker(
+  Marker _point(LatLng p, Color couleur, {double taille = 22, VoidCallback? onTap, String? label, IconData? icone}) => Marker(
         point: p, width: taille + 8, height: taille + 8,
-        child: Semantics(
-          label: label,
-          child: GestureDetector(onTap: onTap, child: Container(decoration: BoxDecoration(
-            shape: BoxShape.circle, color: couleur, border: Border.all(color: Colors.white, width: 2.5),
-            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
-          ))),
-        ),
+        child: Semantics(label: label, button: onTap != null, child: GestureDetector(onTap: onTap, child: Container(
+          decoration: BoxDecoration(shape: BoxShape.circle, color: couleur, border: Border.all(color: Colors.white, width: 2.5),
+              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)]),
+          child: icone == null ? null : Icon(icone, size: taille * .6, color: Colors.white),
+        ))),
       );
 
   LatLng _ll(Map<String, dynamic> j) => LatLng((j['latitude'] as num).toDouble(), (j['longitude'] as num).toDouble());
@@ -185,97 +166,98 @@ class _CarteScreenState extends State<CarteScreen> {
   @override
   Widget build(BuildContext context) {
     final config = context.watch<Configuration>();
-    final fond = _fonds[_fond]!;
+    final ouverts = _dossiers.map((d) => d['id']).toSet();
     final marqueurs = <Marker>[
-      if (_couches['incidents']!)
-        for (final p in _autresIncidents)
-          _point(_ll(p), couleurHex(config.categorie(p['type_incident'])?.couleur), taille: p['est_le_mien'] == true ? 28 : 22, label: config.categorie(p['type_incident'])?.libelle, onTap: () => showModalBottomSheet(
+      if (_service == null)
+        for (final p in _incidents.where((p) => !ouverts.contains(p['id'])))
+          _point(_ll(p), couleurHex(config.categorie(p['type_incident'])?.couleur), taille: p['est_le_mien'] == true ? 26 : 20,
+              label: config.categorie(p['type_incident'])?.libelle, onTap: () => showModalBottomSheet(
             context: context, builder: (_) => Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
               if (p['est_le_mien'] == true) Padding(padding: const EdgeInsets.only(bottom: 6), child: Text('Votre signalement', style: titre(14, couleur: AppColors.info))),
               Text(config.categorie(p['type_incident'])?.libelle ?? p['type_incident'], style: titre(18)),
               const SizedBox(height: 8),
               Row(children: [BadgeStatut(p['statut']), const SizedBox(width: 8), Text(dateHeure(lireDate(p['date_creation'])))]),
               const SizedBox(height: 8),
-              Text(p['est_le_mien'] == true ? 'Suivi dans « Dossiers » · position arrondie à ~100 m.' : 'Signalé par un citoyen, identité protégée · position arrondie à ~100 m.',
-                  style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+              Text('Identité du déclarant protégée · position arrondie à ~100 m.', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
             ])))),
-      if (widget.agent && _couches['dossiers']!)
-        for (final d in _dossiers.where((d) => d['latitude'] != null))
-          _point(_ll(d), statut(d['statut']).couleur, taille: 26, label: d['reference'], onTap: () => context.push('/dossier/incident/${d['id']}')),
-      if (widget.agent && _couches['sos']!)
-        for (final d in _sos.where((d) => d['latitude'] != null))
-          _point(_ll(d), AppColors.rouge, taille: 30, label: 'SOS ${d['reference']}', onTap: () => context.push('/dossier/sos/${d['id']}')),
-      if (_moi != null) _marqueurMoi(),
-    ];
-    final cercles = <CircleMarker>[
-      if (_moi != null && (_precision ?? 0) > 0)
-        CircleMarker(point: _moi!, radius: _precision!.clamp(0, 2000).toDouble(), useRadiusInMeter: true,
-            color: AppColors.info.withOpacity(0.08), borderColor: AppColors.info, borderStrokeWidth: 1),
-      if (_couches['risque']!)
-        for (final z in _niveaux.where((z) => _couleursNiveau.containsKey(z['niveau'])))
-          CircleMarker(point: _ll(z), radius: z['niveau'] == 'critique' ? 32000 : z['niveau'] == 'eleve' ? 24000 : 16000, useRadiusInMeter: true,
-              color: _couleursNiveau[z['niveau']]!.withOpacity(0.18), borderColor: _couleursNiveau[z['niveau']]!, borderStrokeWidth: 1.5),
-      if (_couches['alertes']!)
-        for (final a in _alertes)
-          for (final code in (a['regions'] as List).isEmpty ? config.regions.map((r) => r.code) : List<String>.from(a['regions']))
-            if (config.region(code) != null)
-              CircleMarker(point: LatLng(config.region(code)!.lat, config.region(code)!.lng), radius: 40000, useRadiusInMeter: true,
-                  color: (_couleursAlerte[a['niveau']] ?? AppColors.marine700).withOpacity(0.08), borderColor: _couleursAlerte[a['niveau']] ?? AppColors.marine700, borderStrokeWidth: 3),
+      for (final d in _dossiers.where((d) => d['latitude'] != null))
+        _point(_ll(d), statut(d['statut']).couleur, taille: 26, label: d['reference'], onTap: () => context.push('/dossier/incident/${d['id']}')),
+      for (final d in _sos.where((d) => d['latitude'] != null))
+        _point(_ll(d), AppColors.rouge, taille: 30, label: 'SOS ${d['reference']}', icone: Icons.sos, onTap: () => context.push('/dossier/sos/${d['id']}')),
+      for (final s in _structures ?? const <Map<String, dynamic>>[])
+        _point(_ll(s), AppColors.marine700, taille: 28, label: s['nom'], icone: Icons.apartment_rounded, onTap: () => _ficheStructure(s)),
+      if (_moi != null)
+        Marker(point: _moi!, width: 22, height: 22, child: Container(decoration: BoxDecoration(
+            shape: BoxShape.circle, color: AppColors.info, border: Border.all(color: Colors.white, width: 3),
+            boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 6)]))),
     ];
     return Scaffold(
-      appBar: AppBar(title: Text(widget.agent ? 'Carte opérationnelle' : 'Carte interactive'), actions: [
+      appBar: AppBar(title: Text(widget.agent ? 'Carte de mes missions' : 'Carte'), actions: [
         IconButton(tooltip: 'Rechercher un lieu', onPressed: _rechercher, icon: const Icon(Icons.search)),
-        IconButton(tooltip: 'Couches', onPressed: _panneau, icon: const Icon(Icons.layers_outlined)),
-        IconButton(tooltip: 'Actualiser', onPressed: _charger, icon: const Icon(Icons.refresh)),
+        IconButton(tooltip: 'Actualiser', onPressed: () { _charger(); if (_service != null) _chargerStructures(); }, icon: const Icon(Icons.refresh)),
       ]),
       body: Stack(children: [
         FlutterMap(
           mapController: _carte,
-          options: MapOptions(initialCenter: const LatLng(14.45, -14.9), initialZoom: 6.3, minZoom: 5.5,
+          options: MapOptions(initialCenter: _centreSenegal, initialZoom: 6.3, minZoom: 5.5,
               cameraConstraint: CameraConstraint.containCenter(bounds: _bornes),
-              onMapReady: () { _cartePrete = true; if (_moi != null) _carte.move(_moi!, 13); }),
+              onMapReady: () { _cartePrete = true; if (_moi != null) _carte.move(_moi!, 14); }),
           children: [
-            // Le fond clair n'a pas de détail au-delà du niveau 12 dans une partie du pays : il est agrandi.
-            TileLayer(key: ValueKey(_fond), urlTemplate: fond.$2, maxNativeZoom: _fond == 'clair' ? 12 : 19, userAgentPackageName: 'com.senalert.senalert_mobile'),
-            CircleLayer(circles: cercles),
+            TileLayer(urlTemplate: fondPlan, userAgentPackageName: 'com.senalert.senalert_mobile'),
             MarkerLayer(markers: marqueurs),
-            RichAttributionWidget(attributions: [TextSourceAttribution(fond.$3)]),
+            const RichAttributionWidget(attributions: [TextSourceAttribution('Fond © Esri · © contributeurs OpenStreetMap')]),
           ],
         ),
         if (_chargement) const LinearProgressIndicator(),
-        if (_erreur != null) Positioned(left: 12, right: 12, top: 12, child: Bandeau.erreur(_erreur!.message)),
-        if (_alertes.isNotEmpty && _couches['alertes']!) Positioned(left: 12, right: 12, top: _erreur != null ? 90 : 12, child: Material(
-          color: AppColors.orange, borderRadius: BorderRadius.circular(14),
-          child: Padding(padding: const EdgeInsets.all(10), child: Row(children: [
-            const Icon(Icons.campaign_rounded),
-            const SizedBox(width: 8),
-            Expanded(child: Text('${_alertes.first['titre']}${_alertes.length > 1 ? ' (+${_alertes.length - 1})' : ''}', style: const TextStyle(fontWeight: FontWeight.w700))),
+        Positioned(left: 0, right: 0, top: 8, child: Column(children: [
+          // Un seul réglage : quoi afficher. Incidents récents par défaut, ou les structures d'un service.
+          SizedBox(height: 44, child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 10), children: [
+            Padding(padding: const EdgeInsets.symmetric(horizontal: 3), child: ChoiceChip(
+              label: Text(widget.agent ? 'Mes missions' : 'Incidents récents'), selected: _service == null,
+              onSelected: (_) => setState(() { _service = null; _structures = null; }))),
+            for (final s in config.services)
+              Padding(padding: const EdgeInsets.symmetric(horizontal: 3), child: ChoiceChip(
+                label: Text(s.$2), selected: _service == s.$1,
+                onSelected: (_) { setState(() => _service = s.$1); _chargerStructures(); })),
           ])),
-        )),
-        if (_moi != null) Positioned(left: 12, right: 84, bottom: 70, child: Material(
-          color: AppColors.white, borderRadius: BorderRadius.circular(14), elevation: 3,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(14),
-            onTap: () => _carte.move(_moi!, 13),
-            child: Padding(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9), child: Row(children: [
-              Container(width: 10, height: 10, decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.info)),
+          if (_erreur != null) Padding(padding: const EdgeInsets.fromLTRB(12, 6, 12, 0), child: Bandeau.erreur(_erreur!.message)),
+          if (_alertes.isNotEmpty) Padding(padding: const EdgeInsets.fromLTRB(12, 6, 12, 0), child: Material(
+            color: AppColors.orange, borderRadius: BorderRadius.circular(14),
+            child: Padding(padding: const EdgeInsets.all(10), child: Row(children: [
+              const Icon(Icons.campaign_rounded),
               const SizedBox(width: 8),
-              Expanded(child: Text.rich(TextSpan(style: const TextStyle(fontSize: 13), children: [
-                const TextSpan(text: 'Vous êtes ici', style: TextStyle(fontWeight: FontWeight.w700)),
-                TextSpan(text: ' · $_resumeAutour'),
-              ]))),
+              Expanded(child: Text('${_alertes.first['titre']}${_alertes.length > 1 ? ' (+${_alertes.length - 1})' : ''}', style: const TextStyle(fontWeight: FontWeight.w700))),
             ])),
+          )),
+        ])),
+        if (_service != null) Positioned(left: 12, right: 76, bottom: 16, child: Material(
+          color: AppColors.white, borderRadius: BorderRadius.circular(16), elevation: 4,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 230),
+            child: _structures == null
+                ? const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator()))
+                : _structures!.isEmpty
+                    ? const Padding(padding: EdgeInsets.all(16), child: Text('Aucune structure de ce service n’est enregistrée près d’ici.'))
+                    : ListView(shrinkWrap: true, padding: const EdgeInsets.symmetric(vertical: 6), children: [
+                        Padding(padding: const EdgeInsets.fromLTRB(16, 6, 16, 2), child: Text(
+                            _moi == null ? 'Les plus proches du centre de la carte' : 'Les plus proches de vous',
+                            style: TextStyle(fontSize: 12, color: AppColors.textGrey, fontWeight: FontWeight.w600))),
+                        for (final s in _structures!)
+                          ListTile(
+                            dense: true, onTap: () { _aller(_ll(s), 16); _ficheStructure(s); },
+                            leading: const Icon(Icons.apartment_rounded, color: AppColors.marine700),
+                            title: Text('${s['nom']}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
+                            subtitle: Text((s['adresse'] ?? '').toString().isNotEmpty ? s['adresse'] : s['region_libelle'], maxLines: 1, overflow: TextOverflow.ellipsis),
+                            trailing: Text(distance(s['distance_m']), style: const TextStyle(fontWeight: FontWeight.w700)),
+                          ),
+                      ]),
           ),
-        )),
-        Positioned(left: 12, bottom: 28, child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(color: Colors.white.withOpacity(0.92), borderRadius: BorderRadius.circular(12)),
-          child: Text(_synchro == null ? 'Non synchronisé' : 'Actualisé ${ilYa(_synchro)}', style: const TextStyle(fontSize: 12)),
         )),
       ]),
       floatingActionButton: FloatingActionButton(
-        heroTag: 'localiser', tooltip: 'Me localiser', backgroundColor: AppColors.white, foregroundColor: AppColors.marine700,
-        onPressed: _localiser, child: const Icon(Icons.my_location),
+        heroTag: 'localiser', tooltip: 'Utiliser ma position actuelle', backgroundColor: AppColors.white, foregroundColor: AppColors.marine700,
+        onPressed: _localisation ? null : _localiser,
+        child: _localisation ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.my_location),
       ),
     );
   }

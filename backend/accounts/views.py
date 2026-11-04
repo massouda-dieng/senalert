@@ -71,10 +71,14 @@ class ConnexionView(TokenObtainPairView):
 
     def post(self, request, *args, **kwargs):
         try:
-            return super().post(request, *args, **kwargs)
+            reponse = super().post(request, *args, **kwargs)
         except Exception:
             journaliser(request, 'compte.echec_connexion', details={'identifiant': str(request.data.get('username', ''))[:150]})
             raise
+        user = User.objects.filter(pk=reponse.data.get('utilisateur', {}).get('id')).first()
+        if user is not None:
+            journaliser(request, 'compte.connexion', user, {'espace': str(request.data.get('espace', ''))[:20]}, acteur=user)
+        return reponse
 
 
 class DeconnexionView(APIView):
@@ -99,6 +103,11 @@ class ProfilView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_object(self):
         return self.request.user
+
+    def perform_update(self, serializer):
+        user = serializer.save()
+        champs = sorted(k for k in self.request.data if k not in ('password', 'mot_de_passe'))
+        journaliser(self.request, 'compte.modification_profil', user, {'champs': champs})
 
     @extend_schema(request=SuppressionCompteSerializer)
     def destroy(self, request, *args, **kwargs):

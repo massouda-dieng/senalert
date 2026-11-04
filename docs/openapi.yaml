@@ -974,6 +974,8 @@ paths:
   /api/audit/:
     get:
       operationId: audit_list
+      description: Journal d'audit en lecture seule, réservé au superadministrateur
+        (aucune modification ni suppression).
       parameters:
       - in: query
         name: acteur
@@ -1005,6 +1007,10 @@ paths:
         description: Un numéro de page de l'ensemble des résultats.
         schema:
           type: integer
+      - in: query
+        name: rubrique
+        schema:
+          type: string
       - name: taille
         required: false
         in: query
@@ -3586,6 +3592,11 @@ components:
           type: string
           readOnly: true
           nullable: true
+        type_urgence:
+          $ref: '#/components/schemas/AlerteSOSTypeUrgenceEnum'
+        type_urgence_libelle:
+          type: string
+          readOnly: true
         message:
           type: string
           maxLength: 280
@@ -3684,10 +3695,15 @@ components:
       - service_nom
       - statut_libelle
       - structure_nom
+      - type_urgence_libelle
       - uuid
     AlerteSOSCreationRequest:
       type: object
       properties:
+        type_urgence:
+          allOf:
+          - $ref: '#/components/schemas/AlerteSOSCreationTypeUrgenceEnum'
+          default: non_precise
         latitude:
           type: number
           format: double
@@ -3713,10 +3729,26 @@ components:
           type: string
           format: uuid
           nullable: true
+    AlerteSOSCreationTypeUrgenceEnum:
+      enum:
+      - medicale
+      - incendie
+      - accident
+      - agression
+      - non_precise
+      type: string
+      description: |-
+        * `medicale` - medicale
+        * `incendie` - incendie
+        * `accident` - accident
+        * `agression` - agression
+        * `non_precise` - non_precise
     AlerteSOSRequest:
       type: object
       description: Champs calculés communs aux incidents et SOS.
       properties:
+        type_urgence:
+          $ref: '#/components/schemas/AlerteSOSTypeUrgenceEnum'
         message:
           type: string
           maxLength: 280
@@ -3769,6 +3801,20 @@ components:
         motif_cloture:
           type: string
           maxLength: 255
+    AlerteSOSTypeUrgenceEnum:
+      enum:
+      - medicale
+      - incendie
+      - accident
+      - agression
+      - non_precise
+      type: string
+      description: |-
+        * `medicale` - Urgence médicale
+        * `incendie` - Incendie
+        * `accident` - Accident
+        * `agression` - Agression ou danger
+        * `non_precise` - Non précisée
     AlerteZone:
       type: object
       properties:
@@ -4701,6 +4747,8 @@ components:
       - password
     JournalAudit:
       type: object
+      description: 'Entrée lisible : qui (nom et rôle), quoi (action en clair), quand
+        et sur quel élément.'
       properties:
         id:
           type: integer
@@ -4715,24 +4763,46 @@ components:
         acteur_nom:
           type: string
           readOnly: true
+        acteur_role:
+          type: string
+          maxLength: 20
+        acteur_role_libelle:
+          type: string
+          readOnly: true
         action:
           type: string
           maxLength: 60
+        action_libelle:
+          type: string
+          readOnly: true
+        rubrique:
+          type: string
+          readOnly: true
         cible_type:
           type: string
           maxLength: 40
         cible_id:
           type: string
           maxLength: 60
+        cible_libelle:
+          type: string
+          maxLength: 150
+        element:
+          type: string
+          readOnly: true
         details: {}
         adresse_ip:
           type: string
           nullable: true
       required:
       - acteur_nom
+      - acteur_role_libelle
       - action
+      - action_libelle
       - date
+      - element
       - id
+      - rubrique
     ModificationUtilisateurRoleEnum:
       enum:
       - citoyen
@@ -5474,7 +5544,14 @@ components:
           type: integer
           nullable: true
           readOnly: true
+        dans_la_zone:
+          type: boolean
+          nullable: true
+          description: 'Recherche par position : la structure est-elle compétente
+            pour la région du lieu ?'
+          readOnly: true
       required:
+      - dans_la_zone
       - distance_m
       - id
       - latitude

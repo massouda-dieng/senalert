@@ -1,21 +1,29 @@
 """Choix des structures et des agents : structures les plus proches, agents disponibles, choix automatique (SOS)."""
 from django.db.models import Count, Q
 
-from .constants import REGIONS, ROLE_AGENT, STATUTS_ACTIFS
-from .geo import distance_m
+from .constants import REGIONS, ROLE_AGENT, STATUTS_ACTIFS, TYPES_URGENCE
+from .geo import distance_m, region_la_plus_proche
 from .models import Structure
+from .structures_osm import SERVICES_PAR_REGION
 
-# Un SOS ne précise pas la nature de l'urgence : il part vers la structure de secours la plus proche.
-SERVICES_SOS = ('pompiers', 'sante', 'police')
+# SOS sans type d'urgence précisé : structure de secours la plus proche, tous services confondus.
+SERVICES_SOS = TYPES_URGENCE['non_precise']['services']
 
 
-def structures_proches(lat, lng, services=None, limite=8):
-    """Structures actives triées par distance : liste de (structure, distance en mètres)."""
+def structures_proches(lat, lng, services=None, limite=8, region=None):
+    """Structures actives compétentes pour le lieu : liste de (structure, distance en mètres).
+
+    La proximité ne remplace pas la compétence territoriale : les structures de la région du lieu
+    passent d'abord (par distance), puis, seulement s'il en manque, celles des régions voisines.
+    Les services organisés en agences régionales (SENELEC, ONAS) ne sont proposés que dans la région.
+    """
+    region = region or region_la_plus_proche(lat, lng)
     qs = Structure.objects.filter(actif=True).select_related('service')
     if services:
         qs = qs.filter(service__code__in=services)
-    avec_distance = [(s, distance_m(lat, lng, s.latitude, s.longitude)) for s in qs]
-    avec_distance.sort(key=lambda x: x[1])
+    avec_distance = [(s, distance_m(lat, lng, s.latitude, s.longitude)) for s in qs
+                     if s.region == region or s.service.code not in SERVICES_PAR_REGION]
+    avec_distance.sort(key=lambda x: (x[0].region != region, x[1]))
     return avec_distance[:limite]
 
 
@@ -40,7 +48,7 @@ def choix_automatique(lat, lng, region, services):
         if not r:
             return None, None
         lat, lng = r['lat'], r['lng']
-    proches = structures_proches(lat, lng, services, limite=10)
+    proches = structures_proches(lat, lng, services, limite=10, region=region)
     for structure, _ in proches:
         agent = agents_disponibles(structure).first()
         if agent:

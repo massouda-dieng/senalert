@@ -63,7 +63,7 @@ class EvenementSerializer(serializers.ModelSerializer):
             return 'SenAlert'
         user = self.context['request'].user
         # Le citoyen voit le rôle de l'intervenant, pas son identité.
-        if user.role not in ('agent', 'superadmin') and obj.acteur_id != user.pk:
+        if user.role not in ('agent', 'superviseur', 'superadmin') and obj.acteur_id != user.pk:
             return obj.acteur.get_role_display()
         return obj.acteur.nom_affiche
 
@@ -218,6 +218,10 @@ class IncidentCreationSerializer(PositionMixin, serializers.ModelSerializer):
         if attrs['type_incident'] == 'autre' and len((attrs.get('description') or '').strip()) < 10:
             raise serializers.ValidationError({'description': 'Décrivez l’incident (10 caractères minimum).'})
         structure, agent = attrs.get('structure'), attrs.get('agent')
+        categorie = Categorie.objects.filter(code=attrs['type_incident']).first()
+        if structure is not None and categorie and categorie.service_defaut_id \
+                and structure.service_id != categorie.service_defaut_id:
+            raise serializers.ValidationError({'structure': "Cette structure n'est pas compétente pour ce type d'incident."})
         if agent is not None:
             if structure is None or agent.structure_id != structure.pk:
                 raise serializers.ValidationError({'agent': "Cet agent n'appartient pas à la structure choisie."})

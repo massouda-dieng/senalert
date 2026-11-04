@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/format.dart';
 import '../../core/location.dart';
 import '../../core/models.dart';
 import '../../state/configuration.dart';
@@ -16,8 +17,9 @@ import '../../state/langue.dart';
 
 enum _Etape { decompte, envoi, succes, echec }
 
-/// Parcours SOS : 5 s annulables, position jointe si disponible (jamais inventée),
-/// résultat affiché uniquement après confirmation du serveur.
+/// Parcours SOS : 5 s annulables, type d'urgence facultatif (un appui envoie aussitôt),
+/// position jointe si disponible (jamais inventée), résultat affiché uniquement après
+/// confirmation du serveur, avec ce qui a réellement été enregistré.
 class SosScreen extends StatefulWidget {
   const SosScreen({super.key});
   @override
@@ -34,6 +36,7 @@ class _SosScreenState extends State<SosScreen> {
   Position2? _position;
   bool _positionEnCours = true;
   Dossier? _dossier;
+  String _typeUrgence = 'non_precise';
   bool _dejaRecue = false;
   ApiException? _erreur;
 
@@ -59,9 +62,10 @@ class _SosScreenState extends State<SosScreen> {
 
   Future<void> _envoyer() async {
     _minuteur?.cancel();
-    if (_etape == _Etape.envoi) return;
+    // Un seul envoi à la fois ; la clé d'idempotence protège aussi contre un renvoi réseau.
+    if (_etape == _Etape.envoi || _etape == _Etape.succes) return;
     setState(() { _etape = _Etape.envoi; _erreur = null; });
-    final corps = <String, dynamic>{'client_request_id': _cle};
+    final corps = <String, dynamic>{'client_request_id': _cle, 'type_urgence': _typeUrgence};
     if (_position?.ok == true) {
       corps.addAll({'latitude': _position!.lat, 'longitude': _position!.lng, 'precision_gps': _position!.precision?.round()});
     }
@@ -122,7 +126,24 @@ class _SosScreenState extends State<SosScreen> {
               ]))),
               const SizedBox(height: 16),
               _infoPosition(),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
+              Text(tr('Quelle urgence ? (facultatif, envoie aussitôt)'), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
+              const SizedBox(height: 10),
+              GridView.count(
+                crossAxisCount: 2, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 10, crossAxisSpacing: 10, childAspectRatio: 2.6,
+                children: [
+                  for (final t in typesUrgence.entries)
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38),
+                          padding: const EdgeInsets.symmetric(horizontal: 10)),
+                      onPressed: () { _typeUrgence = t.key; _envoyer(); },
+                      icon: Icon(t.value.$2, size: 20),
+                      label: Text(tr(t.value.$1), maxLines: 2, textAlign: TextAlign.center, style: const TextStyle(fontSize: 13)),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 20),
               FilledButton(style: FilledButton.styleFrom(backgroundColor: AppColors.rougeFonce, minimumSize: const Size.fromHeight(60)),
                   onPressed: _envoyer, child: Text(tr('Envoyer maintenant'))),
               const SizedBox(height: 12),
@@ -142,10 +163,16 @@ class _SosScreenState extends State<SosScreen> {
               SelectableText(_dossier!.reference, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 20, fontFamily: 'monospace', fontWeight: FontWeight.w700)),
               const SizedBox(height: 18),
               Carte(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [Expanded(child: Text(tr('Statut actuel'))), BadgeStatut(_dossier!.statut)]),
-                const SizedBox(height: 10),
+                Row(children: [Expanded(child: Text(tr('Statut'), style: TextStyle(color: AppColors.textGrey, fontSize: 13))), BadgeStatut(_dossier!.statut)]),
+                LigneInfo('Urgence', _dossier!.typeUrgenceLibelle ?? 'Non précisée'),
+                LigneInfo('Envoyée le', dateHeure(_dossier!.creation)),
+                LigneInfo('Position', _dossier!.lat == null ? 'Non jointe'
+                    : '${_dossier!.lat!.toStringAsFixed(5)}, ${_dossier!.lng!.toStringAsFixed(5)}${_dossier!.precision != null ? ' (± ${_dossier!.precision!.round()} m)' : ''}'),
+                LigneInfo('Destinataire', _dossier!.structureNom ?? 'Supervision SenAlert'),
+                const SizedBox(height: 6),
                 Text(_dejaRecue ? 'Cette alerte avait déjà été reçue : voici son suivi.'
-                    : tr('Votre alerte est enregistrée et transmise aux agents SenAlert de votre zone.')),
+                    : _dossier!.statut == 'affecte' ? 'Un agent de cette structure a été prévenu.'
+                    : 'Le superviseur de cette structure a été prévenu.'),
                 const SizedBox(height: 8),
                 Text(tr('Tant qu’un agent ne l’a pas prise en charge, aucune intervention n’est garantie.'),
                     style: TextStyle(color: AppColors.textGrey, fontSize: 13)),
@@ -157,7 +184,10 @@ class _SosScreenState extends State<SosScreen> {
               const SizedBox(height: 8),
               NumerosUrgence(numeros, sombre: true),
               const SizedBox(height: 18),
-              FilledButton(onPressed: () => context.go('/dossier/sos/${_dossier!.id}'), child: Text(tr('Suivre le dossier'))),
+              FilledButton(onPressed: () => context.go('/dossier/sos/${_dossier!.id}'), child: Text(tr('Voir le détail de l’alerte'))),
+              const SizedBox(height: 8),
+              OutlinedButton(style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38)),
+                  onPressed: () => context.go('/dossiers?type=sos'), child: Text(tr('Historique de mes SOS'))),
             ],
             if (_etape == _Etape.echec) ...[
               const Icon(Icons.error_rounded, color: Jetons.surSombreRouge, size: 72),

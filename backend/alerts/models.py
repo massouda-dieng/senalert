@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
+from core.constants import TYPE_URGENCE_CHOICES
 from core.dossier import Dossier
 
 
@@ -12,6 +13,7 @@ class AlerteSOS(Dossier):
     citoyen = models.ForeignKey(
         'accounts.User', null=True, blank=True, on_delete=models.SET_NULL, related_name='alertes_sos',
     )
+    type_urgence = models.CharField(max_length=20, choices=TYPE_URGENCE_CHOICES, default='non_precise')
     message = models.CharField(max_length=280, blank=True)
     source_position = models.CharField(
         max_length=20, blank=True,

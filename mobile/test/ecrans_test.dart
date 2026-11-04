@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:senalert_mobile/features/auth/auth_screens.dart';
 import 'package:senalert_mobile/features/auth/bienvenue_screen.dart';
+import 'package:senalert_mobile/features/citoyen/report_screen.dart';
+import 'package:senalert_mobile/core/models.dart';
 import 'package:senalert_mobile/state/configuration.dart';
 import 'package:senalert_mobile/state/session.dart';
 import 'package:senalert_mobile/ui/kit.dart';
@@ -80,5 +83,41 @@ void main() {
   testWidgets('badge de statut lisible', (t) async {
     await t.pumpWidget(const MaterialApp(home: Scaffold(body: BadgeStatut('en_cours'))));
     expect(find.text('En cours'), findsOneWidget);
+  });
+
+  testWidgets('signalement : type, détails puis lieu ; sans localisation, recherche et carte restent possibles', (t) async {
+    SharedPreferences.setMockInitialValues({});
+    // Localisation refusée par l'utilisateur (canaux du module geolocator, générique et iOS/macOS).
+    for (final canal in ['flutter.baseflow.com/geolocator', 'flutter.baseflow.com/geolocator_apple']) {
+      t.binding.defaultBinaryMessenger.setMockMethodCallHandler(MethodChannel(canal), (appel) async => switch (appel.method) {
+            'isLocationServiceEnabled' => true,
+            'checkPermission' || 'requestPermission' => 0, // LocationPermission.denied
+            _ => null,
+          });
+    }
+    final config = Configuration()
+      ..categories = [Categorie.depuis({'code': 'incendie', 'libelle': 'Incendie', 'couleur': '#DC2626', 'service_defaut_nom': 'Sapeurs-pompiers'})];
+    await t.pumpWidget(MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => Session()), ChangeNotifierProvider.value(value: config)],
+      child: const MaterialApp(home: SignalerScreen()),
+    ));
+    await t.pump();
+    await t.tap(find.text('Incendie'));
+    await t.pump();
+    expect(find.text('Décrivez la situation'), findsOneWidget);
+    expect(find.text('Ajouter'), findsOneWidget, reason: 'photo facultative avec aperçu');
+    expect(find.textContaining('Date'), findsNothing, reason: 'la date et l’heure ne sont jamais demandées');
+    await t.tap(find.text('Continuer'));
+    await t.pump(const Duration(seconds: 1));
+    await t.pump(const Duration(seconds: 1));
+    expect(find.text('Où se passe l’incident ?'), findsOneWidget);
+    expect(find.textContaining('Rechercher une adresse'), findsOneWidget);
+    expect(find.text('Utiliser ma position actuelle'), findsOneWidget);
+    // Pas de GPS dans le test (comme une permission refusée) : message clair et repli proposé.
+    expect(find.textContaining('Autorisation de localisation refusée'), findsOneWidget);
+    expect(find.textContaining('Recherchez l’adresse ou déplacez la carte'), findsOneWidget);
+    expect(find.text('Région'), findsNothing, reason: 'la région est déduite de la position');
+    final confirmer = t.widget<FilledButton>(find.widgetWithText(FilledButton, 'Confirmer ce lieu'));
+    expect(confirmer.onPressed, isNull, reason: 'pas d’envoi sans lieu');
   });
 }

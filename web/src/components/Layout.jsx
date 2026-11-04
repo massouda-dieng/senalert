@@ -30,7 +30,6 @@ export const NAVIGATION = {
     { a: '/agent', libelle: 'Tableau de bord', icone: Gauge, fin: true },
     { a: '/agent/interventions', libelle: 'Interventions', icone: ClipboardList },
     { a: '/agent/carte', libelle: 'Carte opérationnelle', icone: Map },
-    { a: '/agent/secours', libelle: 'Premiers secours', icone: BookOpenCheck },
   ],
   // Superviseur d'une structure : uniquement les dossiers et les agents de sa structure.
   superviseur: [

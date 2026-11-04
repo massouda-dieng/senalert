@@ -161,38 +161,54 @@ export function Parametres() {
 
 /* ---------------------------------------------------------- Journal d'audit */
 
+const RUBRIQUES_AUDIT = [
+  { code: 'connexions', libelle: 'Connexions' }, { code: 'comptes', libelle: 'Comptes et permissions' },
+  { code: 'signalements', libelle: 'Signalements et SOS' }, { code: 'traitement', libelle: 'Traitement des dossiers' },
+  { code: 'configuration', libelle: 'Structures et configuration' }, { code: 'autres', libelle: 'Autres (exports, analyse…)' },
+];
+
+/** Détails utiles d'une entrée, en clair (jamais de mot de passe ni de jeton : le serveur ne les enregistre pas). */
+function resumeDetails(d = {}) {
+  const libelles = { reference: 'Réf.', structure: 'Structure', statut: 'Statut', motif: 'Motif', categorie: 'Catégorie', type_urgence: 'Urgence',
+    photos: 'Photos', espace: 'Espace', champs: 'Champs', gravite: 'Gravité', disponible: 'Disponible', identifiant: 'Identifiant' };
+  return Object.entries(d).filter(([, v]) => v !== null && v !== '' && !(Array.isArray(v) && !v.length))
+    .map(([k, v]) => `${libelles[k] || k} : ${Array.isArray(v) ? v.join(', ') : typeof v === 'object' ? JSON.stringify(v) : v}`).join(' · ');
+}
+
 export function Audit() {
-  const [filtres, setFiltres] = useState({ action: '', date_debut: '', date_fin: '', page: 1 });
+  const [filtres, setFiltres] = useState({ rubrique: '', date_debut: '', date_fin: '', page: 1 });
   const { donnees, chargement, erreur, recharger } = useRessource('/audit/', filtres);
   const maj = (k) => (v) => setFiltres((f) => ({ ...f, [k]: v, page: 1 }));
   return (
     <>
-      <EnTetePage titre="Journal d’audit" sousTitre="Opérations sensibles : connexions, comptes, affectations, configuration, exports. Lecture seule." />
+      <EnTetePage titre="Journal d’audit" sousTitre="Qui a fait quoi, quand, et sur quel élément. Lecture seule : aucune entrée ne peut être modifiée ni supprimée." />
       <div className="carte mb-4 flex flex-wrap items-end gap-3 p-3">
-        <Selecteur aria-label="Action" className="w-auto" valeur={filtres.action} onChange={maj('action')} vide="Toutes actions"
-          options={[{ code: 'compte.', libelle: 'Comptes' }, { code: 'admin.', libelle: 'Administration' }, { code: 'dossier.', libelle: 'Dossiers' }, { code: 'config.', libelle: 'Configuration' }, { code: 'export.', libelle: 'Exports' }, { code: 'analyse.', libelle: 'Analyse' }]} />
+        <Selecteur aria-label="Rubrique" className="w-auto" valeur={filtres.rubrique} onChange={maj('rubrique')} vide="Toutes les rubriques" options={RUBRIQUES_AUDIT} />
         <label className="text-xs text-texte-doux">Du<input type="date" className="champ mt-1 py-2" value={filtres.date_debut} onChange={(e) => maj('date_debut')(e.target.value)} /></label>
         <label className="text-xs text-texte-doux">Au<input type="date" className="champ mt-1 py-2" value={filtres.date_fin} onChange={(e) => maj('date_fin')(e.target.value)} /></label>
+        {donnees && <span className="ml-auto text-xs text-texte-doux">{donnees.count} entrée(s)</span>}
       </div>
       <EtatErreur erreur={erreur} onReessayer={recharger} />
       <div className="carte overflow-x-auto">
         {chargement && !donnees ? <Chargement /> : (
-          <table className="w-full min-w-[720px] text-sm">
-            <thead className="bg-surface-douce text-left text-xs uppercase text-texte-doux"><tr><th className="px-4 py-2.5">Date</th><th className="px-4 py-2.5">Acteur</th><th className="px-4 py-2.5">Action</th><th className="px-4 py-2.5">Cible</th><th className="px-4 py-2.5">Détails</th><th className="px-4 py-2.5">IP</th></tr></thead>
+          <table className="w-full min-w-[760px] text-sm">
+            <thead className="bg-surface-douce text-left text-xs uppercase text-texte-doux"><tr><th className="px-4 py-2.5">Date et heure</th><th className="px-4 py-2.5">Utilisateur</th><th className="px-4 py-2.5">Action</th><th className="px-4 py-2.5">Élément concerné</th></tr></thead>
             <tbody className="divide-y divide-surface-bord">
-              {donnees?.results.map((e) => (
-                <tr key={e.id}>
-                  <td className="whitespace-nowrap px-4 py-2.5 text-texte-doux">{dateHeure(e.date)}</td>
-                  <td className="px-4 py-2.5">{e.acteur_nom || 'Système'}</td>
-                  <td className="px-4 py-2.5 font-mono text-xs">{e.action}</td>
-                  <td className="px-4 py-2.5 text-texte-doux">{e.cible_type} {e.cible_id}</td>
-                  <td className="max-w-xs truncate px-4 py-2.5 font-mono text-xs text-texte-doux" title={JSON.stringify(e.details)}>{Object.keys(e.details || {}).length ? JSON.stringify(e.details) : '—'}</td>
-                  <td className="px-4 py-2.5 text-texte-pale">{e.adresse_ip || '—'}</td>
-                </tr>
-              ))}
+              {donnees?.results.map((e) => {
+                const details = resumeDetails(e.details);
+                return (
+                  <tr key={e.id} className="align-top">
+                    <td className="whitespace-nowrap px-4 py-2.5 text-texte-doux">{dateHeure(e.date)}</td>
+                    <td className="px-4 py-2.5"><p className="font-semibold">{e.acteur_nom}</p><p className="text-xs text-texte-doux">{e.acteur_role_libelle}</p></td>
+                    <td className="px-4 py-2.5"><p className="font-semibold">{e.action_libelle}</p>{details && <p className="max-w-sm truncate text-xs text-texte-doux" title={details}>{details}</p>}</td>
+                    <td className="px-4 py-2.5 text-texte-doux">{e.element}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
+        {donnees && !donnees.results.length && <p className="p-6 text-center text-sm text-texte-doux">Aucune entrée pour ces filtres.</p>}
         {donnees && <div className="border-t border-surface-bord px-3"><Pagination page={filtres.page} total={donnees.count} onPage={(p) => setFiltres((f) => ({ ...f, page: p }))} /></div>}
       </div>
     </>

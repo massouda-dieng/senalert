@@ -45,6 +45,14 @@ const iconesCategories = <String, IconData>{
   'autre': Icons.more_horiz_rounded,
 };
 
+/// Types d'urgence d'un SOS (mêmes codes que le serveur) : le service de secours sollicité en dépend.
+const typesUrgence = <String, (String, IconData)>{
+  'medicale': ('Urgence médicale', Icons.medical_services_rounded),
+  'incendie': ('Incendie', Icons.local_fire_department_rounded),
+  'accident': ('Accident', Icons.car_crash_rounded),
+  'agression': ('Agression ou danger', Icons.front_hand_rounded),
+};
+
 Color couleurHex(String? hex, [Color defaut = Jetons.gris]) {
   if (hex == null || !hex.startsWith('#') || hex.length != 7) return defaut;
   return Color(int.parse('FF${hex.substring(1)}', radix: 16));
@@ -53,8 +61,12 @@ Color couleurHex(String? hex, [Color defaut = Jetons.gris]) {
 final _dateHeure = DateFormat('d MMM yyyy à HH:mm', 'fr_FR');
 final _date = DateFormat('d MMM yyyy', 'fr_FR');
 
-String dateHeure(DateTime? d) => d == null ? '—' : _dateHeure.format(d.toLocal());
-String dateCourte(DateTime? d) => d == null ? '—' : _date.format(d.toLocal());
+/// Heure de Dakar (Africa/Dakar = UTC+0 toute l'année, sans heure d'été) quel que soit le fuseau du téléphone :
+/// les dates du serveur s'affichent pareil pour le citoyen, l'agent et la supervision.
+DateTime heureDakar(DateTime d) => d.toUtc();
+
+String dateHeure(DateTime? d) => d == null ? '—' : _dateHeure.format(heureDakar(d));
+String dateCourte(DateTime? d) => d == null ? '—' : _date.format(heureDakar(d));
 
 String ilYa(DateTime? d) {
   if (d == null) return '—';

@@ -63,6 +63,11 @@ class ActionsDossierMixin:
         dossier = self.get_queryset().model.objects.get(pk=dossier.pk)
         return Response(self.get_serializer(dossier).data)
 
+    def _tracer(self, request, action, dossier, **details):
+        """Journal d'audit des étapes du traitement, puis réponse avec le dossier à jour."""
+        journaliser(request, action, dossier, {'statut': dossier.statut, **details})
+        return self._repondre(dossier)
+
     def _exiger(self, condition, message):
         if not condition:
             raise PermissionDenied(message)
@@ -89,23 +94,25 @@ class ActionsDossierMixin:
     @action(detail=True, methods=['post'], url_path='prendre-en-charge')
     def prendre_en_charge(self, request, pk=None):
         self._exiger(est_agent(request.user), 'Action réservée aux agents.')
-        return self._repondre(workflow.prendre_en_charge(self.get_object(), request.user))
+        return self._tracer(request, 'dossier.prise_en_charge', workflow.prendre_en_charge(self.get_object(), request.user))
 
     @action(detail=True, methods=['post'])
     def accepter(self, request, pk=None):
         self._exiger(est_agent(request.user), 'Action réservée aux agents.')
-        return self._repondre(workflow.accepter(self.get_object(), request.user))
+        return self._tracer(request, 'dossier.acceptation', workflow.accepter(self.get_object(), request.user))
 
     @extend_schema(request=MotifSerializer)
     @action(detail=True, methods=['post'])
     def decliner(self, request, pk=None):
         self._exiger(est_agent(request.user), 'Action réservée aux agents.')
-        return self._repondre(workflow.decliner(self.get_object(), request.user, lire_motif(request.data)))
+        motif = lire_motif(request.data)
+        return self._tracer(request, 'dossier.refus_affectation', workflow.decliner(self.get_object(), request.user, motif),
+                            motif=motif)
 
     @action(detail=True, methods=['post'])
     def demarrer(self, request, pk=None):
         self._exiger(est_agent(request.user), 'Action réservée aux agents.')
-        return self._repondre(workflow.demarrer(self.get_object(), request.user))
+        return self._tracer(request, 'dossier.demarrage', workflow.demarrer(self.get_object(), request.user))
 
     @extend_schema(request=ClotureSerializer)
     @action(detail=True, methods=['post'])
@@ -113,7 +120,7 @@ class ActionsDossierMixin:
         self._exiger(est_agent(request.user), 'Action réservée aux agents.')
         s = ClotureSerializer(data=request.data)
         s.is_valid(raise_exception=True)
-        return self._repondre(workflow.resoudre(self.get_object(), request.user, **s.validated_data))
+        return self._tracer(request, 'dossier.cloture', workflow.resoudre(self.get_object(), request.user, **s.validated_data))
 
     @extend_schema(request=MotifSerializer)
     @action(detail=True, methods=['post'])
@@ -139,7 +146,8 @@ class ActionsDossierMixin:
                      'Seuls la supervision et l’agent affecté modifient la gravité.')
         s = GraviteSerializer(data=request.data)
         s.is_valid(raise_exception=True)
-        return self._repondre(workflow.changer_gravite(dossier, request.user, s.validated_data['gravite']))
+        return self._tracer(request, 'dossier.gravite', workflow.changer_gravite(dossier, request.user, s.validated_data['gravite']),
+                            gravite=s.validated_data['gravite'])
 
     @extend_schema(request=NoteSerializer)
     @action(detail=True, methods=['post'])

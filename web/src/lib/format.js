@@ -30,8 +30,9 @@ export const NIVEAUX_RISQUE = {
   faible: { libelle: 'Faible', couleur: COULEURS.succes },
 };
 
-const dtf = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'short' });
-const df = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium' });
+// Heure de Dakar pour tout le monde, quel que soit le fuseau de l'ordinateur ou du téléphone.
+const dtf = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Dakar' });
+const df = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeZone: 'Africa/Dakar' });
 const rtf = new Intl.RelativeTimeFormat('fr', { numeric: 'auto' });
 
 export const dateHeure = (v) => (v ? dtf.format(new Date(v)) : '—');
