@@ -6,7 +6,6 @@ import 'core/constants/app_colors.dart';
 import 'features/agent/agent_home_screen.dart';
 import 'features/auth/auth_screens.dart';
 import 'features/auth/bienvenue_screen.dart';
-import 'features/auth/onboarding_screen.dart';
 import 'features/citoyen/assistant_screen.dart';
 import 'features/citoyen/carte_screen.dart';
 import 'features/citoyen/home_screen.dart';
@@ -22,7 +21,7 @@ import 'state/session.dart';
 import 'ui/kit.dart';
 import 'state/langue.dart';
 
-const _publiques = {'/bienvenue', '/connexion', '/inscription', '/compte-agent', '/compte-superviseur', '/mot-de-passe-oublie', '/secours', '/onboarding'};
+const _publiques = {'/bienvenue', '/connexion', '/inscription', '/compte-agent', '/compte-superviseur', '/mot-de-passe-oublie', '/secours'};
 const _citoyen = {'/accueil', '/signaler', '/sos', '/services', '/assistant', '/carte', '/dossiers', '/communaute'};
 const _agent = {'/agent', '/interventions', '/carte-agent'};
 
@@ -44,7 +43,6 @@ GoRouter creerRouteur(Session session) => GoRouter(
       },
       routes: [
         GoRoute(path: '/', builder: (_, __) => const _Demarrage()),
-        GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
         GoRoute(path: '/bienvenue', builder: (_, __) => const BienvenueScreen()),
         GoRoute(path: '/connexion', builder: (_, __) => const ConnexionScreen()),
         GoRoute(path: '/inscription', builder: (_, __) => const InscriptionScreen()),
@@ -103,7 +101,7 @@ class _Coquille extends StatelessWidget {
 }
 
 /// Écran de démarrage : logo et slogan apparaissent en douceur pendant l'ouverture de la session.
-/// À la première ouverture, redirige vers l'onboarding.
+/// Sans session, l'accueil présente l'application (présentation en trois pages à la première ouverture).
 class _Demarrage extends StatefulWidget {
   const _Demarrage();
   @override
@@ -131,10 +129,7 @@ class _DemarrageState extends State<_Demarrage> {
       context.go(accueilPour(u.role));
       return;
     }
-    // Sinon, onboarding à la première ouverture
-    final aVoir = await onboardingAVoir();
-    if (!mounted) return;
-    context.go(aVoir ? '/onboarding' : '/bienvenue');
+    context.go('/bienvenue');
   }
 
   @override

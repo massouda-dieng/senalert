@@ -14,7 +14,7 @@ import { nombre } from '../lib/format';
 import { useInstallation } from '../lib/installation';
 
 const FONCTIONS = [
-  { icone: Siren, titre: 'SOS en un geste', texte: 'Votre position GPS et sa précision partent vers les agents de votre zone. 5 secondes pour annuler.', urgence: true },
+  { icone: Siren, titre: 'SOS en un geste', texte: 'Votre position GPS part vers l’agent disponible de la structure de secours la plus proche. 5 secondes pour annuler.', urgence: true },
   { icone: ShieldAlert, titre: 'Signalement guidé', texte: 'Accident, incendie, inondation : en quatre étapes, avec photos et position sur la carte.' },
   { icone: BellRing, titre: 'Suivi en direct', texte: 'Chaque étape est notifiée, et vous voyez l’agent approcher jusqu’au compte rendu.' },
   { icone: Map, titre: 'Carte interactive', texte: 'Incidents récents, carte de chaleur, zones à risque et alertes officielles.' },
@@ -32,12 +32,12 @@ const CONSTATS = [
 
 const ETAPES = [
   { photo: 'rue-inondee', titre: 'Vous signalez', texte: 'Un citoyen constate une rue inondée et envoie un signalement géolocalisé avec photo.' },
-  { photo: 'pompiers-bnsp', titre: 'Les secours sont mobilisés', texte: 'Le dossier arrive au service compétent de la zone ; un agent l’accepte et part sur place.' },
+  { photo: 'pompiers-bnsp', titre: 'Les secours sont mobilisés', texte: 'Le citoyen choisit la structure la plus proche et un agent disponible ; l’agent accepte et part sur place.' },
   { photo: 'croix-rouge-agent', titre: 'Vous êtes informé', texte: 'Chaque étape vous est notifiée, jusqu’au compte rendu de l’intervention.' },
 ];
 
 const PARCOURS = [
-  { titre: 'Alerte reçue', texte: 'Le dossier arrive au service de votre zone.' },
+  { titre: 'Alerte reçue', texte: 'Le dossier arrive à la structure la plus proche et à l’agent choisi.' },
   { titre: 'Pris en charge', texte: 'Un agent accepte l’intervention.' },
   { titre: 'Secours en route', texte: 'Vous voyez l’agent approcher sur la carte.' },
   { titre: 'Résolu', texte: 'Compte rendu, puis votre évaluation.' },
@@ -45,8 +45,8 @@ const PARCOURS = [
 
 const ESPACES = [
   { icone: UserRound, titre: 'Citoyens', texte: 'Déclencher un SOS, signaler, suivre ses dossiers et recevoir les alertes de sa région.' },
-  { icone: ShieldCheck, titre: 'Agents de secours', texte: 'Recevoir les missions de sa zone, accepter, intervenir, clôturer avec un compte rendu.' },
-  { icone: Gauge, titre: 'Superviseurs', texte: 'Affecter les dossiers, suivre les délais, lire la carte nationale et exporter des rapports.' },
+  { icone: ShieldCheck, titre: 'Agents de secours', texte: 'Recevoir les missions transmises, se déclarer disponible, intervenir, clôturer avec un compte rendu.' },
+  { icone: Gauge, titre: 'Superviseurs', texte: 'Chaque structure a son superviseur : il crée ses agents, affecte ses dossiers et suit ses délais.' },
 ];
 
 /** Compteur animé jusqu'à la valeur réelle (désactivé si l'utilisateur réduit les animations). */
@@ -178,7 +178,7 @@ export default function Vitrine() {
             </p>
             <h1 className="mt-6 font-titre text-[2.6rem] font-extrabold leading-[1.06] sm:text-6xl">Ensemble, protégeons des vies</h1>
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-white/85">
-              SenAlert relie les citoyens, les agents de secours et les superviseurs sur un même canal. Votre alerte part vers le bon service, dans votre région, et vous suivez chaque étape.
+              SenAlert relie les citoyens, les agents de secours et les superviseurs sur un même canal. Votre alerte part vers la structure la plus proche, et vous suivez chaque étape.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link to={espace || '/inscription'} className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 font-bold text-marque-800 shadow-lg transition hover:bg-marque-50">
@@ -283,7 +283,7 @@ export default function Vitrine() {
             <p className="text-sm font-bold uppercase tracking-widest text-marque-100">Trois espaces</p>
             <h2 className="mt-2 font-titre text-3xl font-extrabold sm:text-4xl">Pensé pour ceux qui alertent et ceux qui interviennent</h2>
             <ul className="mt-6 space-y-2.5">
-              {['Orientation vers le bon service et la bonne zone', 'Délais de prise en charge mesurés', 'Score de risque descriptif par région', 'Données personnelles protégées (loi n° 2008-12)'].map((t) => (
+              {['Orientation vers la structure la plus proche', 'Délais de prise en charge mesurés', 'Score de risque descriptif par région', 'Données personnelles protégées (loi n° 2008-12)'].map((t) => (
                 <li key={t} className="flex items-center gap-2.5 text-white/90"><CheckCircle2 className="h-5 w-5 shrink-0 text-succes-vif" />{t}</li>
               ))}
             </ul>
