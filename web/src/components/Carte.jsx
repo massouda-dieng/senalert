@@ -10,12 +10,40 @@ export const CENTRE_SENEGAL = [14.45, -14.9];
 /** Cadre de la carte nationale : le Sénégal et ses frontières, jamais le planisphère répété. */
 export const BORNES_SENEGAL = [[9, -22], [20, -7]];
 
-/** Icône ronde colorée (pas d'image externe). `sos` ajoute un halo rouge. */
-export function icone(couleur, { sos = false, taille = 16 } = {}) {
+// Pictogrammes des épingles (tracés Lucide, licence ISC), par catégorie d'incident, service ou type de point.
+const FLAMME = '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>';
+const CROIX = '<path d="M11 2a2 2 0 0 0-2 2v5H4a2 2 0 0 0-2 2v2c0 1.1.9 2 2 2h5v5c0 1.1.9 2 2 2h2a2 2 0 0 0 2-2v-5h5a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-5V4a2 2 0 0 0-2-2h-2z"/>';
+const BOUCLIER = '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>';
+const ECLAIR = '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>';
+const GOUTTE = '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>';
+const PICTOS = {
+  incendie: FLAMME, pompiers: FLAMME,
+  accident: '<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/>',
+  inondation: GOUTTE, onas: GOUTTE,
+  insecurite: `${BOUCLIER}<path d="M12 8v4"/><path d="M12 16h.01"/>`, police: BOUCLIER,
+  agression: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  electricite: ECLAIR, senelec: ECLAIR,
+  urgence_medicale: CROIX, sante: CROIX, hopital: CROIX, clinique: CROIX, pharmacie: CROIX,
+  sos: '<circle cx="12" cy="12" r="9"/><path d="M12 7v6"/><path d="M12 17h.01"/>',
+  structure: '<rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/>',
+};
+
+/**
+ * Épingle colorée avec le pictogramme du type (catégorie d'incident, service, « sos »…), sans image externe.
+ * La pointe de l'épingle marque le lieu exact.
+ */
+export function icone(couleur, { sos = false, taille = 16, type } = {}) {
+  const l = Math.round(22 + taille * 0.7 + (sos ? 4 : 0));
+  const h = Math.round(l * 1.3);
+  const picto = PICTOS[sos ? 'sos' : type] || '<circle cx="12" cy="12" r="3.5" fill="#fff"/>';
   return L.divIcon({
     className: '',
-    iconSize: [taille, taille],
-    html: `<span style="display:block;width:${taille}px;height:${taille}px;border-radius:999px;background:${couleur};border:2.5px solid #fff;box-shadow:0 0 0 ${sos ? 6 : 1}px ${sos ? 'rgba(230,57,70,.28)' : 'rgba(7,19,48,.25)'},0 2px 6px rgba(7,19,48,.35)"></span>`,
+    iconSize: [l, h],
+    iconAnchor: [l / 2, h],
+    popupAnchor: [0, -h + 6],
+    html: `<svg width="${l}" height="${h}" viewBox="0 0 36 47" style="filter:drop-shadow(0 2px 3px rgba(7,19,48,.35))">`
+      + `<path d="M18 1C8.6 1 1 8.6 1 18c0 12.4 17 28 17 28s17-15.6 17-28C35 8.6 27.4 1 18 1z" fill="${couleur}" stroke="#fff" stroke-width="2"/>`
+      + `<g transform="translate(8 8) scale(.84)" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">${picto}</g></svg>`,
   });
 }
 
@@ -54,7 +82,7 @@ function CoucheMarqueurs({ points, regrouper }) {
   useEffect(() => {
     const groupe = regrouper ? L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 45 }) : L.layerGroup();
     points.forEach((p) => {
-      const m = L.marker([p.lat, p.lng], { icon: p.agent ? ICONE_AGENT : icone(p.couleur, { sos: p.sos }), keyboard: true, title: p.titre || '', zIndexOffset: p.agent ? 500 : 0 });
+      const m = L.marker([p.lat, p.lng], { icon: p.agent ? ICONE_AGENT : p.moi ? ICONE_MOI : icone(p.couleur, { sos: p.sos, type: p.type, taille: p.taille }), keyboard: true, title: p.titre || '', zIndexOffset: p.agent ? 500 : 0 });
       if (p.popup) m.bindPopup(p.popup);
       if (p.onClick) m.on('click', () => p.onClick());
       groupe.addLayer(m);

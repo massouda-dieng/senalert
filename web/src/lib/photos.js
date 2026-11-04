@@ -6,3 +6,9 @@ export const PHOTOS = Object.fromEntries(credits.map((c) => [c.fichier.replace('
 export const CREDITS = credits;
 
 export const creditCourt = (p) => `Photo : ${p.auteur} — ${p.licence}`;
+
+/** Photo d'exemple de chaque type d'incident (illustration seulement, jamais un incident réel). */
+export const PHOTO_CATEGORIE = {
+  accident: 'accident-route', incendie: 'incendie-fumee', inondation: 'rue-inondee', insecurite: 'camera-surveillance',
+  agression: 'police-vehicule', electricite: 'senelec-agence', urgence_medicale: 'ambulance-pompiers', autre: 'dakar-vue',
+};

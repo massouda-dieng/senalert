@@ -13,7 +13,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from core.constants import RESOLU, ROLE_AGENT, STATUTS_ACTIFS
 from core.models import Categorie, Parametre
 from core.audit import journaliser
-from core.structures import structures_proches
+from core.structures import choix_automatique
 from core.params import entier
 from core.permissions import est_citoyen, est_superadmin
 
@@ -87,10 +87,10 @@ class IncidentViewSet(ActionsDossierMixin, mixins.ListModelMixin, mixins.Retriev
         agent = donnees.pop('agent', None)
         structure = donnees.pop('structure', None)
         if structure is None and categorie.service_defaut_id:
-            # Pas de choix du citoyen : structure compétente la plus proche ; son superviseur affectera.
-            proches = structures_proches(donnees['latitude'], donnees['longitude'], [categorie.service_defaut.code], 1,
-                                         region=donnees.get('region'))
-            structure = proches[0][0] if proches else None
+            # Orientation automatique (le citoyen ne choisit rien) : structure compétente la plus proche ayant un
+            # agent disponible, et cet agent ; sans agent disponible, la plus proche, et le superviseur affecte.
+            structure, agent = choix_automatique(donnees['latitude'], donnees['longitude'], donnees.get('region'),
+                                                 [categorie.service_defaut.code])
         service = structure.service if structure else categorie.service_defaut
         try:
             with transaction.atomic():

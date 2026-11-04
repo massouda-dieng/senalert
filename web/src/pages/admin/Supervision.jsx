@@ -10,7 +10,7 @@ import { telecharger } from '../../api/client';
 import { useRessource } from '../../api/hooks';
 import { useAuth } from '../../auth/AuthContext';
 import CarteAvancee from '../../components/CarteAvancee';
-import { Bandeau, Bouton, Carte, Chargement, EtatErreur, IndicateurSynchro, Indicateur, Selecteur, useToast } from '../../components/ui';
+import { Bandeau, Bouton, Carte, Chargement, EtatErreur, IndicateurSynchro, Indicateur, Onglets, Selecteur, useToast } from '../../components/ui';
 import { useConfig } from '../../lib/config';
 import { COULEURS } from '../../lib/couleurs';
 import { GRAVITES, ORDRE_GRAVITE, date, duree, ilYa, isoJour, nombre, pct } from '../../lib/format';
@@ -98,6 +98,7 @@ export default function Supervision() {
   // Le superviseur d'une structure ne voit que sa structure (le serveur filtre déjà toutes les données).
   const national = utilisateur.role === 'superadmin';
   const toast = useToast();
+  const [vue, setVue] = useState('direct');
   const [periode, setPeriode] = useState('30');
   const [region, setRegion] = useState('');
   const [categorie, setCategorie] = useState('');
@@ -163,37 +164,24 @@ export default function Supervision() {
             <div className="rounded-lg bg-surface text-texte"><IndicateurSynchro date={derniereSynchro} chargement={chargement} onRafraichir={recharger} /></div>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-2 text-texte md:flex md:flex-wrap md:items-center">
-          <Selecteur aria-label="Période" className="md:w-auto" vide={null} valeur={periode} onChange={setPeriode}
-            options={[{ code: '7', libelle: '7 derniers jours' }, { code: '30', libelle: '30 derniers jours' }, { code: '90', libelle: '90 derniers jours' }, { code: '365', libelle: '12 derniers mois' }]} />
-          <Selecteur aria-label="Région" className="md:w-auto" valeur={region} onChange={setRegion} vide="Toutes régions" options={config.regions} />
-          <Selecteur aria-label="Catégorie" className="md:w-auto" valeur={categorie} onChange={setCategorie} vide="Toutes catégories" options={config.categories} />
-          <Selecteur aria-label="Granularité" className="md:w-auto" vide={null} valeur={granularite} onChange={setGranularite}
-            options={[{ code: 'jour', libelle: 'Par jour' }, { code: 'semaine', libelle: 'Par semaine' }, { code: 'mois', libelle: 'Par mois' }]} />
-          <span className="col-span-2 text-xs text-white/75 md:ml-auto">{s && `Du ${date(s.periode.debut)} au ${date(s.periode.fin)}, comparé au ${date(c.periode.debut)} – ${date(c.periode.fin)}`}</span>
-        </div>
       </div>
 
       <EtatErreur erreur={erreur} onReessayer={recharger} />
       {s?.donnees_demo && <Bandeau type="alerte" className="mb-5" titre="Données de démonstration présentes">Des dossiers étiquetés « [DÉMO] » sont inclus dans ces indicateurs. Ils ne correspondent à aucun événement réel.</Bandeau>}
       {!s && chargement ? <Chargement /> : s && (
         <>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
-            <Indicateur libelle="Signalements" valeur={nombre(r.total_signalements)} icone={ClipboardList} aide={def.total_signalements} tendance={<Tendance actuel={r.total_signalements} precedent={c.total_signalements} />} />
-            <Indicateur libelle="Alertes SOS" valeur={nombre(r.total_sos)} icone={Siren} ton="sos" aide={def.total_sos} tendance={<Tendance actuel={r.total_sos} precedent={c.total_sos} />} />
-            <Indicateur libelle="En attente" valeur={nombre(r.a_traiter)} icone={Hourglass} ton="alerte" aide={def.a_traiter} sous={`${nombre(r.en_retard)} en retard`} />
+          <div className="mb-5"><Onglets actif={vue} onChange={setVue} onglets={[{ code: 'direct', libelle: 'Aujourd’hui' }, { code: 'stats', libelle: 'Statistiques' }]} /></div>
+          {vue === 'direct' && (<>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <Indicateur libelle="Alertes SOS" valeur={nombre(r.total_sos)} icone={Siren} ton="sos" aide={def.total_sos} sous={`sur ${periode} jours`} />
+            <Indicateur libelle="En attente d’un agent" valeur={nombre(r.a_traiter)} icone={Hourglass} ton="alerte" aide={def.a_traiter} sous={`${nombre(r.en_retard)} en retard`} />
             <Indicateur libelle="En cours" valeur={nombre(r.en_cours)} icone={Timer} aide={def.en_cours} sous={`${nombre(r.agents_en_intervention)} agents mobilisés`} />
             <Indicateur libelle="Terminées" valeur={nombre(r.resolus)} icone={CheckCircle2} ton="succes" aide={def.resolus} sous={`Taux : ${pct(r.taux_resolution)}`} />
-            <Indicateur libelle="Agents actifs" valeur={nombre(r.agents)} icone={ShieldCheck} ton="neutre" aide={def.agents} sous={`${nombre(r.citoyens)} citoyens`} />
-            <Indicateur libelle="Prise en charge" valeur={duree(r.delai_moyen_prise_en_charge_min)} icone={Clock} ton="neutre" aide={def.delai_moyen_prise_en_charge_min}
-              tendance={<Tendance actuel={r.delai_moyen_prise_en_charge_min} precedent={c.delai_moyen_prise_en_charge_min} unite=" min" inverse />} />
           </div>
-
-          <NiveauxUrgence repartition={s.par_gravite} sos={r.total_sos} />
 
           <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
             <section aria-label="Carte nationale" className="min-w-0">
-              <CarteAvancee role="superadmin" hauteur="600px" panneauOuvert={false} />
+              <CarteAvancee role="superadmin" hauteur="460px" panneauOuvert={false} />
             </section>
             <div className="min-w-0 space-y-5">
               <Carte titre="À traiter maintenant" action={<Link to="/supervision/incidents" className="lien text-sm">Tout voir</Link>} corpsClassName="p-0">
@@ -219,8 +207,8 @@ export default function Supervision() {
                   <ul className="divide-y divide-surface-bord">
                     {activite.donnees.results.slice(0, 5).map((e) => (
                       <li key={e.id} className="px-5 py-2.5">
-                        <p className="truncate font-mono text-xs font-semibold text-marque-700">{e.action}</p>
-                        <p className="truncate text-xs text-texte-doux">{e.acteur_nom || 'Système'} · {ilYa(e.date)}</p>
+                        <p className="truncate text-sm font-semibold">{e.action_libelle}</p>
+                        <p className="truncate text-xs text-texte-doux">{e.acteur_nom} · {e.element !== '—' ? `${e.element} · ` : ''}{ilYa(e.date)}</p>
                       </li>
                     ))}
                   </ul>
@@ -229,6 +217,41 @@ export default function Supervision() {
             </div>
           </div>
 
+          <section className="mt-5" aria-label="Administration">
+            <h2 className="mb-3 text-[15px] font-bold">Administration</h2>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+              {ADMINISTRATION.filter((a) => national || !a.national).map((a) => (
+                <Link key={a.a} to={a.a} className="carte group flex items-center gap-3 p-4 transition hover:-translate-y-0.5">
+                  <a.icone className="h-5 w-5 shrink-0 text-marque-600" aria-hidden />
+                  <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{a.titre}</p><p className="truncate text-xs text-texte-doux">{comptesAdmin[a.cle]}</p></div>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-texte-pale transition group-hover:translate-x-0.5" aria-hidden />
+                </Link>
+              ))}
+            </div>
+          </section>
+          </>)}
+          {vue === 'stats' && (<>
+        <div className="carte mb-5 grid grid-cols-2 gap-2 p-3 md:flex md:flex-wrap md:items-center">
+          <Selecteur aria-label="Période" className="md:w-auto" vide={null} valeur={periode} onChange={setPeriode}
+            options={[{ code: '7', libelle: '7 derniers jours' }, { code: '30', libelle: '30 derniers jours' }, { code: '90', libelle: '90 derniers jours' }, { code: '365', libelle: '12 derniers mois' }]} />
+          <Selecteur aria-label="Région" className="md:w-auto" valeur={region} onChange={setRegion} vide="Toutes régions" options={config.regions} />
+          <Selecteur aria-label="Catégorie" className="md:w-auto" valeur={categorie} onChange={setCategorie} vide="Toutes catégories" options={config.categories} />
+          <Selecteur aria-label="Granularité" className="md:w-auto" vide={null} valeur={granularite} onChange={setGranularite}
+            options={[{ code: 'jour', libelle: 'Par jour' }, { code: 'semaine', libelle: 'Par semaine' }, { code: 'mois', libelle: 'Par mois' }]} />
+          <span className="col-span-2 text-xs text-texte-doux md:ml-auto">{s && `Du ${date(s.periode.debut)} au ${date(s.periode.fin)}, comparé au ${date(c.periode.debut)} – ${date(c.periode.fin)}`}</span>
+        </div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
+            <Indicateur libelle="Signalements" valeur={nombre(r.total_signalements)} icone={ClipboardList} aide={def.total_signalements} tendance={<Tendance actuel={r.total_signalements} precedent={c.total_signalements} />} />
+            <Indicateur libelle="Alertes SOS" valeur={nombre(r.total_sos)} icone={Siren} ton="sos" aide={def.total_sos} tendance={<Tendance actuel={r.total_sos} precedent={c.total_sos} />} />
+            <Indicateur libelle="En attente" valeur={nombre(r.a_traiter)} icone={Hourglass} ton="alerte" aide={def.a_traiter} sous={`${nombre(r.en_retard)} en retard`} />
+            <Indicateur libelle="En cours" valeur={nombre(r.en_cours)} icone={Timer} aide={def.en_cours} sous={`${nombre(r.agents_en_intervention)} agents mobilisés`} />
+            <Indicateur libelle="Terminées" valeur={nombre(r.resolus)} icone={CheckCircle2} ton="succes" aide={def.resolus} sous={`Taux : ${pct(r.taux_resolution)}`} />
+            <Indicateur libelle="Agents actifs" valeur={nombre(r.agents)} icone={ShieldCheck} ton="neutre" aide={def.agents} sous={`${nombre(r.citoyens)} citoyens`} />
+            <Indicateur libelle="Prise en charge" valeur={duree(r.delai_moyen_prise_en_charge_min)} icone={Clock} ton="neutre" aide={def.delai_moyen_prise_en_charge_min}
+              tendance={<Tendance actuel={r.delai_moyen_prise_en_charge_min} precedent={c.delai_moyen_prise_en_charge_min} unite=" min" inverse />} />
+          </div>
+
+          <NiveauxUrgence repartition={s.par_gravite} sos={r.total_sos} />
           <div className="mt-5 grid gap-5 xl:grid-cols-2">
             <Carte titre="Évolution des signalements">
               {serie.length === 0 ? <p className="py-16 text-center text-sm text-texte-doux">Aucun signalement sur la période.</p> : (
@@ -367,19 +390,6 @@ export default function Supervision() {
             </Carte>
           </div>
 
-          <section className="mt-5" aria-label="Administration">
-            <h2 className="mb-3 text-[15px] font-bold">Administration</h2>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-              {ADMINISTRATION.filter((a) => national || !a.national).map((a) => (
-                <Link key={a.a} to={a.a} className="carte group flex items-center gap-3 p-4 transition hover:-translate-y-0.5">
-                  <a.icone className="h-5 w-5 shrink-0 text-marque-600" aria-hidden />
-                  <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{a.titre}</p><p className="truncate text-xs text-texte-doux">{comptesAdmin[a.cle]}</p></div>
-                  <ArrowRight className="h-4 w-4 shrink-0 text-texte-pale transition group-hover:translate-x-0.5" aria-hidden />
-                </Link>
-              ))}
-            </div>
-          </section>
-
           <details className="carte mt-5 p-5 text-sm">
             <summary className="flex cursor-pointer items-center gap-2 font-semibold"><Info className="h-4 w-4" aria-hidden /> Définition des indicateurs</summary>
             <dl className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -387,6 +397,7 @@ export default function Supervision() {
             </dl>
             <p className="mt-3 flex flex-wrap items-center gap-2 text-xs text-texte-doux"><Database className="h-3.5 w-3.5" aria-hidden /> Calcul serveur à {new Date(s.genere_le).toLocaleTimeString('fr-FR')}. <AlertTriangle className="h-3.5 w-3.5" aria-hidden /> Les volumes reflètent les signalements reçus, pas la totalité des événements réels.</p>
           </details>
+          </>)}
         </>
       )}
     </>

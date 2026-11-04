@@ -4,7 +4,7 @@ import { api } from '../../api/client';
 import { useRessource } from '../../api/hooks';
 import { Bandeau, Bouton, Carte, Champ, Chargement, EnTetePage, EtatErreur, Fenetre, Pagination, Selecteur, useToast } from '../../components/ui';
 import { useConfig } from '../../lib/config';
-import { GRAVITES, dateHeure } from '../../lib/format';
+import { GRAVITES, STATUTS, dateHeure } from '../../lib/format';
 import { COULEURS } from '../../lib/couleurs';
 
 /* ---------------------------------------------------------- Services & catégories */
@@ -170,9 +170,15 @@ const RUBRIQUES_AUDIT = [
 /** Détails utiles d'une entrée, en clair (jamais de mot de passe ni de jeton : le serveur ne les enregistre pas). */
 function resumeDetails(d = {}) {
   const libelles = { reference: 'Réf.', structure: 'Structure', statut: 'Statut', motif: 'Motif', categorie: 'Catégorie', type_urgence: 'Urgence',
-    photos: 'Photos', espace: 'Espace', champs: 'Champs', gravite: 'Gravité', disponible: 'Disponible', identifiant: 'Identifiant' };
+    photos: 'Photos', position: 'Position', espace: 'Espace', champs: 'Champs', gravite: 'Gravité', disponible: 'Disponible', identifiant: 'Identifiant' };
+  const valeurs = {
+    statut: (v) => STATUTS[v]?.libelle || v,
+    type_urgence: (v) => ({ medicale: 'médicale', incendie: 'incendie', accident: 'accident', agression: 'agression ou danger', non_precise: 'non précisée' }[v] || v),
+    position: (v) => (v ? 'jointe' : 'non jointe'),
+    disponible: (v) => (v ? 'oui' : 'non'),
+  };
   return Object.entries(d).filter(([, v]) => v !== null && v !== '' && !(Array.isArray(v) && !v.length))
-    .map(([k, v]) => `${libelles[k] || k} : ${Array.isArray(v) ? v.join(', ') : typeof v === 'object' ? JSON.stringify(v) : v}`).join(' · ');
+    .map(([k, v]) => `${libelles[k] || k} : ${valeurs[k] ? valeurs[k](v) : Array.isArray(v) ? v.join(', ') : typeof v === 'object' ? JSON.stringify(v) : v}`).join(' · ');
 }
 
 export function Audit() {

@@ -108,6 +108,18 @@ class ServicesProximiteTests(SenAlertTestCase):
         self.assertTrue(r.data['donnees_anciennes'])
         self.assertIn('Geofabrik', r.data['source'])
 
+    def test_extrait_embarque_respecte_le_type_choisi(self):
+        """Constat de l'équipe : « Sapeurs-pompiers » choisi, mais hôpitaux et police affichés (repli sans filtre)."""
+        base = {'source': 'extrait', 'extrait_le': '2026-11-02', 'elements': [
+            {'type': 'node', 'id': 7, 'lat': 14.6935, 'lon': -17.4470, 'tags': {'amenity': 'hospital', 'name': 'Hôpital'}},
+            {'type': 'node', 'id': 8, 'lat': 14.6940, 'lon': -17.4460, 'tags': {'amenity': 'fire_station', 'name': 'Caserne'}},
+            {'type': 'node', 'id': 9, 'lat': 14.6930, 'lon': -17.4465, 'tags': {'amenity': 'police', 'name': 'Commissariat'}},
+        ]}
+        with mock.patch('core.views.interroger_overpass', side_effect=requests.ConnectionError), \
+                mock.patch('core.views.base_services_locale', return_value=base):
+            r = self.client.get(self.URL, {'lat': 14.69, 'lng': -17.44, 'type': 'pompiers'})
+        self.assertEqual([x['nom'] for x in r.data['resultats']], ['Caserne'])
+
     def test_osm_indisponible_503(self):
         with mock.patch('core.views.interroger_overpass', side_effect=requests.ConnectionError), \
                 mock.patch('core.views.base_services_locale', return_value=None):

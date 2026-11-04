@@ -12,6 +12,7 @@ import { useConfig } from '../lib/config';
 import { useInstallation } from '../lib/installation';
 import { useLangue } from '../lib/langue';
 import { appliquerTheme, choisirTheme, themeChoisi } from '../lib/theme';
+import BoutonSOS from './BoutonSOS';
 import AlertesTempsReel from './AlertesTempsReel';
 import { Logo } from './Logo';
 
@@ -179,11 +180,6 @@ export default function Layout() {
             )}
             <div className="ml-auto flex items-center gap-1.5">
               {!enLigne && <span className="mr-2 inline-flex items-center gap-1.5 rounded-full bg-alerte-clair px-3 py-1 text-xs font-semibold text-alerte"><WifiOff className="h-3.5 w-3.5" /> Hors connexion</span>}
-              {utilisateur.role === 'citoyen' && lieu.pathname !== '/citoyen' && (
-                <NavLink to="/citoyen" className="mr-1 inline-flex items-center gap-1.5 rounded-full bg-sos-fonce px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-sos-sombre">
-                  <Siren className="h-4 w-4" /> SOS
-                </NavLink>
-              )}
               {utilisateur.role !== 'citoyen' && <AlertesTempsReel role={utilisateur.role} />}
               {traduit && (
                 <div className="mr-1 inline-flex rounded-full bg-surface-douce p-0.5 text-xs font-bold ring-1 ring-surface-bord" role="group" aria-label="Langue / Làkk">
@@ -217,6 +213,7 @@ export default function Layout() {
         <main id="contenu" className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6 lg:px-8" tabIndex={-1}>
           <Outlet />
         </main>
+        {utilisateur.role === 'citoyen' && <BoutonSOS />}
         <footer className="px-6 pb-24 text-center text-xs text-texte-pale lg:pb-6">
           SenAlert ne remplace pas les services officiels de secours. En cas de danger immédiat, appelez directement {config?.numeros_urgence?.map((n) => `${n.service} ${n.numero}`).join(' · ') || 'les secours'}.
           {' '}<Link to="/credits" className="underline">Crédits photos</Link>

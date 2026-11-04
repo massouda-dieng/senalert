@@ -8,12 +8,14 @@ import { api } from '../../api/client';
 import { useRessource } from '../../api/hooks';
 import { useAuth } from '../../auth/AuthContext';
 import CarteSenAlert, { Legende } from '../../components/Carte';
+import Photo from '../../components/Photo';
+import { PHOTO_CATEGORIE } from '../../lib/photos';
 import { DialogueCloture } from '../../components/DossierDetail';
 import ListeDossiers from '../../components/ListeDossiers';
 import {
   BadgeGravite, BadgeStatut, Bandeau, Bouton, Carte, Chargement, Confirmation, EnTetePage, EtatErreur, IndicateurSynchro, Indicateur, Onglets, useToast,
 } from '../../components/ui';
-import { GRAVITES, ORDRE_GRAVITE, STATUTS, dateHeure, duree, ilYa, nombre, rangGravite } from '../../lib/format';
+import { GRAVITES, ORDRE_GRAVITE, STATUTS, dateHeure, ilYa, nombre, rangGravite } from '../../lib/format';
 
 const chemin = (d) => (d.sos ? `/alertes/sos/${d.id}/` : `/incidents/${d.id}/`);
 const lien = (d) => `/agent/interventions?${d.sos ? 'type=sos&' : ''}dossier=${d.id}`;
@@ -23,20 +25,28 @@ function Mission({ d, utilisateur, onAgir, onDialogue, enCours }) {
   const estMien = d.intervention?.agent === utilisateur.id;
   const actions = [];
   if (d.statut === 'affecte' && estMien) {
-    actions.push(<Bouton key="a" taille="sm" icone={CheckCircle2} chargement={enCours} onClick={() => onAgir(d, 'accepter', 'Mission acceptée.')}>Accepter</Bouton>);
+    actions.push(<Bouton key="a" taille="sm" icone={CheckCircle2} chargement={enCours} onClick={() => onAgir(d, 'accepter', 'Mission prise en charge.')}>Prendre en charge</Bouton>);
     actions.push(<Bouton key="d" taille="sm" variante="secondaire" icone={X} onClick={() => onDialogue('decliner', d)}>Décliner</Bouton>);
   }
   if (d.statut === 'accepte' && estMien) actions.push(<Bouton key="m" taille="sm" icone={Play} chargement={enCours} onClick={() => onAgir(d, 'demarrer', 'Intervention démarrée.')}>Démarrer</Bouton>);
   if (['accepte', 'en_cours'].includes(d.statut) && estMien) actions.push(<Bouton key="c" taille="sm" variante="succes" icone={Flag} onClick={() => onDialogue('cloturer', d)}>Clôturer</Bouton>);
   return (
-    <li className="rounded-2xl border border-l-4 border-surface-bord bg-surface p-3.5 shadow-sm" style={{ borderLeftColor: GRAVITES[d.gravite]?.couleur }}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="flex items-center gap-1.5 truncate font-bold">{d.sos && <Siren className="h-4 w-4 shrink-0 text-sos-fonce" aria-hidden />}{d.sos ? 'Alerte SOS' : d.categorie_libelle}</p>
+    <li className="overflow-hidden rounded-2xl border border-surface-bord bg-surface shadow-sm">
+      <div className="flex gap-3 p-3.5">
+        {d.sos ? (
+          <span className="grid h-16 w-20 shrink-0 place-items-center rounded-xl bg-sos-fonce text-white"><Siren className="h-7 w-7" aria-hidden /></span>
+        ) : (
+          <Photo nom={PHOTO_CATEGORIE[d.type_incident] || 'dakar-vue'} className="h-16 w-20 shrink-0 rounded-xl" alt="" credit={false} />
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <p className="truncate font-bold">{d.sos ? `Alerte SOS${d.type_urgence_libelle && d.type_urgence !== 'non_precise' ? ` · ${d.type_urgence_libelle}` : ''}` : d.categorie_libelle}</p>
+            <BadgeGravite gravite={d.gravite} />
+          </div>
           <Link to={lien(d)} className="font-mono text-xs font-semibold text-marque-700 hover:underline">{d.reference}</Link>
         </div>
-        <BadgeGravite gravite={d.gravite} />
       </div>
+      <div className="px-3.5 pb-3.5">
       <p className="mt-2 flex items-center gap-1.5 text-[13px] text-texte-doux"><MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden /><span className="truncate">{d.adresse || d.region_libelle || 'Lieu non précisé'}</span></p>
       <p className="mt-0.5 flex items-center gap-1.5 text-[13px] text-texte-doux" title={dateHeure(d.date_creation)}>
         <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />{ilYa(d.date_creation)}
@@ -50,6 +60,7 @@ function Mission({ d, utilisateur, onAgir, onDialogue, enCours }) {
             <Navigation className="h-3.5 w-3.5" aria-hidden /> Itinéraire <ExternalLink className="h-3 w-3" aria-hidden />
           </a>
         )}
+      </div>
       </div>
     </li>
   );
@@ -106,7 +117,6 @@ export function TableauAgent() {
     .sort((a, b) => rangGravite(a.gravite) - rangGravite(b.gravite) || Number(b.sos || 0) - Number(a.sos || 0) || new Date(b.date_creation) - new Date(a.date_creation));
   // L'agent ne voit que les dossiers qui lui sont transmis (choisi par le citoyen ou par son superviseur).
   const miens = fusion(miensSos, miensInc);
-  const ouverts = miens;
   const attente = miens.filter((d) => d.statut === 'affecte');
   const encours = miens.filter((d) => ['accepte', 'en_cours'].includes(d.statut));
   const finis = fusion(finisSos, finisInc).sort((a, b) => new Date(b.date_cloture) - new Date(a.date_cloture)).slice(0, 5);
@@ -115,7 +125,7 @@ export function TableauAgent() {
   const erreur = miensInc.erreur;
 
   const points = useMemo(() => miens.filter((d) => d.latitude != null).map((d) => ({
-    id: `${d.sos ? 's' : 'i'}${d.id}`, lat: d.latitude, lng: d.longitude, sos: d.sos, couleur: GRAVITES[d.gravite]?.couleur || STATUTS[d.statut].point, titre: d.reference,
+    id: `${d.sos ? 's' : 'i'}${d.id}`, lat: d.latitude, lng: d.longitude, sos: d.sos, type: d.type_incident, couleur: GRAVITES[d.gravite]?.couleur || STATUTS[d.statut].point, titre: d.reference,
   })), [miensInc.donnees, miensSos.donnees]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const agir = async (d, verbe, message, corps) => {
@@ -138,41 +148,37 @@ export function TableauAgent() {
 
   return (
     <>
-      <div className="mb-5 rounded-3xl bg-marque-800 px-5 py-6 text-white sm:px-7">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="relative mb-5 overflow-hidden rounded-3xl text-white">
+        <Photo nom="pompiers-bnsp" className="absolute inset-0 h-full w-full" alt="" credit={false} priorite />
+        <div className="absolute inset-0 bg-gradient-to-r from-marque-950/90 via-marque-900/75 to-marque-900/30" aria-hidden />
+        <div className="relative flex flex-wrap items-end justify-between gap-4 px-5 py-7 sm:px-8">
           <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-marque-100">Espace agent</p>
+            <p className="text-[13px] font-semibold uppercase tracking-wider text-marque-100">Espace agent</p>
             <h1 className="mt-1 font-titre text-2xl font-extrabold sm:text-3xl">{`Bonjour ${utilisateur.first_name || ''}`.trim()}</h1>
-            <p className="mt-1 text-sm text-marque-100">{[utilisateur.profil_agent?.fonction, utilisateur.structure_nom].filter(Boolean).join(' · ')}</p>
+            <p className="mt-1 text-sm text-white/85">{[utilisateur.profil_agent?.fonction, utilisateur.structure_nom].filter(Boolean).join(' · ')}</p>
+            <p className="mt-3 text-sm text-white/85">
+              {attente.length ? `${attente.length} mission(s) à prendre en charge` : encours.length ? `${encours.length} intervention(s) en cours` : 'Aucune mission en attente'}
+            </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Disponibilite />
             <div className="rounded-lg bg-surface text-texte"><IndicateurSynchro date={miensInc.derniereSynchro} chargement={miensInc.chargement} onRafraichir={toutRecharger} /></div>
           </div>
         </div>
-        <ul className="mt-4 flex flex-wrap gap-2" aria-label="Dossiers ouverts par gravité">
-          {ORDRE_GRAVITE.map((g) => (
-            <li key={g} className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[13px] font-semibold ring-1 ring-white/15">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: GRAVITES[g].couleur }} aria-hidden />
-              {GRAVITES[g].libelle} <span className="tabular-nums">{ouverts.filter((d) => d.gravite === g).length}</span>
-            </li>
-          ))}
-        </ul>
       </div>
 
       {!utilisateur.structure && <Bandeau type="alerte" className="mb-5">Votre compte n’est rattaché à aucune structure : aucun citoyen ne peut vous choisir. Contactez votre superviseur.</Bandeau>}
       {erreur && <div className="mb-5"><EtatErreur erreur={erreur} onReessayer={toutRecharger} /></div>}
 
-      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Indicateur libelle="Missions reçues" valeur={nombre(attente.length)} icone={Hourglass} ton="sos" sous={`dont ${attente.filter((d) => d.sos).length} SOS, à accepter`} />
+      <div className="mb-6 grid grid-cols-3 gap-3">
+        <Indicateur libelle="À prendre en charge" valeur={nombre(attente.length)} icone={Hourglass} ton="sos" sous={attente.some((d) => d.sos) ? `dont ${attente.filter((d) => d.sos).length} SOS` : undefined} />
         <Indicateur libelle="En cours" valeur={nombre(encours.length)} icone={Timer} />
         <Indicateur libelle="Terminées" valeur={nombre(nbTermines)} icone={CheckCircle2} ton="succes" sous={`${a?.resolus_7j ?? 0} sur 7 jours`} />
-        <Indicateur libelle="Prise en charge moyenne" valeur={duree(a?.incidents?.delai_moyen_prise_en_charge_min)} icone={Clock} ton="neutre" aide="Vos incidents, de la création à l’acceptation." />
       </div>
 
       {miensInc.chargement && !miensInc.donnees ? <Chargement /> : (
         <div className="grid gap-4 lg:grid-cols-2">
-          <Colonne titre="Missions reçues, à accepter" icone={Hourglass} accent="text-sos-fonce" nombre={attente.length} vide="Aucune mission reçue. Les citoyens et votre superviseur vous transmettent les dossiers.">{attente.map(mission)}</Colonne>
+          <Colonne titre="À prendre en charge" icone={Hourglass} accent="text-sos-fonce" nombre={attente.length} vide="Aucune mission reçue. Les citoyens et votre superviseur vous transmettent les dossiers.">{attente.map(mission)}</Colonne>
           <Colonne titre="Interventions en cours" icone={Timer} nombre={encours.length} vide="Aucune intervention en cours.">{encours.map(mission)}</Colonne>
         </div>
       )}
@@ -202,7 +208,7 @@ export function TableauAgent() {
       </div>
 
       <Confirmation ouverte={dialogue?.type === 'decliner'} onFermer={() => setDialogue(null)} titre="Décliner la mission"
-        message="Le dossier redevient « Nouveau » et le superviseur est prévenu." motif="Raison" libelleAction="Décliner"
+        message="Le dossier redevient « Nouveau » et votre superviseur est prévenu." motif="Raison" libelleAction="Décliner"
         onConfirmer={(motif) => agir(dialogue.d, 'decliner', 'Mission déclinée.', { motif })} />
       <DialogueCloture ouverte={dialogue?.type === 'cloturer'} onFermer={() => setDialogue(null)}
         onValider={(corps) => agir(dialogue.d, 'resoudre', 'Intervention clôturée.', corps)} />

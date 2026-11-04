@@ -11,4 +11,15 @@ const creditsPhotos = <String, String>{
   'motards-sapeurs': "Photo : Ibrahima xaalil Ndiaye — CC BY-SA 4.0",
   'rue-inondee': "Photo : Patrick Schumacher — Public domain",
   'dakar-cote': "Photo : Tbo47 — CC0",
+  'accident-route': "Photo : Jeff Attaway — CC BY 2.0",
+  'incendie-fumee': "Photo : Tbo47 — CC BY 4.0",
+  'senelec-agence': "Photo : Ji-Elle — Public domain",
+  'camera-surveillance': "Photo : Babacar Dioum — CC BY-SA 4.0",
+  'police-vehicule': "Photo : Babacar Dioum — CC BY-SA 4.0",
+};
+
+/// Photo d'exemple de chaque type d'incident (illustration seulement, jamais un incident réel).
+const photoCategorie = <String, String>{
+  'accident': 'accident-route', 'incendie': 'incendie-fumee', 'inondation': 'rue-inondee', 'insecurite': 'camera-surveillance',
+  'agression': 'police-vehicule', 'electricite': 'senelec-agence', 'urgence_medicale': 'ambulance-pompiers', 'autre': 'dakar-vue',
 };

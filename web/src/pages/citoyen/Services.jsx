@@ -1,10 +1,10 @@
 import { Crosshair, ExternalLink, Navigation, Phone } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../../api/client';
 import CarteSenAlert, { Legende, echapper } from '../../components/Carte';
 import { Bandeau, Bouton, Carte, EnTetePage, EtatVide, Selecteur } from '../../components/ui';
 import { dateHeure, distance } from '../../lib/format';
-import { lirePosition } from './Accueil';
+import { lirePosition } from '../../components/BoutonSOS';
 import { COULEURS } from '../../lib/couleurs';
 
 const TYPES = {
@@ -22,14 +22,22 @@ export default function Services() {
   const [donnees, setDonnees] = useState(null);
   const [etat, setEtat] = useState({ chargement: false, erreur: null });
 
+  // Seule la dernière recherche lancée s'affiche : une réponse lente (autre service, autre rayon) est ignorée.
+  const derniere = useRef(0);
   const chercher = async (pos = position) => {
     if (!pos) return;
+    const n = ++derniere.current;
     setEtat({ chargement: true, erreur: null });
     try {
-      setDonnees(await api('/services-proximite/', { params: { lat: pos.lat, lng: pos.lng, rayon, type: type || undefined } }));
+      const r = await api('/services-proximite/', { params: { lat: pos.lat, lng: pos.lng, rayon, type: type || undefined } });
+      if (n !== derniere.current) return;
+      setDonnees(r);
       setEtat({ chargement: false, erreur: null });
-    } catch (e) { setEtat({ chargement: false, erreur: e.detail }); }
+    } catch (e) { if (n === derniere.current) setEtat({ chargement: false, erreur: e.detail }); }
   };
+  // Changer de service ou de rayon relance aussitôt la recherche : pas de bouton « Rechercher » à penser.
+  useEffect(() => { if (position) chercher(); }, [type, rayon]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const localiser = async () => {
     setEtat({ chargement: true, erreur: null });
     const p = await lirePosition();
@@ -38,8 +46,8 @@ export default function Services() {
     chercher(p);
   };
   const points = useMemo(() => [
-    ...(position ? [{ id: 'moi', lat: position.lat, lng: position.lng, couleur: COULEURS.marine, titre: 'Ma position', popup: 'Ma position' }] : []),
-    ...(donnees?.resultats || []).map((s) => ({ id: s.id, lat: s.latitude, lng: s.longitude, couleur: TYPES[s.type].couleur, titre: s.nom,
+    ...(position ? [{ id: 'moi', moi: true, lat: position.lat, lng: position.lng, couleur: COULEURS.marine, titre: 'Ma position', popup: 'Ma position' }] : []),
+    ...(donnees?.resultats || []).map((s) => ({ id: s.id, lat: s.latitude, lng: s.longitude, type: s.type, couleur: TYPES[s.type].couleur, titre: s.nom,
       popup: `<b>${echapper(s.nom || 'Sans nom')}</b><br/>${echapper(TYPES[s.type].libelle)} · ${echapper(distance(s.distance_m))}` })),
   ], [position, donnees]);
 
@@ -50,17 +58,17 @@ export default function Services() {
         <Bouton icone={Crosshair} chargement={etat.chargement} onClick={localiser}>{position ? 'Actualiser ma position' : 'Me localiser'}</Bouton>
         <Selecteur aria-label="Type" className="w-auto" valeur={type} onChange={setType} vide="Tous les services" options={Object.entries(TYPES).map(([code, t]) => ({ code, libelle: t.libelle }))} />
         <Selecteur aria-label="Rayon" className="w-auto" vide={null} valeur={rayon} onChange={setRayon} options={[{ code: '2000', libelle: '2 km' }, { code: '5000', libelle: '5 km' }, { code: '10000', libelle: '10 km' }, { code: '20000', libelle: '20 km' }]} />
-        {position && <Bouton variante="secondaire" onClick={() => chercher()}>Rechercher</Bouton>}
       </div>
       {etat.erreur && <Bandeau type="danger" className="mb-4">{etat.erreur}</Bandeau>}
       {!position && !etat.chargement && <EtatVide icone={Crosshair} titre="Autorisez la localisation" texte="Votre position sert uniquement à cette recherche. Elle est arrondie (~1 km) avant d’interroger OpenStreetMap." />}
       {position && (
         <div className="grid gap-5 lg:grid-cols-[1fr_420px]">
           <Carte corpsClassName="space-y-3 p-3">
-            <CarteSenAlert points={points} hauteur={520} cadrer regrouper={false} />
+            {/* Les établissements proches les uns des autres sont regroupés : un chiffre, qui s'ouvre au zoom. */}
+            <CarteSenAlert points={points} hauteur={520} cadrer regrouper />
             <Legende elements={Object.values(TYPES)} />
           </Carte>
-          <Carte titre={donnees ? `${donnees.resultats.length} résultat(s)` : 'Résultats'} corpsClassName="max-h-[560px] overflow-y-auto p-0">
+          <Carte titre={etat.chargement ? 'Recherche en cours…' : donnees ? `${donnees.resultats.length} résultat(s)` : 'Résultats'} corpsClassName="max-h-[560px] overflow-y-auto p-0">
             {donnees?.resultats.length === 0 && <p className="p-5 text-sm text-texte-doux">Aucun établissement référencé dans ce rayon. Élargissez la recherche.</p>}
             <ul className="divide-y divide-surface-bord">
               {donnees?.resultats.map((s) => (

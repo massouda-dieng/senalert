@@ -179,10 +179,13 @@ class WorkflowTests(SenAlertTestCase):
         super().setUp()
         self.awa = self.citoyen('awa')
         self.chef = self.superadmin()
-        self.pompier = self.agent('pompier', 'pompiers', ['dakar'])
+        # Agent indisponible au moment du signalement : le dossier attend une affectation par la supervision.
+        self.pompier = self.agent('pompier', 'pompiers', ['dakar'], disponible=False)
         self.en_tant_que(self.awa)
         self.ref = self.client.post(URL, self.incident_payload(), format='json').data
         self.url = f"{URL}{self.ref['id']}/"
+        self.pompier.profil_agent.disponible = True
+        self.pompier.profil_agent.save()
 
     def action(self, user, nom, **data):
         self.en_tant_que(user)

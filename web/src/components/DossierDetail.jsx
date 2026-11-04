@@ -154,7 +154,7 @@ export default function DossierDetail({ type = 'incident', id, onFermer, onModif
           {d.latitude != null && (
             <CarteSenAlert hauteur={220} zoom={15} centre={[d.latitude, d.longitude]} regrouper={false} cadrer={Boolean(enIntervention && inter?.position_agent)}
               points={[
-                { id: d.id, lat: d.latitude, lng: d.longitude, couleur: type === 'sos' ? COULEURS.sos : STATUTS[s]?.point, sos: type === 'sos', titre: 'Lieu du dossier' },
+                { id: d.id, lat: d.latitude, lng: d.longitude, type: d.type_incident, couleur: type === 'sos' ? COULEURS.sos : STATUTS[s]?.point, sos: type === 'sos', titre: 'Lieu du dossier' },
                 ...(enIntervention && inter?.position_agent ? [{ id: 'agent', lat: inter.position_agent.lat, lng: inter.position_agent.lng, agent: true, titre: 'Agent de secours' }] : []),
               ]} />
           )}

@@ -34,7 +34,7 @@ function Marqueurs({ points, regrouper = true }) {
   useEffect(() => {
     const groupe = regrouper ? L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 45 }) : L.layerGroup();
     points.forEach((p) => {
-      const m = L.marker([p.lat, p.lng], { icon: icone(p.couleur, { sos: p.sos, taille: p.taille || 16 }), title: p.titre || '' });
+      const m = L.marker([p.lat, p.lng], { icon: icone(p.couleur, { sos: p.sos, taille: p.taille || 16, type: p.type }), title: p.titre || '' });
       if (p.popup) m.bindPopup(p.popup);
       groupe.addLayer(m);
     });
@@ -139,13 +139,13 @@ export default function CarteAvancee({ role = 'citoyen', hauteur = 'calc(100vh -
     if (couches.incidents) {
       incidentsRecents.forEach((p) => {
         const c = config.categorie(p.type_incident);
-        pts.push({ id: `c${p.id}`, lat: p.latitude, lng: p.longitude, couleur: c?.couleur || COULEURS.gris, titre: c?.libelle, taille: p.est_le_mien ? 20 : 16,
+        pts.push({ id: `c${p.id}`, lat: p.latitude, lng: p.longitude, type: p.type_incident, couleur: c?.couleur || COULEURS.gris, titre: c?.libelle, taille: p.est_le_mien ? 20 : 16,
           popup: `${p.est_le_mien ? '<b>Votre signalement</b><br/>' : ''}<b>${echapper(c?.libelle || p.type_incident)}</b><br/>${echapper(STATUTS[p.statut]?.libelle)} · ${echapper(dateHeure(p.date_creation))}<br/><small>${p.est_le_mien ? 'Suivi dans « Mes dossiers »' : 'Signalé par un citoyen · identité protégée'} · position arrondie (~100 m)</small>` });
       });
     }
     if (operationnel && couches.dossiers) {
       (dossiers.donnees?.results || []).filter((d) => d.latitude != null).forEach((d) => pts.push({
-        id: `d${d.id}`, lat: d.latitude, lng: d.longitude, couleur: STATUTS[d.statut].point, taille: 18,
+        id: `d${d.id}`, lat: d.latitude, lng: d.longitude, type: d.type_incident, couleur: STATUTS[d.statut].point, taille: 18,
         popup: `<b>${echapper(d.reference)}</b><br/>${echapper(d.categorie_libelle)} · ${echapper(STATUTS[d.statut].libelle)}<br/>${declarant(d)}<a href="/app/${role === 'agent' ? 'agent/interventions' : 'supervision/incidents'}?dossier=${d.id}">Ouvrir le dossier</a> · <a target="_blank" rel="noreferrer" href="https://www.google.com/maps/dir/?api=1&destination=${d.latitude},${d.longitude}">Itinéraire</a>`,
       }));
     }
@@ -240,7 +240,8 @@ export default function CarteAvancee({ role = 'citoyen', hauteur = 'calc(100vh -
       <div className="absolute left-3 right-3 top-3 z-[500] sm:right-auto sm:w-96"><RechercheAdresse onChoix={(r) => { const l = { lat: r.latitude, lng: r.longitude, nom: r.nom }; setLieu(l); setCible(l); }} /></div>
 
       {/* Boutons flottants */}
-      <div className="absolute bottom-6 right-3 z-[500] flex flex-col gap-2">
+      {/* Citoyen : les boutons remontent pour laisser la place au bouton SOS flottant. */}
+      <div className={clsx('absolute right-3 z-[500] flex flex-col gap-2', role === 'citoyen' ? 'bottom-24' : 'bottom-6')}>
         <button type="button" onClick={() => localiser()} className="grid h-11 w-11 place-items-center rounded-2xl bg-surface shadow-flottant hover:bg-surface-douce" title="Me localiser" aria-label="Me localiser"><LocateFixed className="h-5 w-5 text-marque-700" /></button>
         <button type="button" onClick={() => setPanneau((p) => !p)} className="grid h-11 w-11 place-items-center rounded-2xl bg-surface shadow-flottant hover:bg-surface-douce" title="Couches" aria-label="Afficher les couches" aria-expanded={panneau}><Layers className="h-5 w-5 text-marque-700" /></button>
       </div>

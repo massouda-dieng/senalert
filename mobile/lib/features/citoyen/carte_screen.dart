@@ -152,14 +152,26 @@ class _CarteScreenState extends State<CarteScreen> {
         ]),
       ));
 
-  Marker _point(LatLng p, Color couleur, {double taille = 22, VoidCallback? onTap, String? label, IconData? icone}) => Marker(
-        point: p, width: taille + 8, height: taille + 8,
-        child: Semantics(label: label, button: onTap != null, child: GestureDetector(onTap: onTap, child: Container(
-          decoration: BoxDecoration(shape: BoxShape.circle, color: couleur, border: Border.all(color: Colors.white, width: 2.5),
-              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)]),
-          child: icone == null ? null : Icon(icone, size: taille * .6, color: Colors.white),
-        ))),
-      );
+  /// Épingle colorée avec le pictogramme du type ; sa pointe marque le lieu exact.
+  Marker _point(LatLng p, Color couleur, {double taille = 22, VoidCallback? onTap, String? label, IconData? icone}) {
+    final t = taille * 1.7;
+    return Marker(
+      point: p, width: t, height: t, alignment: Alignment.topCenter,
+      child: Semantics(label: label, button: onTap != null, child: GestureDetector(onTap: onTap, child: Stack(alignment: Alignment.topCenter, children: [
+        Icon(Icons.location_on, size: t, color: couleur, shadows: const [Shadow(color: Colors.black38, blurRadius: 5)]),
+        Positioned(top: t * .14, child: Container(
+          width: t * .44, height: t * .44,
+          decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
+          child: Icon(icone ?? Icons.circle, size: icone == null ? t * .14 : t * .3, color: couleur),
+        )),
+      ]))),
+    );
+  }
+
+  static const _iconesServices = <String, IconData>{
+    'pompiers': Icons.fire_truck_rounded, 'police': Icons.local_police_rounded, 'sante': Icons.local_hospital_rounded,
+    'senelec': Icons.bolt_rounded, 'onas': Icons.water_drop_rounded,
+  };
 
   LatLng _ll(Map<String, dynamic> j) => LatLng((j['latitude'] as num).toDouble(), (j['longitude'] as num).toDouble());
 
@@ -170,8 +182,8 @@ class _CarteScreenState extends State<CarteScreen> {
     final marqueurs = <Marker>[
       if (_service == null)
         for (final p in _incidents.where((p) => !ouverts.contains(p['id'])))
-          _point(_ll(p), couleurHex(config.categorie(p['type_incident'])?.couleur), taille: p['est_le_mien'] == true ? 26 : 20,
-              label: config.categorie(p['type_incident'])?.libelle, onTap: () => showModalBottomSheet(
+          _point(_ll(p), couleurHex(config.categorie(p['type_incident'])?.couleur), taille: p['est_le_mien'] == true ? 26 : 22,
+              icone: iconesCategories[p['type_incident']], label: config.categorie(p['type_incident'])?.libelle, onTap: () => showModalBottomSheet(
             context: context, builder: (_) => Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
               if (p['est_le_mien'] == true) Padding(padding: const EdgeInsets.only(bottom: 6), child: Text('Votre signalement', style: titre(14, couleur: AppColors.info))),
               Text(config.categorie(p['type_incident'])?.libelle ?? p['type_incident'], style: titre(18)),
@@ -181,11 +193,11 @@ class _CarteScreenState extends State<CarteScreen> {
               Text('Identité du déclarant protégée · position arrondie à ~100 m.', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
             ])))),
       for (final d in _dossiers.where((d) => d['latitude'] != null))
-        _point(_ll(d), statut(d['statut']).couleur, taille: 26, label: d['reference'], onTap: () => context.push('/dossier/incident/${d['id']}')),
+        _point(_ll(d), statut(d['statut']).couleur, taille: 26, icone: iconesCategories[d['type_incident']], label: d['reference'], onTap: () => context.push('/dossier/incident/${d['id']}')),
       for (final d in _sos.where((d) => d['latitude'] != null))
-        _point(_ll(d), AppColors.rouge, taille: 30, label: 'SOS ${d['reference']}', icone: Icons.sos, onTap: () => context.push('/dossier/sos/${d['id']}')),
+        _point(_ll(d), AppColors.rouge, taille: 28, label: 'SOS ${d['reference']}', icone: Icons.sos, onTap: () => context.push('/dossier/sos/${d['id']}')),
       for (final s in _structures ?? const <Map<String, dynamic>>[])
-        _point(_ll(s), AppColors.marine700, taille: 28, label: s['nom'], icone: Icons.apartment_rounded, onTap: () => _ficheStructure(s)),
+        _point(_ll(s), AppColors.marine700, taille: 26, label: s['nom'], icone: _iconesServices[s['service_code']] ?? Icons.apartment_rounded, onTap: () => _ficheStructure(s)),
       if (_moi != null)
         Marker(point: _moi!, width: 22, height: 22, child: Container(decoration: BoxDecoration(
             shape: BoxShape.circle, color: AppColors.info, border: Border.all(color: Colors.white, width: 3),
@@ -193,6 +205,8 @@ class _CarteScreenState extends State<CarteScreen> {
     ];
     return Scaffold(
       appBar: AppBar(title: Text(widget.agent ? 'Carte de mes missions' : 'Carte'), actions: [
+        IconButton(tooltip: 'Utiliser ma position actuelle', onPressed: _localisation ? null : _localiser,
+            icon: _localisation ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.my_location)),
         IconButton(tooltip: 'Rechercher un lieu', onPressed: _rechercher, icon: const Icon(Icons.search)),
         IconButton(tooltip: 'Actualiser', onPressed: () { _charger(); if (_service != null) _chargerStructures(); }, icon: const Icon(Icons.refresh)),
       ]),
@@ -230,7 +244,8 @@ class _CarteScreenState extends State<CarteScreen> {
             ])),
           )),
         ])),
-        if (_service != null) Positioned(left: 12, right: 76, bottom: 16, child: Material(
+        // Laisse la place du bouton SOS flottant (citoyen) en bas à droite.
+        if (_service != null) Positioned(left: 12, right: 12, bottom: widget.agent ? 16 : 84, child: Material(
           color: AppColors.white, borderRadius: BorderRadius.circular(16), elevation: 4,
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxHeight: 230),
@@ -254,11 +269,6 @@ class _CarteScreenState extends State<CarteScreen> {
           ),
         )),
       ]),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'localiser', tooltip: 'Utiliser ma position actuelle', backgroundColor: AppColors.white, foregroundColor: AppColors.marine700,
-        onPressed: _localisation ? null : _localiser,
-        child: _localisation ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.my_location),
-      ),
     );
   }
 }

@@ -11,6 +11,7 @@ import '../../ui/alertes_zone.dart';
 import '../../ui/cloche.dart';
 import '../../ui/kit.dart';
 import '../../ui/photo.dart';
+import '../../ui/credits_photos.dart';
 
 class AccueilAgent extends StatefulWidget {
   const AccueilAgent({super.key});
@@ -113,24 +114,75 @@ class _AccueilAgentState extends State<AccueilAgent> {
                 if (_erreur != null) Padding(padding: const EdgeInsets.only(top: 10), child: Bandeau.erreur(_erreur!.message)),
                 const SizedBox(height: 14),
                 Row(children: [
-                  kpi('À accepter', '${_miens.where((d) => d.statut == 'affecte').length}', Icons.hourglass_top_rounded, AppColors.warning, onTap: () => context.go('/interventions')),
+                  kpi('À prendre en charge', '${_miens.where((d) => d.statut == 'affecte').length}', Icons.hourglass_top_rounded, AppColors.warning, onTap: () => context.go('/interventions')),
                   const SizedBox(width: 10),
                   kpi('En cours', '${_miens.where((d) => d.statut == 'accepte' || d.statut == 'en_cours').length}', Icons.assignment_outlined, AppColors.marine600),
                   const SizedBox(width: 10),
                   kpi('Finies 7 j', '${_activite?['resolus_7j'] ?? 0}', Icons.check_circle_rounded, AppColors.success),
                 ]),
+                if (_miens.isNotEmpty) ...[
+                  Padding(padding: const EdgeInsets.only(top: 20, bottom: 8), child: Text('Mission la plus urgente', style: titre(17))),
+                  _MissionPrincipale(_miens.first, onOuvrir: () => context.push('/dossier/${_miens.first.estSos ? 'sos' : 'incident'}/${_miens.first.id}').then((_) => _charger())),
+                ],
                 Padding(padding: const EdgeInsets.only(top: 20, bottom: 8), child: Row(children: [
-                  Expanded(child: Text('Mes interventions en cours', style: titre(17))),
+                  Expanded(child: Text(_miens.length > 1 ? 'Autres missions' : 'Mes missions', style: titre(17))),
                   TextButton(onPressed: () => context.go('/interventions'), child: const Text('Tout voir')),
                 ])),
-                if (_miens.isEmpty) Text('Aucune intervention active.', style: TextStyle(color: AppColors.textGrey)),
-                for (final d in _miens) Padding(padding: const EdgeInsets.only(bottom: 10),
+                if (_miens.isEmpty) Carte(child: Row(children: [
+                  const Icon(Icons.check_circle_outline_rounded, color: AppColors.success),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text('Aucune mission active. Restez disponible : les citoyens et le superviseur vous transmettent les dossiers.',
+                      style: TextStyle(color: AppColors.textGrey))),
+                ])),
+                for (final d in _miens.skip(1)) Padding(padding: const EdgeInsets.only(bottom: 10),
                     child: TuileDossier(d, onTap: () => context.push('/dossier/${d.estSos ? 'sos' : 'incident'}/${d.id}').then((_) => _charger()))),
                 if (_synchro != null) Padding(padding: const EdgeInsets.only(top: 12),
                     child: Text('Actualisé ${ilYa(_synchro)} · tirez pour rafraîchir', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppColors.textMuted))),
                 ])),
               ]),
       ),
+    );
+  }
+}
+
+/// Mission la plus urgente : grande photo du type, lieu, ancienneté et l'action suivante en un appui.
+class _MissionPrincipale extends StatelessWidget {
+  final Dossier d;
+  final VoidCallback onOuvrir;
+  const _MissionPrincipale(this.d, {required this.onOuvrir});
+  @override
+  Widget build(BuildContext context) {
+    final action = switch (d.statut) { 'affecte' => 'Voir et prendre en charge', 'accepte' => 'Démarrer l’intervention', _ => 'Mettre à jour / clôturer' };
+    return Material(
+      color: AppColors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: AppColors.border)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(onTap: onOuvrir, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        SizedBox(height: 130, child: Stack(fit: StackFit.expand, children: [
+          if (d.estSos) const ColoredBox(color: AppColors.rougeFonce, child: Icon(Icons.sos_rounded, size: 64, color: Colors.white))
+          else Image.asset('assets/images/photos/${photoCategorie[d.typeIncident] ?? 'dakar-vue'}.jpg', fit: BoxFit.cover, excludeFromSemantics: true,
+              errorBuilder: (_, __, ___) => const ColoredBox(color: AppColors.marine50)),
+          Positioned(left: 12, top: 12, child: BadgeStatut(d.statut)),
+        ])),
+        Padding(padding: const EdgeInsets.all(14), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(d.estSos ? 'Alerte SOS${d.typeUrgenceLibelle != null && d.typeUrgence != 'non_precise' ? ' · ${d.typeUrgenceLibelle}' : ''}' : d.titre, style: titre(18)),
+          const SizedBox(height: 4),
+          Text('${d.reference} · ${ilYa(d.creation)}', style: TextStyle(color: AppColors.textGrey, fontSize: 13)),
+          if (d.adresse.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 4), child: Row(children: [
+            Icon(Icons.place_outlined, size: 16, color: AppColors.textMuted),
+            const SizedBox(width: 4),
+            Expanded(child: Text(d.adresse, maxLines: 1, overflow: TextOverflow.ellipsis)),
+          ])),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(child: FilledButton.icon(onPressed: onOuvrir, icon: const Icon(Icons.arrow_forward_rounded), label: Text(action))),
+            if (d.lat != null) ...[
+              const SizedBox(width: 8),
+              IconButton.outlined(tooltip: 'Itinéraire', onPressed: () => itineraire(d.lat!, d.lng!), icon: const Icon(Icons.navigation_rounded)),
+            ],
+          ]),
+        ])),
+      ])),
     );
   }
 }

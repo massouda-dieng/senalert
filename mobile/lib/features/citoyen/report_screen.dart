@@ -14,6 +14,8 @@ import '../../core/format.dart';
 import '../../state/configuration.dart';
 import '../../ui/kit.dart';
 import '../../ui/selecteur_position.dart';
+import '../../core/models.dart';
+import '../../ui/credits_photos.dart';
 
 const _cleBrouillon = 'brouillon_signalement';
 const _tailleMax = 5 * 1024 * 1024;
@@ -33,8 +35,34 @@ bool formatImageAccepte(Uint8List o) =>
 
 /// Signalement en 5 étapes : type → description et photo → lieu → structure → confirmation.
 /// La date, l'heure et la région sont enregistrées par le serveur : elles ne sont jamais demandées.
+/// Type d'incident illustré par une photo d'exemple (aussi utilisé sur l'accueil du citoyen).
+class TuileCategorie extends StatelessWidget {
+  final Categorie c;
+  final bool choisie;
+  final VoidCallback onTap;
+  const TuileCategorie(this.c, {super.key, this.choisie = false, required this.onTap});
+  @override
+  Widget build(BuildContext context) => Material(
+        color: AppColors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18),
+            side: BorderSide(color: choisie ? AppColors.marine800 : AppColors.border, width: choisie ? 2 : 1)),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(onTap: onTap, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Expanded(child: Image.asset('assets/images/photos/${photoCategorie[c.code] ?? 'dakar-vue'}.jpg', fit: BoxFit.cover, excludeFromSemantics: true,
+              errorBuilder: (_, __, ___) => ColoredBox(color: AppColors.marine50, child: Icon(iconesCategories[c.code] ?? Icons.report, color: AppColors.marine700)))),
+          Padding(padding: const EdgeInsets.fromLTRB(10, 8, 10, 9), child: Row(children: [
+            Icon(iconesCategories[c.code] ?? Icons.report, size: 18, color: couleurHex(c.couleur)),
+            const SizedBox(width: 6),
+            Expanded(child: Text(c.libelle, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700))),
+          ])),
+        ])),
+      );
+}
+
 class SignalerScreen extends StatefulWidget {
-  const SignalerScreen({super.key});
+  /// Type déjà choisi (vignette de l'accueil) : le formulaire commence aux détails.
+  final String? type;
+  const SignalerScreen({super.key, this.type});
   @override
   State<SignalerScreen> createState() => _SignalerScreenState();
 }
@@ -49,19 +77,13 @@ class _SignalerScreenState extends State<SignalerScreen> {
   final List<_Photo> _photos = [];
   bool _envoi = false;
   ApiException? _erreur;
-  // Étape « Structure » : service (choisi seulement pour « Autre incident »), structures proches, agent facultatif.
-  int? _service;
-  List<Map<String, dynamic>>? _structures;
-  String? _erreurStructures;
-  Map<String, dynamic>? _structure;
-  List<Map<String, dynamic>>? _agents;
-  Map<String, dynamic>? _agent;
-
-  static const _etapes = ['Type', 'Détails', 'Lieu', 'Structure', 'Envoi'];
+  // Pas d'étape « structure » : le serveur oriente vers la structure compétente la plus proche (agent disponible d'abord).
+  static const _etapes = ['Type', 'Détails', 'Lieu', 'Envoi'];
 
   @override
   void initState() {
     super.initState();
+    if (widget.type != null) { _type = widget.type; _etape = 1; }
     _restaurer();
     for (final c in [_adresse, _description]) {
       c.addListener(_sauver);
@@ -81,7 +103,7 @@ class _SignalerScreenState extends State<SignalerScreen> {
     final b = jsonDecode(brut);
     setState(() {
       _cle = b['cle'] ?? _cle;
-      _type = b['type'];
+      _type = widget.type ?? b['type'];
       _lat = b['lat'];
       _lng = b['lng'];
       _precision = b['precision'];
@@ -98,8 +120,6 @@ class _SignalerScreenState extends State<SignalerScreen> {
   }
 
   Future<void> _effacer() async => (await SharedPreferences.getInstance()).remove(_cleBrouillon);
-
-  bool get _sansService => context.read<Configuration>().categorie(_type)?.service == null;
 
   // ------------------------------------------------------------------ Photos
 
@@ -155,121 +175,24 @@ class _SignalerScreenState extends State<SignalerScreen> {
           ),
       ]);
 
-  // --------------------------------------------------------------- Structures
-
-  Future<void> _chargerStructures() async {
-    setState(() { _structures = null; _erreurStructures = null; _structure = null; _agents = null; _agent = null; });
-    if (_sansService && _service == null) return setState(() => _structures = []);
-    try {
-      final r = await Api.instance.get<List<dynamic>>('/structures/', params: {
-        'lat': _lat, 'lng': _lng, 'categorie': _type, if (_service != null) 'service': _service, 'limite': 5,
-      });
-      if (mounted) setState(() => _structures = r.cast<Map<String, dynamic>>());
-    } on ApiException catch (e) {
-      // Sans liste, le serveur oriente vers la structure compétente la plus proche.
-      if (mounted) setState(() { _structures = []; _erreurStructures = e.message; });
-    }
-  }
-
-  Future<void> _choisirStructure(Map<String, dynamic> s) async {
-    setState(() { _structure = s; _agents = null; _agent = null; });
-    try {
-      final r = await Api.instance.get<List<dynamic>>('/structures/${s['id']}/agents/');
-      if (mounted && _structure == s) setState(() => _agents = r.cast<Map<String, dynamic>>());
-    } on ApiException {
-      if (mounted) setState(() => _agents = []);
-    }
-  }
-
-  List<Widget> _etapeStructure() {
-    final config = context.watch<Configuration>();
-    final choixService = _sansService ? [
-      Text('Quel service doit intervenir ?', style: titre(18)),
-      const SizedBox(height: 8),
-      Wrap(spacing: 8, runSpacing: 8, children: [
-        for (final s in config.services)
-          ChoiceChip(label: Text(s.$2), selected: _service == s.$1, onSelected: (_) { setState(() => _service = s.$1); _chargerStructures(); }),
-      ]),
-      const SizedBox(height: 16),
-    ] : <Widget>[];
-    if (_sansService && _service == null) return choixService;
-    if (_structures == null) return [...choixService, const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()))];
-    if (_structures!.isEmpty) {
-      return [...choixService, Bandeau(_erreurStructures != null
-          ? 'Liste des structures indisponible ($_erreurStructures). Vous pouvez envoyer : le signalement ira à la structure compétente la plus proche.'
-          : 'Aucune structure de ce service n’est enregistrée près de ce lieu. Vous pouvez envoyer : la supervision orientera votre signalement.')];
-    }
-    return [
-      ...choixService,
-      Text('Structures compétentes les plus proches', style: titre(18)),
-      const SizedBox(height: 4),
-      Text('Touchez celle qui doit recevoir votre signalement.', style: TextStyle(color: AppColors.textGrey, fontSize: 13)),
-      const SizedBox(height: 10),
-      for (final s in _structures!)
-        Padding(padding: const EdgeInsets.only(bottom: 8), child: Carte(
-          couleur: _structure?['id'] == s['id'] ? AppColors.marine50 : null,
-          onTap: () => _choisirStructure(s),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Icon(_structure?['id'] == s['id'] ? Icons.radio_button_checked : Icons.radio_button_off, color: AppColors.marine700),
-            const SizedBox(width: 10),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('${s['nom']}', style: const TextStyle(fontWeight: FontWeight.w700), maxLines: 2),
-              Text([s['service_nom'], if ((s['adresse'] ?? '').toString().isNotEmpty) s['adresse'] else s['region_libelle']].join(' · '),
-                  style: TextStyle(fontSize: 12, color: AppColors.textGrey), maxLines: 2),
-              if (s['dans_la_zone'] == false) const Text('Hors de la région du lieu', style: TextStyle(fontSize: 12, color: AppColors.warning, fontWeight: FontWeight.w600)),
-              if (s['position_approximative'] == true) Text('Position de l’agence approximative', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
-            ])),
-            const SizedBox(width: 8),
-            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Text(distance(s['distance_m']), style: const TextStyle(fontWeight: FontWeight.w700)),
-              Text((s['nb_agents_disponibles'] ?? 0) > 0 ? '${s['nb_agents_disponibles']} agent(s) dispo.' : 'aucun agent dispo.',
-                  style: TextStyle(fontSize: 11, color: (s['nb_agents_disponibles'] ?? 0) > 0 ? AppColors.success : AppColors.textMuted)),
-            ]),
-          ]),
-        )),
-      if (_structure != null) ...[
-        const SizedBox(height: 8),
-        Text('Agent (facultatif)', style: titre(16)),
-        if (_agents == null) const Padding(padding: EdgeInsets.all(12), child: Center(child: CircularProgressIndicator()))
-        else ...[
-          RadioListTile<int?>(
-            value: null, groupValue: _agent?['id'], onChanged: (_) => setState(() => _agent = null),
-            title: const Text('Laisser le superviseur choisir'), contentPadding: EdgeInsets.zero,
-          ),
-          for (final a in _agents!)
-            RadioListTile<int?>(
-              value: a['id'], groupValue: _agent?['id'], onChanged: (_) => setState(() => _agent = a), contentPadding: EdgeInsets.zero,
-              title: Text('${a['prenom']} · ${a['fonction']}'),
-              subtitle: Text((a['missions_actives'] ?? 0) == 0 ? 'Libre' : '${a['missions_actives']} mission(s) en cours'),
-            ),
-          if (_agents!.isEmpty) Text('Aucun agent disponible en ce moment : le superviseur affectera votre dossier.',
-              style: TextStyle(fontSize: 12, color: AppColors.textGrey)),
-        ],
-      ],
-    ];
-  }
-
   // ------------------------------------------------------------------ Navigation
 
   bool get _etapeValide => switch (_etape) {
         0 => _type != null,
         1 => _type != 'autre' || _description.text.trim().length >= 10,
         2 => _lat != null,
-        3 => _structures != null && (_structures!.isEmpty || _structure != null),
         _ => !_envoi,
       };
 
   String get _libelleSuivant => switch (_etape) {
         2 => 'Confirmer ce lieu',
-        3 => _structure == null ? 'Continuer' : 'Choisir cette structure',
-        4 => 'Envoyer le signalement',
+        3 => 'Envoyer le signalement',
         _ => 'Continuer',
       };
 
   void _suivant() {
     FocusScope.of(context).unfocus();
     setState(() => _etape++);
-    if (_etape == 3) _chargerStructures();
   }
 
   Future<void> _envoyer() async {
@@ -284,8 +207,6 @@ class _SignalerScreenState extends State<SignalerScreen> {
         'adresse': _adresse.text.trim(),
         'description': _description.text.trim(),
         'client_request_id': _cle,
-        if (_structure != null) 'structure': _structure!['id'],
-        if (_agent != null) 'agent': _agent!['id'],
       });
       for (var i = 0; i < _photos.length; i++) {
         form.files.add(MapEntry('photos', MultipartFile.fromBytes(_photos[i].octets, filename: 'photo${i + 1}.jpg')));
@@ -304,7 +225,8 @@ class _SignalerScreenState extends State<SignalerScreen> {
           LigneInfo('Statut', statut(r['statut']).libelle),
           LigneInfo('Photos', '${(r['photos'] as List?)?.length ?? 0}'),
           const SizedBox(height: 6),
-          Text(r['statut'] == 'affecte' ? 'L’agent choisi est prévenu.' : 'Le superviseur de la structure va désigner un agent.',
+          Text(r['statut'] == 'affecte' ? 'Orienté automatiquement : un agent disponible de cette structure est prévenu.'
+              : 'Orienté automatiquement : le superviseur va désigner un agent.',
               textAlign: TextAlign.center, style: TextStyle(color: AppColors.textGrey, fontSize: 13)),
         ]),
         actions: [FilledButton(onPressed: () => Navigator.pop(c), child: const Text('Suivre mon signalement'))],
@@ -344,21 +266,15 @@ class _SignalerScreenState extends State<SignalerScreen> {
               const SizedBox(height: 12),
               GridView.count(
                 crossAxisCount: 2, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 10, crossAxisSpacing: 10, childAspectRatio: 2.3,
+                mainAxisSpacing: 10, crossAxisSpacing: 10, childAspectRatio: 1.15,
                 children: [
-                  for (final c in config.categories)
-                    Carte(
-                      couleur: _type == c.code ? AppColors.marine50 : null,
-                      onTap: () { setState(() { _type = c.code; _service = null; _etape = 1; }); _sauver(); },
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      child: Row(children: [
-                        Icon(iconesCategories[c.code] ?? Icons.report, color: couleurHex(c.couleur)),
-                        const SizedBox(width: 8),
-                        Expanded(child: Text(c.libelle, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 2)),
-                      ]),
-                    ),
+                  for (final c in config.categories) TuileCategorie(c, choisie: _type == c.code,
+                      onTap: () { setState(() { _type = c.code; _etape = 1; }); _sauver(); }),
                 ],
               ),
+              const SizedBox(height: 6),
+              Text('Photos d’exemple sous licence libre : elles illustrent le type, ce ne sont pas des incidents réels.',
+                  style: TextStyle(fontSize: 11.5, color: AppColors.textMuted)),
               if (config.categories.isEmpty) const Bandeau.alerte('Catégories indisponibles : vérifiez votre connexion.'),
               const SizedBox(height: 14),
               const Bandeau('Danger vital en cours ? Utilisez plutôt le bouton SOS et appelez les secours.'),
@@ -387,8 +303,7 @@ class _SignalerScreenState extends State<SignalerScreen> {
               const SizedBox(height: 12),
               TextField(controller: _adresse, maxLength: 255, decoration: const InputDecoration(labelText: 'Repère (facultatif)', hintText: 'Ex. : près du marché, rond-point…')),
             ],
-            if (_etape == 3) ..._etapeStructure(),
-            if (_etape == 4) ...[
+            if (_etape == 3) ...[
               Text('Vérifiez puis envoyez', style: titre(18)),
               const SizedBox(height: 10),
               Carte(child: Column(children: [
@@ -396,8 +311,7 @@ class _SignalerScreenState extends State<SignalerScreen> {
                 LigneInfo('Description', _description.text.trim().isEmpty ? '—' : _description.text.trim()),
                 LigneInfo('Lieu', '${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}${_precision != null ? ' (GPS ± ${_precision!.round()} m)' : ''}'),
                 if (_adresse.text.trim().isNotEmpty) LigneInfo('Repère', _adresse.text.trim()),
-                LigneInfo('Destinataire', _structure?['nom'] ?? 'Structure compétente la plus proche'),
-                LigneInfo('Agent', _agent == null ? 'Désigné par le superviseur' : '${_agent!['prenom']} · ${_agent!['fonction']}'),
+                const LigneInfo('Destinataire', 'Choisi automatiquement : la structure compétente la plus proche'),
                 const LigneInfo('Date et heure', 'Enregistrées automatiquement à l’envoi'),
                 LigneInfo('Photos', _photos.isEmpty ? 'Aucune' : '${_photos.length}'),
               ])),
@@ -413,7 +327,7 @@ class _SignalerScreenState extends State<SignalerScreen> {
               if (_etape > 0) Expanded(child: OutlinedButton(onPressed: _envoi ? null : () => setState(() => _etape--), child: const Text('Retour'))),
               if (_etape > 0) const SizedBox(width: 10),
               Expanded(flex: 2, child: FilledButton(
-                onPressed: !_etapeValide || _envoi ? null : (_etape < 4 ? _suivant : _envoyer),
+                onPressed: !_etapeValide || _envoi ? null : (_etape < 3 ? _suivant : _envoyer),
                 child: _envoi ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white))
                     : Text(_libelleSuivant),
               )),

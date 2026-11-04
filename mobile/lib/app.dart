@@ -51,7 +51,7 @@ GoRouter creerRouteur(Session session) => GoRouter(
         GoRoute(path: '/compte-superviseur', builder: (_, __) => const CompteSuperviseurScreen()),
         GoRoute(path: '/mot-de-passe-oublie', builder: (_, __) => const MotDePasseOublieScreen()),
         GoRoute(path: '/sos', builder: (_, __) => const SosScreen()),
-        GoRoute(path: '/signaler', builder: (_, __) => const SignalerScreen()),
+        GoRoute(path: '/signaler', builder: (_, s) => SignalerScreen(type: s.uri.queryParameters['type'])),
         GoRoute(path: '/services', builder: (_, __) => const ServicesScreen()),
         GoRoute(path: '/assistant', builder: (_, __) => const AssistantScreen()),
         GoRoute(path: '/notifications', builder: (_, __) => const NotificationsScreen()),
@@ -92,6 +92,13 @@ class _Coquille extends StatelessWidget {
     final index = onglets.indexWhere((o) => o.$1 == lieu);
     return Scaffold(
       body: child,
+      // Citoyen : bouton SOS flottant, toujours au même endroit sur tous ses écrans.
+      floatingActionButton: u.estCitoyen
+          ? FloatingActionButton.extended(
+              heroTag: 'sos', tooltip: tr('Déclencher une alerte SOS'), onPressed: () => context.push('/sos'),
+              backgroundColor: AppColors.rougeFonce, foregroundColor: Colors.white, elevation: 4,
+              icon: const Icon(Icons.crisis_alert_rounded), label: Text('SOS', style: titre(18, couleur: Colors.white)))
+          : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: index < 0 ? 0 : index,
         onDestinationSelected: (i) => context.go(onglets[i].$1),

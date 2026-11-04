@@ -419,7 +419,8 @@ class ServicesProximiteView(APIView):
             if plat is None or plng is None:
                 continue
             type_ = next((inverse[(k, v)] for k, v in tags.items() if (k, v) in inverse), None)
-            if type_ is None:
+            # Le repli (extrait embarqué) contient tous les types : on ne garde que ceux demandés.
+            if type_ is None or type_ not in types:
                 continue
             d = distance_m(lat, lng, plat, plng)
             if d > rayon:

@@ -6,6 +6,7 @@ import '../core/api.dart';
 import '../core/constants/app_colors.dart';
 import '../core/format.dart';
 import '../core/models.dart';
+import 'credits_photos.dart';
 import '../state/langue.dart';
 
 /// Système de design SenAlert (mêmes jetons que le web : bleu marine, rouge réservé au SOS,
@@ -300,12 +301,15 @@ class TuileDossier extends StatelessWidget {
         child: Row(children: [
           Container(width: 4, height: 44, margin: const EdgeInsets.only(right: 10), decoration: BoxDecoration(
               color: couleursGravite[d.gravite] ?? AppColors.border, borderRadius: BorderRadius.circular(4))),
-          Container(
-            width: 44, height: 44,
-            decoration: BoxDecoration(color: (d.estSos ? AppColors.rouge : AppColors.marine700).withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
-            child: Icon(d.estSos ? Icons.sos_rounded : (iconesCategories[d.typeIncident] ?? Icons.report_rounded),
-                color: d.estSos ? AppColors.rouge : AppColors.marine700),
-          ),
+          // Photo d'exemple du type d'incident ; pastille rouge pour un SOS.
+          if (d.estSos)
+            Container(width: 52, height: 52, decoration: BoxDecoration(color: AppColors.rougeFonce, borderRadius: BorderRadius.circular(14)),
+                child: const Icon(Icons.sos_rounded, color: Colors.white))
+          else
+            ClipRRect(borderRadius: BorderRadius.circular(14), child: Image.asset(
+                'assets/images/photos/${photoCategorie[d.typeIncident] ?? 'dakar-vue'}.jpg', width: 52, height: 52, fit: BoxFit.cover, excludeFromSemantics: true,
+                errorBuilder: (_, __, ___) => Container(width: 52, height: 52, color: AppColors.marine50,
+                    child: Icon(iconesCategories[d.typeIncident] ?? Icons.report_rounded, color: AppColors.marine700)))),
           const SizedBox(width: 12),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
@@ -313,8 +317,10 @@ class TuileDossier extends StatelessWidget {
               if (d.enRetard) const Padding(padding: EdgeInsets.only(left: 6), child: Icon(Icons.schedule_rounded, size: 15, color: AppColors.warning)),
             ]),
             const SizedBox(height: 2),
-            Text('${d.titre} · ${d.regionLibelle.isEmpty ? 'région inconnue' : d.regionLibelle}', maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w600)),
+            Text(d.estSos && d.typeUrgence != null && d.typeUrgence != 'non_precise' ? 'SOS · ${d.typeUrgenceLibelle}' : d.titre,
+                maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
+            Text(d.structureNom ?? (d.regionLibelle.isEmpty ? 'En attente d’orientation' : d.regionLibelle), maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: AppColors.textGrey, fontSize: 12.5)),
             Text(ilYa(d.creation), style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
           ])),
           const SizedBox(width: 8),

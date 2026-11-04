@@ -11,7 +11,7 @@ export default function CartePage() {
   return (
     <>
       <EnTetePage titre={titre} sousTitre={sousTitre} />
-      <CarteAvancee role={utilisateur.role} />
+      <CarteAvancee role={utilisateur.role} panneauOuvert={utilisateur.role !== 'citoyen'} />
     </>
   );
 }

@@ -100,9 +100,22 @@ class ChoixDuCitoyenTests(SenAlertTestCase):
         self.en_tant_que(self.pompier)
         self.assertEqual(self.client.get(URL).data['count'], 0)
 
-    def test_sans_choix_structure_competente_la_plus_proche(self):
+    def test_sans_choix_orientation_automatique_vers_un_agent_disponible(self):
+        """Le citoyen ne choisit rien : structure compétente la plus proche ayant un agent disponible, et cet agent."""
         r = self.signaler()
         self.assertEqual(r.data['structure'], self.structure('pompiers').pk)
+        self.assertEqual(r.data['statut'], AFFECTE)
+        self.assertEqual(r.data['intervention']['agent_nom'], 'Agent de secours', 'le citoyen ne voit pas son identité')
+        agent = Incident.objects.get(pk=r.data['id']).intervention.agent_id
+        self.assertIn(agent, {self.pompier.pk, self.collegue.pk})
+
+    def test_sans_agent_disponible_le_dossier_attend_le_superviseur(self):
+        for a in (self.pompier, self.collegue):
+            a.profil_agent.disponible = False
+            a.profil_agent.save()
+        r = self.signaler(latitude=14.70, longitude=-17.45)
+        self.assertEqual(r.data['statut'], NOUVEAU)
+        self.assertEqual(r.data['service_nom'], 'Sapeurs-pompiers')
 
 
 class SuperviseurDeStructureTests(SenAlertTestCase):

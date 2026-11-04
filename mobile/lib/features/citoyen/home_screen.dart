@@ -11,6 +11,7 @@ import '../../ui/alertes_zone.dart';
 import '../../ui/cloche.dart';
 import '../../ui/kit.dart';
 import '../../ui/photo.dart';
+import 'report_screen.dart';
 import '../../state/langue.dart';
 
 class AccueilCitoyen extends StatefulWidget {
@@ -49,59 +50,44 @@ class _AccueilCitoyenState extends State<AccueilCitoyen> {
   Widget build(BuildContext context) {
     final u = context.watch<Session>().utilisateur!;
     final config = context.watch<Configuration>();
-    final actions = [
-      (tr('Signaler'), tr('Accident, incendie…'), Icons.report_rounded, AppColors.marine800, '/signaler'),
-      (tr('Premiers secours'), tr('Fiches hors ligne'), Icons.healing_rounded, AppColors.marine600, '/secours'),
-      (tr('Services proches'), tr('Hôpitaux, pharmacies…'), Icons.local_hospital_rounded, AppColors.marine600, '/services'),
-      (tr('Assistant'), tr('Questions, prévention'), Icons.smart_toy_rounded, AppColors.marine600, '/assistant'),
-    ];
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: _charger,
         child: CustomScrollView(slivers: [
+          // Une photo, une question, deux actions. Le SOS est le bouton rouge flottant, sur tous les écrans.
           SliverToBoxAdapter(
             child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
               child: Stack(children: [
                 const Positioned.fill(child: PhotoIllustration('dakar-vue', credit: false)),
                 const Positioned.fill(child: DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(
                     begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Jetons.voileFort, Jetons.voileMoyen, Jetons.voileLeger])))),
                 Padding(
-                  padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 16, 20, 28),
+                  padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 14, 20, 24),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(children: [
-                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(tr('Bonjour {nom}', {'nom': u.prenom}).trim(), style: titre(24, couleur: Colors.white)),
-                        Text(tr('Besoin d’aide immédiate ?'), style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600)),
-                      ])),
+                      Expanded(child: Text(tr('Bonjour {nom}', {'nom': u.prenom}).trim(), style: titre(26, couleur: Colors.white))),
                       const ClocheNotifications(),
                     ]),
-                    const SizedBox(height: 22),
-                    Center(
-                      child: Semantics(
-                        button: true,
-                        label: tr('Déclencher une alerte SOS'),
-                        child: GestureDetector(
-                          onTap: () => context.push('/sos'),
-                          child: Container(
-                            width: 168, height: 168,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle, gradient: AppColors.sosGradient,
-                              boxShadow: [BoxShadow(color: AppColors.rouge.withOpacity(0.5), blurRadius: 36, spreadRadius: 4)],
-                              border: Border.all(color: Colors.white30, width: 8),
-                            ),
-                            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                              const Icon(Icons.crisis_alert_rounded, color: Colors.white, size: 40),
-                              Text('SOS', style: titre(34, couleur: Colors.white)),
-                            ]),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Center(child: Text(tr('5 secondes pour annuler · position jointe si autorisée'), style: const TextStyle(color: Colors.white70, fontSize: 12.5))),
+                    const SizedBox(height: 4),
+                    Text(tr('Signalez un problème : nous l’envoyons à la structure compétente la plus proche.'),
+                        style: const TextStyle(color: Colors.white, fontSize: 15, height: 1.35)),
                     const SizedBox(height: 18),
-                    NumerosUrgence(config.numeros, sombre: true),
+                    Row(children: [
+                      Expanded(child: FilledButton.icon(
+                        style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.marine900, minimumSize: const Size.fromHeight(52)),
+                        onPressed: () => context.push('/signaler'), icon: const Icon(Icons.report_rounded), label: Text(tr('Signaler')))),
+                      const SizedBox(width: 10),
+                      Expanded(child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white54), minimumSize: const Size.fromHeight(52)),
+                        onPressed: () => context.push('/services'), icon: const Icon(Icons.local_hospital_rounded), label: Text(tr('Services proches')))),
+                    ]),
+                    const SizedBox(height: 14),
+                    Row(children: [
+                      const Icon(Icons.crisis_alert_rounded, size: 16, color: Colors.white70),
+                      const SizedBox(width: 6),
+                      Expanded(child: Text(tr('Danger immédiat : bouton SOS rouge en bas à droite.'), style: const TextStyle(color: Colors.white70, fontSize: 12.5))),
+                    ]),
                   ]),
                 ),
               ]),
@@ -109,19 +95,14 @@ class _AccueilCitoyenState extends State<AccueilCitoyen> {
           ),
           SliverToBoxAdapter(child: BandeauAlertesZone(region: u.region.isEmpty ? null : u.region)),
           SliverPadding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 18, 16, 10),
+            sliver: SliverToBoxAdapter(child: Text(tr('Que voulez-vous signaler ?'), style: titre(18))),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             sliver: SliverGrid.count(
-              crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 1.55,
-              children: [
-                for (final a in actions)
-                  Carte(onTap: () => context.push(a.$5), padding: const EdgeInsets.all(14), child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: a.$4.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: Icon(a.$3, color: a.$4)),
-                    Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(a.$1, style: const TextStyle(fontWeight: FontWeight.w700)),
-                      Text(a.$2, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: AppColors.textGrey, fontSize: 12)),
-                    ]),
-                  ])),
-              ],
+              crossAxisCount: 2, mainAxisSpacing: 10, crossAxisSpacing: 10, childAspectRatio: 1.25,
+              children: [for (final c in config.categories) TuileCategorie(c, onTap: () => context.push('/signaler?type=${c.code}'))],
             ),
           ),
           if (_erreur != null) SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.all(16),
@@ -129,9 +110,9 @@ class _AccueilCitoyenState extends State<AccueilCitoyen> {
           else if (_enCours == null) const SliverToBoxAdapter(child: Chargement())
           else if (_enCours!.isNotEmpty) ...[
             SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 6),
               sliver: SliverToBoxAdapter(child: Row(children: [
-                Expanded(child: Text(tr('Mes dossiers en cours'), style: titre(17))),
+                Expanded(child: Text(tr('Mes dossiers en cours'), style: titre(18))),
                 TextButton(onPressed: () => context.go('/dossiers'), child: Text(tr('Tout voir'))),
               ])),
             ),
@@ -142,10 +123,43 @@ class _AccueilCitoyenState extends State<AccueilCitoyen> {
                   child: TuileDossier(_enCours![i], onTap: () => context.push('/dossier/${_enCours![i].estSos ? 'sos' : 'incident'}/${_enCours![i].id}').then((_) => _charger()))),
             ),
           ],
-          SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.all(20),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+            sliver: SliverToBoxAdapter(child: Row(children: [
+              Expanded(child: _Raccourci(Icons.healing_rounded, tr('Premiers secours'), () => context.push('/secours'))),
+              const SizedBox(width: 10),
+              Expanded(child: _Raccourci(Icons.smart_toy_rounded, tr('Assistant'), () => context.push('/assistant'))),
+            ])),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+            sliver: SliverToBoxAdapter(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(tr('Numéros d’urgence'), style: titre(16)),
+              const SizedBox(height: 8),
+              NumerosUrgence(config.numeros),
+            ])),
+          ),
+          SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.fromLTRB(20, 20, 20, 96),
               child: Text(config.avertissement, textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppColors.textMuted)))),
         ]),
       ),
     );
   }
+}
+
+class _Raccourci extends StatelessWidget {
+  final IconData icone;
+  final String libelle;
+  final VoidCallback onTap;
+  const _Raccourci(this.icone, this.libelle, this.onTap);
+  @override
+  Widget build(BuildContext context) => Carte(
+        onTap: onTap, padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        child: Row(children: [
+          Icon(icone, color: AppColors.marine700),
+          const SizedBox(width: 10),
+          Expanded(child: Text(libelle, style: const TextStyle(fontWeight: FontWeight.w700))),
+          Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+        ]),
+      );
 }
