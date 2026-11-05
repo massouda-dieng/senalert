@@ -1,10 +1,12 @@
 from datetime import datetime, time
 
+from django.conf import settings
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers, status
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
@@ -185,3 +187,46 @@ class AssistantView(APIView):
         s = AssistantSerializer(data=request.data)
         s.is_valid(raise_exception=True)
         return Response(assistant.repondre(s.validated_data['message'], s.validated_data.get('historique')))
+
+
+class TranscriptionSerializer(serializers.Serializer):
+    audio = serializers.FileField()
+
+    def validate_audio(self, fichier):
+        extension = (fichier.name or '').rsplit('.', 1)[-1].lower() if '.' in (fichier.name or '') else ''
+        if extension not in assistant.FORMATS_AUDIO:
+            raise serializers.ValidationError('Format audio non pris en charge.')
+        if fichier.size == 0:
+            raise serializers.ValidationError('Enregistrement vide.')
+        if fichier.size > settings.ASSISTANT_AUDIO_MAX_OCTETS:
+            raise serializers.ValidationError('Message vocal trop long (2 minutes au maximum).')
+        return fichier
+
+
+class TranscriptionView(APIView):
+    """Dictée vocale : transforme un message vocal en texte, que le citoyen relit avant de l'envoyer à l'assistant.
+    L'audio est transmis au fournisseur pour la transcription puis oublié : il n'est jamais enregistré."""
+
+    parser_classes = [MultiPartParser]
+    serializer_class = TranscriptionSerializer
+    throttle_scope = 'assistant_vocal'
+
+    def get_throttles(self):
+        return [ScopedRateThrottle(), ThrottleAssistantJour()]
+
+    @extend_schema(request={'multipart/form-data': TranscriptionSerializer}, responses=OpenApiTypes.OBJECT)
+    def post(self, request):
+        if not (Parametre.get('fonctionnalites') or {}).get('assistant_ia', True):
+            raise PermissionDenied("L'assistant est désactivé par l'administrateur.")
+        s = TranscriptionSerializer(data=request.data)
+        s.is_valid(raise_exception=True)
+        fichier = s.validated_data['audio']
+        try:
+            texte = assistant.transcrire(fichier.name, fichier.read(), fichier.content_type)
+        except assistant.DicteeIndisponible:
+            return Response({'detail': 'La dictée vocale est indisponible pour le moment. Écrivez votre question.',
+                             'code': 'dictee_indisponible'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        if not texte:
+            return Response({'detail': 'Aucune parole reconnue. Parlez plus près du micro puis réessayez.',
+                             'code': 'aucune_parole'}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        return Response({'texte': texte})

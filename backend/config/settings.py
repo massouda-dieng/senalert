@@ -186,6 +186,7 @@ REST_FRAMEWORK = {
         'sos': config('THROTTLE_SOS', default='10/hour'),
         'signalement': config('THROTTLE_SIGNALEMENT', default='30/hour'),
         'assistant': config('THROTTLE_ASSISTANT', default='20/min'),
+        'assistant_vocal': config('THROTTLE_ASSISTANT_VOCAL', default='10/min'),
         'assistant_jour': config('THROTTLE_ASSISTANT_JOUR', default='200/day'),
         'services': config('THROTTLE_SERVICES', default='30/min'),
     },
@@ -254,6 +255,9 @@ FIREBASE_CREDENTIALS_PATH = config('FIREBASE_CREDENTIALS_PATH', default='firebas
 GROQ_API_KEY = config('GROQ_API_KEY', default='')
 GROQ_MODEL = config('GROQ_MODEL', default='qwen/qwen3.8-27b')
 GROQ_TIMEOUT = config('GROQ_TIMEOUT', default=15, cast=int)
+# Dictée vocale de l'assistant : l'audio est transcrit par Whisper (Groq), jamais conservé.
+GROQ_MODEL_TRANSCRIPTION = config('GROQ_MODEL_TRANSCRIPTION', default='whisper-large-v3-turbo')
+ASSISTANT_AUDIO_MAX_OCTETS = 8 * 1024 * 1024
 
 # --- Services de proximité (OpenStreetMap / Overpass) -----------------------
 OVERPASS_URL = config('OVERPASS_URL', default='https://overpass-api.de/api/interpreter')

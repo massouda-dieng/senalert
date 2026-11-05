@@ -166,6 +166,36 @@ def appeler_groq(message, historique):
     return texte_simple(re.sub(r'<think>.*?</think>', '', contenu, flags=re.S).strip())
 
 
+class DicteeIndisponible(Exception):
+    """La transcription n'a pas pu être faite (pas de clé, fournisseur en panne ou réponse invalide)."""
+
+
+# Formats acceptés par Whisper ; l'application enregistre en WAV (web, Android, iOS).
+FORMATS_AUDIO = {'wav', 'webm', 'm4a', 'mp3', 'mp4', 'mpeg', 'mpga', 'ogg', 'oga', 'opus', 'flac', 'aac'}
+
+
+def transcrire(nom, contenu, type_mime):
+    """Transcrit un court message vocal en texte (Whisper chez Groq). L'audio n'est jamais conservé."""
+    if not settings.GROQ_API_KEY:
+        raise DicteeIndisponible('Aucune clé Groq configurée.')
+    try:
+        r = requests.post(
+            'https://api.groq.com/openai/v1/audio/transcriptions',
+            headers={'Authorization': f'Bearer {settings.GROQ_API_KEY}'},
+            files={'file': (nom, contenu, type_mime or 'application/octet-stream')},
+            data={'model': settings.GROQ_MODEL_TRANSCRIPTION, 'language': 'fr', 'response_format': 'json', 'temperature': '0'},
+            timeout=max(settings.GROQ_TIMEOUT, 30),
+        )
+        r.raise_for_status()
+        texte = r.json().get('text')
+    except Exception as exc:
+        logger.warning('Transcription Groq indisponible (%s).', exc.__class__.__name__)
+        raise DicteeIndisponible(exc.__class__.__name__) from exc
+    if not isinstance(texte, str):
+        raise DicteeIndisponible('Réponse sans texte.')
+    return ' '.join(texte.split())[:LONGUEUR_MAX]
+
+
 def texte_simple(texte):
     """Retire la mise en forme Markdown du modèle (**gras**, titres, puces « * ») :
     le web et le mobile affichent la réponse en texte brut."""

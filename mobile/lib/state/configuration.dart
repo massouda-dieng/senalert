@@ -14,6 +14,8 @@ class Configuration extends ChangeNotifier {
   /// Services d'intervention actifs : (identifiant, nom).
   List<(int, String)> services = [];
   String? smsSecours;
+  /// Dictée vocale de l'assistant disponible sur le serveur (clé de transcription configurée).
+  bool assistantVocal = false;
   String avertissement = 'SenAlert ne remplace pas les services officiels de secours.';
   bool chargee = false;
   String? erreur;
@@ -39,6 +41,7 @@ class Configuration extends ChangeNotifier {
     numeros = (j['numeros_urgence'] as List).map((n) => NumeroUrgence.depuis(n)).toList();
     avertissement = j['avertissement'] ?? avertissement;
     smsSecours = j['sms_secours'];
+    assistantVocal = j['assistant_vocal'] == true;
     services = [for (final s in (j['services'] as List? ?? [])) (int.parse('${s['code']}'), '${s['libelle']}')];
     chargee = true;
   }

@@ -217,3 +217,105 @@ class TestAssistant(SenAlertTestCase):
     def test_desactivable(self):
         Parametre.objects.filter(cle='fonctionnalites').update(valeur={'assistant_ia': False, 'connexion_google': True, 'carte_publique': True})
         self.assertEqual(self.client.post(self.URL, {'message': 'bonjour'}, format='json').status_code, 403)
+
+
+# --------------------------------------------------------------------------
+# Dictée vocale de l'assistant (Whisper chez Groq)
+# --------------------------------------------------------------------------
+from django.core.files.uploadedfile import SimpleUploadedFile  # noqa: E402
+
+
+def wav(octets=3200):
+    """Court WAV PCM 16 bits mono 16 kHz (silence) : suffisant pour les validations."""
+    import struct
+    entete = b'RIFF' + struct.pack('<I', 36 + octets) + b'WAVEfmt ' + struct.pack('<IHHIIHH', 16, 1, 1, 16000, 32000, 2, 16)
+    return SimpleUploadedFile('message.wav', entete + b'data' + struct.pack('<I', octets) + b'\x00' * octets, content_type='audio/wav')
+
+
+class TestDicteeVocale(SenAlertTestCase):
+    URL = '/api/analyse/assistant/transcrire/'
+
+    def setUp(self):
+        super().setUp()
+        self.en_tant_que(self.citoyen())
+
+    def envoyer(self, fichier):
+        return self.client.post(self.URL, {'audio': fichier}, format='multipart')
+
+    def test_sans_cle_indisponible_et_masque(self):
+        r = self.envoyer(wav())
+        self.assertEqual(r.status_code, 503)
+        self.assertEqual(r.data['code'], 'dictee_indisponible')
+        self.assertFalse(self.client.get('/api/configuration/').data['assistant_vocal'])
+
+    @override_settings(GROQ_API_KEY='cle-test')
+    def test_transcription_envoyee_a_whisper(self):
+        reponse = mock.Mock(status_code=200)
+        reponse.json.return_value = {'text': '  Que faire   en cas de brûlure ?  '}
+        with mock.patch('analyse.assistant.requests.post', return_value=reponse) as post:
+            r = self.envoyer(wav())
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.data, {'texte': 'Que faire en cas de brûlure ?'})
+        appel = post.call_args
+        self.assertIn('/audio/transcriptions', appel.args[0])
+        self.assertEqual(appel.kwargs['data']['language'], 'fr')
+        self.assertEqual(appel.kwargs['data']['model'], 'whisper-large-v3-turbo')
+        self.assertEqual(appel.kwargs['files']['file'][0], 'message.wav')
+        self.assertNotIn('cle-test', str(r.data))
+        self.assertTrue(self.client.get('/api/configuration/').data['assistant_vocal'])
+
+    @override_settings(GROQ_API_KEY='cle-test')
+    def test_panne_groq(self):
+        with mock.patch('analyse.assistant.requests.post', side_effect=TimeoutError):
+            r = self.envoyer(wav())
+        self.assertEqual(r.status_code, 503)
+
+    @override_settings(GROQ_API_KEY='cle-test')
+    def test_silence_aucune_parole(self):
+        reponse = mock.Mock(status_code=200)
+        reponse.json.return_value = {'text': '   '}
+        with mock.patch('analyse.assistant.requests.post', return_value=reponse):
+            r = self.envoyer(wav())
+        self.assertEqual(r.status_code, 422)
+        self.assertEqual(r.data['code'], 'aucune_parole')
+
+    @override_settings(GROQ_API_KEY='cle-test')
+    def test_texte_tronque(self):
+        reponse = mock.Mock(status_code=200)
+        reponse.json.return_value = {'text': 'mot ' * 600}
+        with mock.patch('analyse.assistant.requests.post', return_value=reponse):
+            r = self.envoyer(wav())
+        self.assertLessEqual(len(r.data['texte']), assistant.LONGUEUR_MAX)
+
+    @override_settings(GROQ_API_KEY='cle-test', ASSISTANT_AUDIO_MAX_OCTETS=1000)
+    def test_validations(self):
+        with mock.patch('analyse.assistant.requests.post') as post:
+            self.assertEqual(self.envoyer(SimpleUploadedFile('virus.exe', b'MZ', content_type='audio/wav')).status_code, 400)
+            self.assertEqual(self.envoyer(SimpleUploadedFile('vide.wav', b'', content_type='audio/wav')).status_code, 400)
+            self.assertEqual(self.envoyer(wav(4000)).status_code, 400)
+            self.assertEqual(self.client.post(self.URL, {}, format='multipart').status_code, 400)
+        post.assert_not_called()
+
+    def test_connexion_obligatoire(self):
+        self.client.force_authenticate(user=None)
+        self.assertEqual(self.envoyer(wav()).status_code, 401)
+
+    @override_settings(GROQ_API_KEY='cle-test')
+    def test_desactivable(self):
+        Parametre.objects.filter(cle='fonctionnalites').update(valeur={'assistant_ia': False, 'connexion_google': True, 'carte_publique': True})
+        with mock.patch('analyse.assistant.requests.post') as post:
+            self.assertEqual(self.envoyer(wav()).status_code, 403)
+        post.assert_not_called()
+        self.assertFalse(self.client.get('/api/configuration/').data['assistant_vocal'])
+
+    @override_settings(GROQ_API_KEY='cle-test')
+    def test_audio_jamais_conserve(self):
+        import os
+        from django.conf import settings as reglages
+        avant = sum(len(f) for _, _, f in os.walk(reglages.MEDIA_ROOT)) if os.path.isdir(reglages.MEDIA_ROOT) else 0
+        reponse = mock.Mock(status_code=200)
+        reponse.json.return_value = {'text': 'bonjour'}
+        with mock.patch('analyse.assistant.requests.post', return_value=reponse):
+            self.envoyer(wav())
+        apres = sum(len(f) for _, _, f in os.walk(reglages.MEDIA_ROOT)) if os.path.isdir(reglages.MEDIA_ROOT) else 0
+        self.assertEqual(avant, apres)

@@ -29,6 +29,10 @@ dependencies:
   url_launcher: ^6.3.1
   google_fonts: ^6.2.1
   intl: ^0.19.0
+  # Assistant vocal : dictée (micro, transcrite par le serveur) et lecture des réponses à voix haute.
+  # record 6.x reste compatible avec Flutter 3.24 (la 7 exige Flutter 3.44).
+  record: ^6.1.0
+  flutter_tts: ^4.2.0
   # Authentification Google (ID token vérifié par le backend)
   google_sign_in: ^6.2.1
   # Notifications push

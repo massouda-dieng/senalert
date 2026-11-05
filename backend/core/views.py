@@ -45,6 +45,8 @@ class ConfigurationPubliqueView(APIView):
             'sms_secours': sms.get('numero') if sms.get('actif') and sms.get('numero') else None,
             'google_client_id_web': settings.GOOGLE_CLIENT_ID_WEB or None,
             'google_actif': bool(settings.GOOGLE_CLIENT_IDS) and fonctions.get('connexion_google', True),
+            # Dictée vocale de l'assistant : possible seulement avec une clé Groq (Whisper).
+            'assistant_vocal': bool(settings.GROQ_API_KEY) and fonctions.get('assistant_ia', True),
             'numeros_urgence': numeros_verifies(),
             'avertissement': ("SenAlert ne remplace pas les services officiels de secours. "
                               "En cas de danger immédiat, appelez directement les numéros d'urgence."),
