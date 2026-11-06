@@ -49,6 +49,30 @@ class StatistiquesTests(SenAlertTestCase):
         Incident.objects.create(citoyen=self.awa, type_incident='inondation', region='dakar')
         self.assertEqual(self.client.get(URL).data['resume']['total_incidents'], 4)
 
+    def test_profils_citoyens(self):
+        """Inscriptions, participation et citoyens les plus actifs, calculés depuis la base."""
+        from accounts.models import User
+        fatou = self.citoyen('fatou', region='thies')
+        User.objects.filter(pk=fatou.pk).update(telephone='771234567')
+        ancien = self.citoyen('ancien', region='')
+        User.objects.filter(pk=ancien.pk).update(date_joined=timezone.now() - timedelta(days=200))
+        self.citoyen('parti').__class__.objects.filter(username='parti').update(is_active=False)
+        self.en_tant_que(self.superadmin())
+        c = self.client.get(URL).data['citoyens']
+        self.assertEqual(c['total'], 3)  # awa, fatou, ancien (le compte désactivé est exclu)
+        self.assertEqual(c['nouveaux'], 2)
+        self.assertEqual(c['actifs'], 1)  # seule Awa a signalé sur la période
+        self.assertEqual(c['taux_participation'], round(100 / 3, 1))
+        self.assertEqual(c['signalements_par_actif'], 4.0)  # 3 incidents + 1 SOS
+        self.assertEqual(c['reguliers'], 1)
+        self.assertEqual(c['profil_complet_pct'], round(100 / 3, 1))
+        self.assertEqual(c['plus_actifs'][0], {'id': self.awa.pk, 'nom': 'awa', 'region': 'Dakar', 'signalements': 4, 'resolus': 1})
+        self.assertEqual(sum(c['inscriptions'].values()), 2)
+        self.assertEqual({r['libelle']: r['total'] for r in c['par_region']}, {'Dakar': 1, 'Thiès': 1, 'Non renseignée': 1})
+        self.assertEqual(len(c['derniers_inscrits']), 3)
+        # Filtre région : seulement les citoyens de la région
+        self.assertEqual(self.client.get(URL, {'region': 'thies'}).data['citoyens']['total'], 1)
+
     def test_filtres_appliques(self):
         self.en_tant_que(self.superadmin())
         r = self.client.get(URL, {'region': 'thies'}).data

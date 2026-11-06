@@ -42,7 +42,7 @@ export const NAVIGATION = {
     { a: '/supervision/utilisateurs', libelle: 'Mes agents', icone: Users },
   ],
   superadmin: [
-    { a: '/supervision', libelle: 'Supervision', icone: Gauge, fin: true },
+    { a: '/supervision', libelle: 'Vue d’ensemble', icone: Gauge, fin: true },
     { a: '/supervision/incidents', libelle: 'Incidents', icone: ClipboardList },
     { a: '/supervision/sos', libelle: 'Alertes SOS', icone: Siren },
     { a: '/supervision/carte', libelle: 'Carte interactive', icone: Map },
@@ -50,7 +50,7 @@ export const NAVIGATION = {
     { a: '/supervision/alertes-zone', libelle: 'Alertes de zone', icone: Megaphone },
     { a: '/supervision/communaute', libelle: 'Communauté', icone: UsersRound },
     { groupe: 'Administration' },
-    { a: '/supervision/utilisateurs', libelle: 'Utilisateurs', icone: Users },
+    { a: '/supervision/utilisateurs', libelle: 'Citoyens et agents', icone: Users },
     { a: '/supervision/structures', libelle: 'Structures', icone: Building2 },
     { a: '/supervision/referentiels', libelle: 'Services & catégories', icone: Tags },
     { a: '/supervision/parametres', libelle: 'Paramètres', icone: SlidersHorizontal },
