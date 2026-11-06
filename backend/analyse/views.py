@@ -222,11 +222,11 @@ class TranscriptionView(APIView):
         s.is_valid(raise_exception=True)
         fichier = s.validated_data['audio']
         try:
-            texte = assistant.transcrire(fichier.name, fichier.read(), fichier.content_type)
+            resultat = assistant.transcrire(fichier.name, fichier.read(), fichier.content_type)
         except assistant.DicteeIndisponible:
             return Response({'detail': 'La dictée vocale est indisponible pour le moment. Écrivez votre question.',
                              'code': 'dictee_indisponible'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-        if not texte:
+        if not resultat['texte']:
             return Response({'detail': 'Aucune parole reconnue. Parlez plus près du micro puis réessayez.',
                              'code': 'aucune_parole'}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
-        return Response({'texte': texte})
+        return Response(resultat)

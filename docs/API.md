@@ -60,7 +60,7 @@ Conventions :
 | GET | `/api/analyse/zones-risque/` | agent, superadmin | `date_debut`, `date_fin`, `type_incident`, `niveau`, `region`, `comparer=1` ; renvoie les 14 régions, la formule, la date de calcul et un avertissement |
 | GET/POST | `/api/analyse/zones-risque/historique/` | GET agent/superadmin, POST superadmin | Instantanés `ZoneRisque` |
 | POST | `/api/analyse/assistant/` | connecté (20/min, 200/jour) | `{message ≤ 1000 car., historique?}` → `{reponse, source: groq|secours_local, alerte_urgence, fiches}` |
-| POST | `/api/analyse/assistant/transcrire/` | connecté (10/min, 200/jour) | multipart `audio` (wav, webm, ogg, m4a, mp3… ≤ 8 Mo, ≈ 2 min) → `{texte}` transcrit par Whisper (Groq) ; l'audio n'est jamais conservé. 503 `dictee_indisponible` sans clé Groq ou en cas de panne, 422 `aucune_parole` si rien n'est reconnu. `assistant_vocal` dans `/api/configuration/` indique si la dictée est disponible. |
+| POST | `/api/analyse/assistant/transcrire/` | connecté (10/min, 200/jour) | multipart `audio` (wav, webm, ogg, m4a, mp3… ≤ 8 Mo, ≈ 2 min) → `{texte, langue: francais|wolof|melange|null, traduit}` : transcrit par Whisper (Groq) puis rendu en français par `GROQ_MODEL_TRADUCTION` (le wolof est traduit, le français seulement corrigé ; si la traduction échoue, `langue` vaut `null` et la transcription brute est rendue) ; l'audio n'est jamais conservé. 503 `dictee_indisponible` sans clé Groq ou en cas de panne, 422 `aucune_parole` si rien n'est reconnu. `assistant_vocal` dans `/api/configuration/` indique si la dictée est disponible. |
 
 ## Fonctionnalités v3.1
 

@@ -232,6 +232,14 @@ def wav(octets=3200):
     return SimpleUploadedFile('message.wav', entete + b'data' + struct.pack('<I', octets) + b'\x00' * octets, content_type='audio/wav')
 
 
+def traduction(langue, francais):
+    """Réponse simulée du modèle qui rend le message dicté en français."""
+    import json
+    r = mock.Mock(status_code=200)
+    r.json.return_value = {'choices': [{'message': {'content': json.dumps({'langue': langue, 'francais': francais})}}]}
+    return r
+
+
 class TestDicteeVocale(SenAlertTestCase):
     URL = '/api/analyse/assistant/transcrire/'
 
@@ -252,17 +260,46 @@ class TestDicteeVocale(SenAlertTestCase):
     def test_transcription_envoyee_a_whisper(self):
         reponse = mock.Mock(status_code=200)
         reponse.json.return_value = {'text': '  Que faire   en cas de brûlure ?  '}
-        with mock.patch('analyse.assistant.requests.post', return_value=reponse) as post:
+        with mock.patch('analyse.assistant.requests.post', side_effect=[reponse, traduction('francais', 'Que faire en cas de brûlure ?')]) as post:
             r = self.envoyer(wav())
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.data, {'texte': 'Que faire en cas de brûlure ?'})
-        appel = post.call_args
+        self.assertEqual(r.data, {'texte': 'Que faire en cas de brûlure ?', 'langue': 'francais', 'traduit': False})
+        appel = post.call_args_list[0]
         self.assertIn('/audio/transcriptions', appel.args[0])
-        self.assertEqual(appel.kwargs['data']['language'], 'fr')
+        self.assertNotIn('language', appel.kwargs['data'])  # langue libre : le wolof ne doit pas être forcé en français
+        self.assertIn('wolof', appel.kwargs['data']['prompt'])
         self.assertEqual(appel.kwargs['data']['model'], 'whisper-large-v3-turbo')
         self.assertEqual(appel.kwargs['files']['file'][0], 'message.wav')
         self.assertNotIn('cle-test', str(r.data))
         self.assertTrue(self.client.get('/api/configuration/').data['assistant_vocal'])
+
+    @override_settings(GROQ_API_KEY='cle-test')
+    def test_wolof_traduit_en_francais(self):
+        whisper = mock.Mock(status_code=200)
+        whisper.json.return_value = {'text': 'Am na fi safara, kër gi dafay lakk. Appelez le 77 123 45 67'}
+        with mock.patch('analyse.assistant.requests.post',
+                        side_effect=[whisper, traduction('wolof', "Il y a un feu ici, la maison brûle.")]) as post:
+            r = self.envoyer(wav())
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.data, {'texte': 'Il y a un feu ici, la maison brûle.', 'langue': 'wolof', 'traduit': True})
+        appel = post.call_args_list[1]
+        self.assertIn('/chat/completions', appel.args[0])
+        self.assertEqual(appel.kwargs['json']['model'], 'openai/gpt-oss-120b')
+        envoye = appel.kwargs['json']['messages'][1]['content']
+        self.assertIn('<transcription>Am na fi safara', envoye)
+        self.assertNotIn('77 123 45 67', envoye)  # téléphone masqué avant envoi au modèle
+
+    @override_settings(GROQ_API_KEY='cle-test')
+    def test_traduction_en_panne_texte_brut(self):
+        whisper = mock.Mock(status_code=200)
+        whisper.json.return_value = {'text': 'Am na fi safara'}
+        illisible = mock.Mock(status_code=200)
+        illisible.json.return_value = {'choices': [{'message': {'content': 'pas du JSON'}}]}
+        for seconde in (TimeoutError(), illisible, traduction('wolof', '   ')):
+            with mock.patch('analyse.assistant.requests.post', side_effect=[whisper, seconde]):
+                r = self.envoyer(wav())
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.data, {'texte': 'Am na fi safara', 'langue': None, 'traduit': False})
 
     @override_settings(GROQ_API_KEY='cle-test')
     def test_panne_groq(self):

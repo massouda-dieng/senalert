@@ -46,7 +46,7 @@ enum EtatDictee { repos, enregistrement, transcription }
 class Dictee extends ChangeNotifier {
   Dictee({required this.surTexte, required this.surErreur});
 
-  final void Function(String texte) surTexte;
+  final void Function(String texte, bool traduit) surTexte;
   final void Function(String message) surErreur;
 
   final _micro = AudioRecorder();
@@ -117,7 +117,7 @@ class Dictee extends ChangeNotifier {
     try {
       final form = FormData.fromMap({'audio': MultipartFile.fromBytes(wavDepuisPcm(pcm), filename: 'message.wav')});
       final r = await Api.instance.post<Map<String, dynamic>>('/analyse/assistant/transcrire/', data: form);
-      if (!_libere) surTexte('${r['texte']}');
+      if (!_libere) surTexte('${r['texte']}', r['traduit'] == true);
     } on ApiException catch (e) {
       if (!_libere) surErreur(e.message);
     }
