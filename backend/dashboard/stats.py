@@ -36,6 +36,11 @@ DEFINITIONS = {
     'agents_en_intervention': "Agents ayant au moins un dossier accepté ou en cours, à cet instant.",
     'comparaison': "Mêmes indicateurs sur la période précédente de même durée.",
     'interventions': "Dossiers pris en charge et dossiers clôturés « résolu », datés du jour de l'événement.",
+    'citoyens_nouveaux': "Comptes citoyens créés pendant la période.",
+    'citoyens_actifs': "Citoyens ayant envoyé au moins un signalement ou un SOS pendant la période.",
+    'taux_participation': "Citoyens actifs ÷ citoyens inscrits, en %.",
+    'citoyens_reguliers': "Citoyens ayant envoyé au moins 2 signalements pendant la période.",
+    'profil_complet_pct': "Part des citoyens ayant renseigné leur région et leur téléphone.",
 }
 
 
@@ -160,6 +165,64 @@ def satisfaction(incidents, sos):
     }
 
 
+def citoyens(params, granularite, debut, fin, incidents, sos):
+    """Profils citoyens : inscriptions, participation et complétude des profils.
+
+    Superviseur de structure : seulement les citoyens qui ont un dossier dans sa structure.
+    Les inscriptions ne dépendent pas des filtres région/catégorie des dossiers, sauf la région du profil.
+    """
+    base = User.objects.filter(role=ROLE_CITOYEN, is_active=True, date_anonymisation__isnull=True)
+    if params.get('structure'):
+        base = base.filter(Q(incidents__structure_id=params['structure']) | Q(
+            pk__in=AlerteSOS.objects.filter(structure_id=params['structure']).values('citoyen_id'))).distinct()
+    if params.get('region'):
+        base = base.filter(region=params['region'])
+    total = base.count()
+
+    p_fin = debut - timedelta(days=1)
+    p_debut = p_fin - (fin - debut)
+    inscrits = base.filter(date_joined__date__gte=debut, date_joined__date__lte=fin)
+
+    # Participation : signalements de la période (mêmes filtres que les indicateurs) par citoyen.
+    par_citoyen = {}
+    for qs in (incidents, sos):
+        for l in qs.filter(citoyen__isnull=False).values('citoyen').annotate(n=Count('id')):
+            par_citoyen[l['citoyen']] = par_citoyen.get(l['citoyen'], 0) + l['n']
+    actifs = len(par_citoyen)
+    signalements = sum(par_citoyen.values())
+
+    resolus = {}
+    for qs in (incidents, sos):
+        for l in qs.filter(citoyen__isnull=False, statut=RESOLU).values('citoyen').annotate(n=Count('id')):
+            resolus[l['citoyen']] = resolus.get(l['citoyen'], 0) + l['n']
+    meilleurs = sorted(par_citoyen.items(), key=lambda x: -x[1])[:5]
+    profils = {u.pk: u for u in User.objects.filter(pk__in=[pk for pk, _ in meilleurs])}
+
+    def profil(u, **extra):
+        return {'id': u.pk, 'nom': f'{u.first_name} {u.last_name}'.strip() or u.username,
+                'region': REGIONS.get(u.region, {}).get('libelle', '') if u.region else '', **extra}
+
+    libelles = {c: r['libelle'] for c, r in REGIONS.items()}
+    par_region = [{'code': l['region'] or '', 'libelle': libelles.get(l['region'], 'Non renseignée'), 'total': l['n']}
+                  for l in base.order_by().values('region').annotate(n=Count('id')).order_by('-n')]
+    pct = lambda n: round(100 * n / total, 1) if total else None  # noqa: E731
+    return {
+        'total': total,
+        'nouveaux': inscrits.count(),
+        'nouveaux_precedent': base.filter(date_joined__date__gte=p_debut, date_joined__date__lte=p_fin).count(),
+        'inscriptions': serie(inscrits, granularite, debut, fin, 'date_joined'),
+        'actifs': actifs,
+        'taux_participation': pct(actifs),
+        'signalements_par_actif': round(signalements / actifs, 1) if actifs else None,
+        'reguliers': sum(1 for n in par_citoyen.values() if n >= 2),
+        'profil_complet_pct': pct(base.exclude(region='').exclude(telephone='').count()),
+        'avec_google_pct': pct(base.filter(comptes_externes__fournisseur='google').distinct().count()),
+        'par_region': par_region,
+        'plus_actifs': [profil(profils[pk], signalements=n, resolus=resolus.get(pk, 0)) for pk, n in meilleurs if pk in profils],
+        'derniers_inscrits': [profil(u, date_inscription=u.date_joined) for u in base.order_by('-date_joined')[:5]],
+    }
+
+
 def delai_global(ci, cs):
     """Délai moyen de prise en charge, incidents et SOS confondus (moyenne pondérée par le nombre de dossiers)."""
     n = ci['nb_pris_en_charge'] + cs['nb_pris_en_charge']
@@ -266,6 +329,7 @@ def statistiques(params):
         'comparaison': comparaison(params, granularite, debut, fin, delais),
         'qualite': qualite(incidents),
         'satisfaction': satisfaction(incidents, sos),
+        'citoyens': citoyens(params, granularite, debut, fin, incidents, sos),
         'definitions': DEFINITIONS,
         'genere_le': timezone.now(),
         'donnees_demo': Incident.objects.filter(description__startswith='[DÉMO]').exists(),

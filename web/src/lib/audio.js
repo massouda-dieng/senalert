@@ -56,7 +56,7 @@ export function useDictee({ surTexte, surErreur }) {
       const corps = new FormData();
       corps.append('audio', blob, `message.${extensionAudio(blob.type)}`);
       const r = await api('/analyse/assistant/transcrire/', { methode: 'POST', corps });
-      surTexte(r.texte);
+      surTexte(r.texte, r);
     } catch (e) {
       surErreur(e.detail || 'La dictée vocale a échoué. Écrivez votre question.');
     } finally { setEtat('repos'); }

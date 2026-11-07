@@ -257,6 +257,8 @@ GROQ_MODEL = config('GROQ_MODEL', default='qwen/qwen3.8-27b')
 GROQ_TIMEOUT = config('GROQ_TIMEOUT', default=15, cast=int)
 # Dictée vocale de l'assistant : l'audio est transcrit par Whisper (Groq), jamais conservé.
 GROQ_MODEL_TRANSCRIPTION = config('GROQ_MODEL_TRANSCRIPTION', default='whisper-large-v3-turbo')
+# Traduction en français des messages vocaux (wolof, français ou mélange) : meilleur modèle Groq testé pour le wolof
+GROQ_MODEL_TRADUCTION = config('GROQ_MODEL_TRADUCTION', default='openai/gpt-oss-120b')
 ASSISTANT_AUDIO_MAX_OCTETS = 8 * 1024 * 1024
 
 # --- Services de proximité (OpenStreetMap / Overpass) -----------------------

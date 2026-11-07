@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { extensionAudio, texteAParler } from '../lib/audio';
@@ -6,6 +6,7 @@ import Assistant from '../pages/citoyen/Assistant';
 
 vi.mock('../auth/AuthContext', () => ({ useAuth: () => ({ utilisateur: { id: 1 } }) }));
 vi.mock('../lib/config', () => ({ useConfig: () => globalThis.__config }));
+vi.mock('../api/client', () => ({ api: vi.fn(async () => ({ reponse: 'Refroidissez la zone.', source: 'groq' })) }));
 // jsdom ne fait pas défiler : l'assistant descend vers le dernier message.
 Element.prototype.scrollIntoView = () => {};
 
@@ -57,14 +58,36 @@ describe('assistant : boutons audio', () => {
     expect(screen.queryByRole('button', { name: 'Dicter ma question' })).not.toBeInTheDocument();
   });
 
-  it('bouton « Écouter » sur les réponses si la synthèse vocale existe', () => {
+  it('bouton « Écouter » sur les réponses si la synthèse vocale existe', async () => {
     window.speechSynthesis = { cancel: vi.fn(), speak: vi.fn(), getVoices: () => [] };
-    localStorage.setItem('senalert.assistant.1', JSON.stringify([
-      { role: 'user', content: 'brûlure ?' }, { role: 'assistant', content: 'Refroidissez la zone.', source: 'groq' },
-    ]));
     globalThis.__config = { assistant_vocal: false };
     afficher();
+    fireEvent.click(screen.getByRole('button', { name: 'Que faire en cas de brûlure ?' }));
+    expect(await screen.findByText('Refroidissez la zone.')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /Écouter/ })).toHaveLength(1);
     delete window.speechSynthesis;
+  });
+});
+
+describe('assistant : comme une messagerie IA', () => {
+  afterEach(() => { cleanup(); localStorage.clear(); });
+
+  it('chaque visite ouvre une discussion vide, sans les anciennes questions', () => {
+    localStorage.setItem('senalert.assistant.1', JSON.stringify([{ role: 'user', content: 'ancienne question' }]));
+    globalThis.__config = { assistant_vocal: false };
+    render(<MemoryRouter><Assistant /></MemoryRouter>);
+    expect(screen.queryByText('ancienne question')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /comment puis-je vous aider/ })).toBeInTheDocument();
+    expect(localStorage.getItem('senalert.assistant.1')).toBeNull();
+  });
+
+  it('« Nouvelle discussion » vide la conversation en cours', async () => {
+    globalThis.__config = { assistant_vocal: false };
+    render(<MemoryRouter><Assistant /></MemoryRouter>);
+    fireEvent.click(screen.getByRole('button', { name: 'Comment suivre mon signalement ?' }));
+    expect(await screen.findByText('Refroidissez la zone.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Nouvelle discussion/ }));
+    expect(screen.queryByText('Refroidissez la zone.')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /comment puis-je vous aider/ })).toBeInTheDocument();
   });
 });

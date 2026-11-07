@@ -1,5 +1,6 @@
 import { Pencil, ShieldPlus, UserPlus } from 'lucide-react';
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../../api/client';
 import { useRessource } from '../../api/hooks';
 import { useAuth } from '../../auth/AuthContext';
@@ -109,7 +110,9 @@ export default function Utilisateurs() {
   const national = moi.role === 'superadmin';
   const config = useConfig();
   const toast = useToast();
-  const [filtres, setFiltres] = useState({ role: '', is_active: '', q: '', page: 1 });
+  const [params] = useSearchParams();
+  // Lien « Voir les citoyens » du tableau de bord : liste déjà filtrée sur les citoyens.
+  const [filtres, setFiltres] = useState({ role: national ? params.get('role') || '' : '', is_active: '', q: '', page: 1 });
   const [creation, setCreation] = useState(null);
   const [edition, setEdition] = useState(null);
   const liste = useRessource('/gestion/utilisateurs/', filtres);
