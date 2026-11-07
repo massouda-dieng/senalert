@@ -24,7 +24,7 @@ COMPTES = [
     ('superviseur.sante@senalert.local', ROLE_SUPERVISEUR, 'Astou', 'Mbaye', 'sante', ''),
     ('superviseur.senelec@senalert.local', ROLE_SUPERVISEUR, 'Modou', 'Ndour', 'senelec', ''),
     ('superviseur.onas@senalert.local', ROLE_SUPERVISEUR, 'Aïssatou', 'Kane', 'onas', ''),
-    ('superadmin.test@senalert.local', ROLE_SUPERADMIN, 'Superviseur', 'National', None, ''),
+    ('superadmin.test@senalert.local', ROLE_SUPERADMIN, 'Administrateur', 'SenAlert', None, ''),
 ]
 
 

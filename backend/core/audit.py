@@ -23,6 +23,7 @@ ACTIONS = {
     'incident.creation': ('Signalement d’incident', 'signalements'),
     'sos.envoi': ('Envoi d’une alerte SOS', 'signalements'),
     'dossier.affectation': ('Affectation à un agent ou une structure', 'traitement'),
+    'dossier.changement_structure': ('Changement de structure par le citoyen', 'signalements'),
     'dossier.prise_en_charge': ('Prise en charge', 'traitement'),
     'dossier.acceptation': ('Prise en charge (acceptation)', 'traitement'),
     'dossier.refus_affectation': ('Affectation déclinée', 'traitement'),

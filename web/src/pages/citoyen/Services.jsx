@@ -45,6 +45,8 @@ export default function Services() {
     setPosition(p);
     chercher(p);
   };
+  // Position prise automatiquement à l'ouverture : les services autour de soi s'affichent sans rien cliquer.
+  useEffect(() => { localiser(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const points = useMemo(() => [
     ...(position ? [{ id: 'moi', moi: true, lat: position.lat, lng: position.lng, couleur: COULEURS.marine, titre: 'Ma position', popup: 'Ma position' }] : []),
     ...(donnees?.resultats || []).map((s) => ({ id: s.id, lat: s.latitude, lng: s.longitude, type: s.type, couleur: TYPES[s.type].couleur, titre: s.nom,
@@ -55,7 +57,7 @@ export default function Services() {
     <>
       <EnTetePage titre="Services de proximité" sousTitre="Hôpitaux, pharmacies, police et sapeurs-pompiers autour de vous, d’après OpenStreetMap." />
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <Bouton icone={Crosshair} chargement={etat.chargement} onClick={localiser}>{position ? 'Actualiser ma position' : 'Me localiser'}</Bouton>
+        <Bouton icone={Crosshair} chargement={etat.chargement} onClick={localiser}>{position ? 'Actualiser ma position' : 'Réessayer la localisation'}</Bouton>
         <Selecteur aria-label="Type" className="w-auto" valeur={type} onChange={setType} vide="Tous les services" options={Object.entries(TYPES).map(([code, t]) => ({ code, libelle: t.libelle }))} />
         <Selecteur aria-label="Rayon" className="w-auto" vide={null} valeur={rayon} onChange={setRayon} options={[{ code: '2000', libelle: '2 km' }, { code: '5000', libelle: '5 km' }, { code: '10000', libelle: '10 km' }, { code: '20000', libelle: '20 km' }]} />
       </div>

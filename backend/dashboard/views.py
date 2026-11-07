@@ -3,6 +3,7 @@ import io
 
 from django.conf import settings
 from django.http import FileResponse, Http404, HttpResponse
+from django.db.models import Q
 from django.utils import timezone
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 from drf_spectacular.types import OpenApiTypes
@@ -13,6 +14,7 @@ from rest_framework.views import APIView
 from alerts.models import AlerteSOS
 from analyse.views import calculer
 from core.audit import journaliser
+from core.constants import ROLE_AGENT
 from core.permissions import EstAgent, EstAgentOuSupervision, EstSupervision, est_superviseur
 from incidents.models import Incident
 from incidents.views import FiltreIncident
@@ -73,8 +75,14 @@ class FluxView(APIView):
             depuis = timezone.make_aware(depuis)
         depuis = max(depuis, maintenant - timezone.timedelta(minutes=10))  # jamais de rafale après une longue coupure
         ctx = {'request': request}
-        sos = AlerteSOS.objects.filter(filtre_visibilite(request.user, True), date_creation__gt=depuis).distinct()[:20]
-        inc = Incident.objects.filter(filtre_visibilite(request.user, False), date_creation__gt=depuis).distinct()[:20]
+        # Superviseur : les nouveaux dossiers de sa structure. Agent : les dossiers qui viennent de lui être
+        # affectés (un dossier ancien affecté maintenant doit aussi déclencher l'alerte).
+        if request.user.role == ROLE_AGENT:
+            recent = Q(intervention__agent=request.user, intervention__date_affectation__gt=depuis)
+        else:
+            recent = Q(date_creation__gt=depuis)
+        sos = AlerteSOS.objects.filter(filtre_visibilite(request.user, True), recent).distinct()[:20]
+        inc = Incident.objects.filter(filtre_visibilite(request.user, False), recent).distinct()[:20]
         return Response({
             'maintenant': maintenant,
             'sos': AlerteSOSSerializer(sos, many=True, context=ctx).data,

@@ -48,10 +48,13 @@ def valider_photos(fichiers, deja=0):
     return [nettoyer_image(f) for f in fichiers]
 
 
-def enregistrer_photos(incident, photos_nettoyees, auteur):
+def enregistrer_photos(dossier, photos_nettoyees, auteur):
+    """Enregistre les photos d'un incident ou d'une alerte SOS."""
+    from .models import Incident
+    lien = {'incident': dossier} if isinstance(dossier, Incident) else {'alerte': dossier}
     pieces = []
     for contenu, largeur, hauteur in photos_nettoyees:
-        pj = PieceJointe(incident=incident, auteur=auteur, taille=contenu.size, largeur=largeur, hauteur=hauteur)
+        pj = PieceJointe(**lien, auteur=auteur, taille=contenu.size, largeur=largeur, hauteur=hauteur)
         pj.fichier.save(contenu.name, contenu, save=True)
         pieces.append(pj)
     return pieces

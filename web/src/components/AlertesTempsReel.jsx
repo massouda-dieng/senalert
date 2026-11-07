@@ -8,6 +8,11 @@ import { ilYa } from '../lib/format';
 import { estSupervision } from '../auth/AuthContext';
 
 const INTERVALLE = 5000;
+
+// Superviseur : nouveaux dossiers de sa structure. Agent : dossiers que son superviseur vient de lui affecter.
+const titreAlerte = (role, sos) => (role === 'agent'
+  ? (sos ? 'SOS affecté' : 'Nouvelle intervention affectée')
+  : (sos ? 'Alerte SOS' : 'Nouveau signalement'));
 const CLE_SON = 'senalert.son-alertes';
 
 /** Sons générés par le navigateur (aucun fichier) : sirène à deux tons pour un SOS, bip pour un incident. */
@@ -35,8 +40,8 @@ function jouer(type) {
 }
 
 /**
- * Alertes en direct pour la supervision et les agents : nouveaux SOS et incidents
- * visibles par l'utilisateur, détectés toutes les 5 secondes.
+ * Alertes en direct, détectées toutes les 5 secondes : nouveaux SOS et incidents pour la supervision,
+ * dossiers qui viennent de lui être affectés pour l'agent.
  */
 export default function AlertesTempsReel({ role }) {
   const navigate = useNavigate();
@@ -69,7 +74,7 @@ export default function AlertesTempsReel({ role }) {
         setAlertes((a) => [...nouvelles.map((d) => ({ cle: `${d.sos ? 's' : 'i'}${d.id}`, ...d })), ...a].slice(0, 5));
         if (sonRef.current) jouer(nouvelles.some((d) => d.sos) ? 'sos' : 'incident');
         if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.visibilityState !== 'visible') {
-          nouvelles.forEach((d) => new Notification(d.sos ? `Alerte SOS ${d.reference}` : `Nouveau signalement ${d.reference}`, {
+          nouvelles.forEach((d) => new Notification(`${titreAlerte(role, d.sos)} ${d.reference}`, {
             body: `${d.sos ? 'SOS' : d.categorie_libelle} — ${d.region_libelle || 'région inconnue'}`, tag: d.reference,
           }));
         }
@@ -98,7 +103,7 @@ export default function AlertesTempsReel({ role }) {
                 {d.sos ? <Siren className="h-5 w-5" /> : <ShieldAlert className="h-5 w-5" />}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold uppercase tracking-wider opacity-80">{d.sos ? 'Alerte SOS' : 'Nouveau signalement'}</p>
+                <p className="text-xs font-bold uppercase tracking-wider opacity-80">{titreAlerte(role, d.sos)}</p>
                 <p className="font-bold">{d.reference}</p>
                 <p className="truncate text-sm opacity-90">{d.sos ? 'SOS' : d.categorie_libelle} · {d.region_libelle || 'région inconnue'} · {ilYa(d.date_creation)}</p>
               </div>

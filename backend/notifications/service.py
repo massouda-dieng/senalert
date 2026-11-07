@@ -144,7 +144,7 @@ def notifier_nouveau_dossier(dossier):
         sos = not isinstance(dossier, Incident)
         titre = 'Nouvelle alerte SOS' if sos else f'Nouveau signalement : {dossier.type_incident}'
         zone = dossier.get_region_display() if dossier.region else 'zone inconnue'
-        # L'agent choisi est prévenu par la transmission elle-même (notifier_affectation).
+        # L’agent est prévenu au moment où le superviseur lui affecte le dossier (notifier_affectation).
         # Le superviseur de la structure reçoit tout nouveau dossier ; le superadministrateur reçoit
         # les SOS et les dossiers qu'aucun superviseur de structure ne couvre.
         superviseurs = superviseurs_structure(dossier)

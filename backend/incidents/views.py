@@ -1,7 +1,6 @@
 import django_filters
 from django.db import IntegrityError, transaction
 from django.db.models import Q
-from django.http import FileResponse, Http404
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, status, viewsets
@@ -13,13 +12,13 @@ from rest_framework.throttling import ScopedRateThrottle
 from core.constants import RESOLU, ROLE_AGENT, STATUTS_ACTIFS
 from core.models import Categorie, Parametre
 from core.audit import journaliser
-from core.structures import choix_automatique
+from core.structures import structure_competente
 from core.params import entier
 from core.permissions import est_citoyen, est_superadmin
 
 from . import workflow
 from .dossier_views import ActionsDossierMixin, FiltreDossier
-from .models import Incident, PieceJointe
+from .models import Incident
 from .photos import enregistrer_photos, valider_photos
 from .serializers import CarteIncidentSerializer, IncidentCreationSerializer, IncidentSerializer
 
@@ -84,19 +83,17 @@ class IncidentViewSet(ActionsDossierMixin, mixins.ListModelMixin, mixins.Retriev
         photos = valider_photos(request.FILES.getlist('photos'))
         categorie = Categorie.objects.get(code=s.validated_data['type_incident'])
         donnees = s.validated_data
-        agent = donnees.pop('agent', None)
         structure = donnees.pop('structure', None)
         if structure is None and categorie.service_defaut_id:
-            # Orientation automatique (le citoyen ne choisit rien) : structure compétente la plus proche ayant un
-            # agent disponible, et cet agent ; sans agent disponible, la plus proche, et le superviseur affecte.
-            structure, agent = choix_automatique(donnees['latitude'], donnees['longitude'], donnees.get('region'),
-                                                 [categorie.service_defaut.code])
+            # Le citoyen n'a pas choisi : structure compétente la plus proche (celle suggérée à l'écran).
+            structure = structure_competente(donnees['latitude'], donnees['longitude'], donnees.get('region'),
+                                             [categorie.service_defaut.code])
         service = structure.service if structure else categorie.service_defaut
         try:
             with transaction.atomic():
                 incident = s.save(citoyen=user, service=service, structure=structure, gravite=categorie.gravite_defaut)
                 enregistrer_photos(incident, photos, user)
-                workflow.apres_creation(incident, user, agent=agent)
+                workflow.apres_creation(incident, user)
                 journaliser(request, 'incident.creation', incident, {
                     'reference': incident.reference, 'categorie': incident.type_incident,
                     'structure': structure.nom if structure else None, 'photos': len(photos)})
@@ -107,37 +104,6 @@ class IncidentViewSet(ActionsDossierMixin, mixins.ListModelMixin, mixins.Retriev
             return Response(IncidentSerializer(existant, context={'request': request}).data, status=status.HTTP_200_OK)
         incident = self.get_queryset().model.objects.get(pk=incident.pk)
         return Response(IncidentSerializer(incident, context={'request': request}).data, status=status.HTTP_201_CREATED)
-
-    @action(detail=True, methods=['post'], url_path='completer')
-    def completer(self, request, pk=None):
-        """Le citoyen ajoute une information ou des photos à son dossier ouvert."""
-        incident = self.get_object()
-        message = (request.data.get('message') or '').strip()
-        fichiers = request.FILES.getlist('photos')
-        photos = []
-        if fichiers:
-            if incident.citoyen_id != request.user.pk:
-                raise PermissionDenied('Ce dossier ne vous appartient pas.')
-            photos = valider_photos(fichiers, deja=incident.pieces_jointes.count())
-        with transaction.atomic():
-            workflow.completer(incident, request.user, message or f'{len(fichiers)} photo(s) ajoutée(s).')
-            if fichiers:
-                enregistrer_photos(incident, photos, request.user)
-        return self._repondre(incident)
-
-    @action(detail=True, methods=['get'], url_path=r'photos/(?P<photo_id>\d+)')
-    def photo(self, request, pk=None, photo_id=None):
-        """Sert une photo après contrôle d'accès (les fichiers ne sont jamais publics)."""
-        incident = self.get_object()
-        pj = PieceJointe.objects.filter(incident=incident, pk=photo_id).first()
-        if pj is None or not pj.fichier:
-            raise Http404
-        try:
-            reponse = FileResponse(pj.fichier.open('rb'), content_type='image/jpeg')
-        except FileNotFoundError:
-            raise Http404
-        reponse['Cache-Control'] = 'private, max-age=3600'
-        return reponse
 
     @action(detail=False, methods=['get'])
     def carte(self, request):

@@ -1,12 +1,12 @@
 import clsx from 'clsx';
-import { Crosshair, RotateCcw, Siren, X } from 'lucide-react';
+import { Crosshair, ImagePlus, RotateCcw, Siren, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, nouvelleCle } from '../api/client';
 import { useRessource } from '../api/hooks';
 import { BadgeStatut, Bandeau, Bouton, Chargement, Fenetre } from './ui';
 import { useConfig } from '../lib/config';
-import { dateHeure } from '../lib/format';
+import { dateHeure, distance } from '../lib/format';
 import { useLangue } from '../lib/langue';
 
 const COMPTE_A_REBOURS = 5;
@@ -115,7 +115,7 @@ export default function BoutonSOS() {
           <div className="space-y-4">
             <Bandeau type="succes" titre={`Dossier ${dossier.reference}`}>
               {resultat.deja_enregistree ? 'Cette alerte avait déjà été reçue : voici son suivi.'
-                : dossier.statut === 'affecte' ? 'Un agent de la structure ci-dessous a été prévenu.' : 'Le superviseur de la structure ci-dessous a été prévenu.'}
+                : 'Le superviseur de la structure ci-dessous a été prévenu : il affecte un agent.'}
             </Bandeau>
             <dl className="divide-y divide-surface-bord rounded-2xl border border-surface-bord text-sm">
               <div className="flex items-center justify-between px-3 py-2"><dt className="text-texte-doux">{t('Statut')}</dt><dd><BadgeStatut statut={dossier.statut} /></dd></div>
@@ -126,6 +126,7 @@ export default function BoutonSOS() {
                 ['Destinataire', dossier.structure_nom || 'Supervision SenAlert'],
               ].map(([k, v]) => <div key={k} className="grid grid-cols-[110px_1fr] gap-3 px-3 py-2"><dt className="text-texte-doux">{t(k)}</dt><dd className="font-medium">{v}</dd></div>)}
             </dl>
+            <ComplementSOS dossier={dossier} onMaj={(d) => { setResultat((r) => ({ ...r, ...d })); suivi.setDonnees(d); }} />
             {dossier.latitude == null && <Bandeau type="alerte">Votre position n’a pas pu être jointe. Indiquez votre lieu exact aux secours par téléphone.</Bandeau>}
             <p className="text-xs text-texte-doux">Tant qu’un agent n’a pas pris en charge l’alerte, aucune intervention n’est garantie. Si le danger est immédiat, appelez directement {config.numeros_urgence.map((n) => n.numero).join(' ou ')}.</p>
             <div className="flex flex-wrap gap-4 text-sm">
@@ -166,3 +167,46 @@ function PositionInfo({ position }) {
   );
 }
 
+/** Après l'envoi : le citoyen peut choisir une autre structure (tant que le SOS n'est pas affecté) et joindre des photos. */
+function ComplementSOS({ dossier, onMaj }) {
+  const { t } = useLangue();
+  const [envoi, setEnvoi] = useState(null);
+  const [erreur, setErreur] = useState(null);
+  const modifiable = dossier.statut === 'nouveau' && dossier.latitude != null;
+  const proches = useRessource(modifiable ? '/structures/' : null,
+    { lat: dossier.latitude, lng: dossier.longitude, type_urgence: dossier.type_urgence, limite: 6 });
+  const agir = async (cle, chemin, corps) => {
+    setEnvoi(cle); setErreur(null);
+    try { onMaj(await api(`/alertes/sos/${dossier.id}/${chemin}/`, { methode: 'POST', corps })); } catch (e) { setErreur(e.detail); } finally { setEnvoi(null); }
+  };
+  const ajouterPhotos = (fichiers) => {
+    if (!fichiers.length) return;
+    const fd = new FormData();
+    [...fichiers].slice(0, 5).forEach((f) => fd.append('photos', f));
+    agir('photos', 'completer', fd);
+  };
+  return (
+    <div className="space-y-3 rounded-2xl border border-surface-bord p-3 text-sm">
+      {modifiable && (proches.donnees || []).length > 1 && (
+        <label className="block">
+          <span className="etiquette">{t('Structure prévenue')}</span>
+          <select className="champ" value={dossier.structure || ''} disabled={envoi === 'structure'}
+            onChange={(e) => agir('structure', 'changer-structure', { structure: Number(e.target.value) })}>
+            {proches.donnees.map((s) => <option key={s.id} value={s.id}>{`${s.nom} — ${s.service_nom}${s.distance_m != null ? ` (${distance(s.distance_m)})` : ''}`}</option>)}
+          </select>
+        </label>
+      )}
+      <div className="flex flex-wrap items-center gap-2">
+        {(dossier.photos || []).map((p) => <span key={p.id} className="rounded-lg bg-surface-douce px-2 py-1 text-xs">{t('Photo jointe')}</span>)}
+        {dossier.statut !== 'resolu' && (dossier.photos || []).length < 5 && (
+          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-surface-bord px-3 py-2 font-semibold hover:bg-surface-douce">
+            <ImagePlus className="h-4 w-4" /> {envoi === 'photos' ? t('Envoi…') : t('Ajouter une photo')}
+            <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only" disabled={envoi === 'photos'}
+              onChange={(e) => { ajouterPhotos(e.target.files); e.target.value = ''; }} />
+          </label>
+        )}
+      </div>
+      {erreur && <p className="text-sm text-sos-fonce">{erreur}</p>}
+    </div>
+  );
+}

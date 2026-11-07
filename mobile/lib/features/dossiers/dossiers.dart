@@ -258,12 +258,6 @@ class _DossierScreenState extends State<DossierScreen> {
     if (ok == true) await _agir('resoudre', 'Intervention clôturée.', {'compte_rendu': cr.text.trim(), 'difficultes': diff.text.trim()});
   }
 
-  Future<void> _completer() async {
-    final motif = await confirmer(context, titre: 'Compléter le signalement', message: 'Ajoutez une information utile aux secours.',
-        motif: 'Information complémentaire', action: 'Envoyer');
-    if (motif != null && motif.isNotEmpty) await _agir('completer', 'Complément envoyé.', {'message': motif});
-  }
-
   Future<void> _commenter() async {
     final texte = TextEditingController();
     var visible = true;
@@ -291,16 +285,7 @@ class _DossierScreenState extends State<DossierScreen> {
     Widget bouton(String libelle, IconData icone, VoidCallback f, {Color? couleur, bool plein = true}) => plein
         ? FilledButton.icon(style: couleur == null ? null : FilledButton.styleFrom(backgroundColor: couleur), onPressed: _action ? null : f, icon: Icon(icone), label: Text(libelle))
         : OutlinedButton.icon(onPressed: _action ? null : f, icon: Icon(icone), label: Text(libelle));
-    if (u.estCitoyen && d.estProprietaire) {
-      if (!d.estClos && !d.estSos) b.add(bouton(tr('Compléter'), Icons.add_comment_outlined, _completer, plein: false));
-      if (const {'nouveau', 'affecte'}.contains(d.statut)) {
-        b.add(bouton(tr('Annuler'), Icons.cancel_outlined, () async {
-          final m = await confirmer(context, titre: 'Annuler le dossier', message: 'Le dossier sera clos avec le statut « Annulé ».',
-              motif: 'Motif', action: 'Annuler le dossier', danger: true);
-          if (m != null) await _agir('annuler', 'Dossier annulé.', {'motif': m});
-        }, plein: false));
-      }
-    }
+    // Le citoyen suit son dossier sans agir dessus : seule la structure le traite. Il donne son avis une fois résolu.
     if (u.estAgent) {
       if (d.statut == 'nouveau') b.add(bouton('Prendre en charge', Icons.how_to_reg, () => _agir('prendre-en-charge', 'Dossier pris en charge.')));
       if (d.statut == 'affecte' && mien) {

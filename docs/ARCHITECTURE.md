@@ -33,9 +33,12 @@ Les deux clients partagent **le même backend et les mêmes règles** : toute au
 
 ### Modèle de données (correspondance avec le diagramme de classes du chapitre 3)
 
+Diagramme à jour, centré sur la structure : [DIAGRAMME_CLASSES.md](DIAGRAMME_CLASSES.md).
+
 | Classe UML | Implémentation |
 |---|---|
-| Utilisateur (+ Citoyen, AgentSecours, Administrateur) | `accounts.User` avec champ `role` ; `AgentProfil.service` = attribut `service` d'AgentSecours |
+| Utilisateur (+ Citoyen, AgentSecours, SuperviseurStructure, AdministrateurPlateforme) | `accounts.User` avec champ `role` et clé étrangère `structure` ; `AgentProfil` = attributs propres d'AgentSecours |
+| Structure | `core.Structure` : table centrale, reliée à ses superviseurs, ses agents et les dossiers qu'elle reçoit |
 | Incident (id UUID, type, description, lat/lng, photoUrl, gravite, dateSignalement) | `incidents.Incident` : `uuid` + `reference` lisible (INC-AAAA-NNNNNN), `type_incident`, `gravite`, photos dans `PieceJointe` (plusieurs) |
 | AlerteSOS (id, lat/lng, statut, dateEnvoi) | `alerts.AlerteSOS` : position facultative (jamais inventée), `precision_gps`, `reference` SOS-AAAA-NNNNNN |
 | Intervention (statut, dateAffectation, dateCloture) | `incidents.Intervention` (1 par dossier) : agent, service, dates d'affectation/acceptation/début/fin, compte rendu. Le statut est porté par le dossier (source unique de vérité) |
@@ -46,7 +49,7 @@ Champs communs Incident / SOS (classe abstraite `core.dossier.Dossier`) : `uuid`
 ### Cycle de vie d'un dossier
 
 ```
- nouveau ──affecter (superadmin)──▶ affecte ──accepter (agent)──▶ accepte ──demarrer──▶ en_cours ──resoudre (+ compte rendu)──▶ resolu
+ nouveau ──affecter (superviseur de la structure)──▶ affecte ──accepter (agent)──▶ accepte ──demarrer──▶ en_cours ──resoudre (+ compte rendu)──▶ resolu
     │  └──prendre en charge (agent de la zone et du service)──────────▲                        │
     │                     affecte ──decliner (motif)──▶ nouveau                                 │
     │        réaffecter : affecte / accepte / en_cours ──▶ affecte (nouvel agent)               │
@@ -61,8 +64,9 @@ Chaque action : verrouillage de la ligne (`select_for_update`), contrôle du sta
 | Rôle | Voit |
 |---|---|
 | Citoyen | uniquement ses propres dossiers ; la carte publique (positions arrondies ~100 m, sans description ni photo) |
-| Agent | les dossiers qui lui sont affectés + les dossiers **nouveaux** de ses zones (incidents : seulement ceux de son service ; SOS : tous les services) |
-| Superadmin | tout |
+| Agent | uniquement les dossiers que le superviseur de sa structure lui a affectés |
+| Superviseur de structure | uniquement les dossiers adressés à sa structure ; il n'affecte qu'aux agents de sa structure |
+| Administrateur de la plateforme | tout |
 
 Les coordonnées du déclarant ne sont visibles que de l'agent affecté et du superadmin. Le citoyen voit le service intervenant, pas l'identité de l'agent.
 

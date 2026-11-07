@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -26,24 +29,51 @@ class _AccueilAgentState extends State<AccueilAgent> {
   ApiException? _erreur;
   bool _charge = false;
   DateTime? _synchro;
+  Timer? _actualisation;
+  Set<String>? _connus;
 
   @override
   void initState() {
     super.initState();
     _charger();
+    // Les dossiers affectés par le superviseur apparaissent d'eux-mêmes, avec une alerte (sans recharger l'écran).
+    _actualisation = Timer.periodic(const Duration(seconds: 10), (_) { if (mounted) _charger(); });
+  }
+
+  @override
+  void dispose() {
+    _actualisation?.cancel();
+    super.dispose();
+  }
+
+  void _signalerNouvelles(List<Dossier> missions) {
+    final cles = {for (final d in missions) '${d.estSos ? 's' : 'i'}${d.id}'};
+    final nouvelles = _connus == null ? const <Dossier>[] : missions.where((d) => !_connus!.contains('${d.estSos ? 's' : 'i'}${d.id}')).toList();
+    _connus = cles;
+    if (nouvelles.isEmpty || !mounted) return;
+    HapticFeedback.heavyImpact();
+    final d = nouvelles.first;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      duration: const Duration(seconds: 8),
+      backgroundColor: d.estSos ? AppColors.rougeFonce : AppColors.marine800,
+      content: Text(nouvelles.length > 1 ? '${nouvelles.length} nouvelles interventions vous ont été affectées.'
+          : '${d.estSos ? 'SOS' : 'Nouvelle intervention'} ${d.reference} vous a été affecté${d.estSos ? '' : 'e'} par votre superviseur.'),
+      action: SnackBarAction(label: 'Ouvrir', textColor: Colors.white,
+          onPressed: () => context.push('/dossier/${d.estSos ? 'sos' : 'incident'}/${d.id}')),
+    ));
   }
 
   Future<List<Dossier>> _liste(String chemin, Map<String, dynamic> p, bool sos) async =>
       ((await Api.instance.get<Map<String, dynamic>>(chemin, params: p))['results'] as List).map((j) => Dossier.depuis(j, estSos: sos)).toList();
 
-  /// L'agent se déclare disponible ou non : seuls les agents disponibles sont proposés aux citoyens.
+  /// L'agent se déclare disponible ou non : son superviseur le voit au moment d'affecter un dossier.
   Future<void> _basculerDisponibilite(bool disponible) async {
     setState(() => _bascule = true);
     try {
       final j = await Api.instance.post<Map<String, dynamic>>('/auth/disponibilite/', data: {'disponible': disponible});
       if (!mounted) return;
       context.read<Session>().remplacerProfil(j);
-      afficherMessage(context, disponible ? 'Vous êtes disponible.' : 'Vous êtes indisponible : les citoyens ne peuvent plus vous choisir.');
+      afficherMessage(context, disponible ? 'Vous êtes disponible.' : 'Vous êtes indisponible : votre superviseur le voit avant de vous affecter un dossier.');
     } on ApiException catch (e) {
       if (mounted) afficherMessage(context, e.message, erreur: true);
     } finally {
@@ -58,6 +88,8 @@ class _AccueilAgentState extends State<AccueilAgent> {
         _liste('/incidents/', {'affecte_a_moi': true, 'actifs': true}, false),
       ]);
       final a = await Api.instance.get<Map<String, dynamic>>('/tableau-de-bord/activite-agent/');
+      if (!mounted) return;
+      _signalerNouvelles([...r[0], ...r[1]]);
       setState(() {
         // Les missions les plus urgentes d'abord
         _miens = [...r[0], ...r[1]]..sort((a, b) => rangGravite(a.gravite).compareTo(rangGravite(b.gravite)));
@@ -67,7 +99,7 @@ class _AccueilAgentState extends State<AccueilAgent> {
         _synchro = DateTime.now();
       });
     } on ApiException catch (e) {
-      setState(() { _erreur = e; _charge = true; });
+      if (mounted) setState(() { _erreur = e; _charge = true; });
     }
   }
 

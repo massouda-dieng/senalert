@@ -1,8 +1,11 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -14,6 +17,7 @@ import '../../core/models.dart';
 import '../../state/configuration.dart';
 import '../../ui/kit.dart';
 import '../../state/langue.dart';
+import 'report_screen.dart' show formatImageAccepte;
 
 enum _Etape { decompte, envoi, succes, echec }
 
@@ -171,12 +175,13 @@ class _SosScreenState extends State<SosScreen> {
                 LigneInfo('Destinataire', _dossier!.structureNom ?? 'Supervision SenAlert'),
                 const SizedBox(height: 6),
                 Text(_dejaRecue ? 'Cette alerte avait déjà été reçue : voici son suivi.'
-                    : _dossier!.statut == 'affecte' ? 'Un agent de cette structure a été prévenu.'
-                    : 'Le superviseur de cette structure a été prévenu.'),
+                    : 'Le superviseur de cette structure a été prévenu : il affecte un agent.'),
                 const SizedBox(height: 8),
                 Text(tr('Tant qu’un agent ne l’a pas prise en charge, aucune intervention n’est garantie.'),
                     style: TextStyle(color: AppColors.textGrey, fontSize: 13)),
               ])),
+              const SizedBox(height: 12),
+              ComplementSos(dossier: _dossier!, onMaj: (d) => setState(() => _dossier = d)),
               if (_dossier!.lat == null) const Padding(padding: EdgeInsets.only(top: 12),
                   child: Bandeau.alerte('Votre position n’a pas pu être jointe. Indiquez votre lieu exact aux secours par téléphone.')),
               const SizedBox(height: 18),
@@ -230,4 +235,92 @@ class _SosScreenState extends State<SosScreen> {
     return Text('${tr('Position obtenue · précision ± {m} m', {'m': p.round()})}${p > 100 ? ' (approximative)' : ''}',
         textAlign: TextAlign.center, style: TextStyle(color: p > 100 ? Jetons.surSombreOrange : Jetons.surSombreVertPale));
   }
+}
+
+/// Après l'envoi du SOS : choisir une autre structure (tant que l'alerte n'est pas affectée) et joindre des photos.
+class ComplementSos extends StatefulWidget {
+  final Dossier dossier;
+  final ValueChanged<Dossier> onMaj;
+  const ComplementSos({super.key, required this.dossier, required this.onMaj});
+  @override
+  State<ComplementSos> createState() => _ComplementSosState();
+}
+
+class _ComplementSosState extends State<ComplementSos> {
+  List<Map<String, dynamic>> _proches = [];
+  String? _envoi;
+
+  Dossier get d => widget.dossier;
+  bool get _modifiable => d.statut == 'nouveau' && d.lat != null;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_modifiable) _chargerProches();
+  }
+
+  Future<void> _chargerProches() async {
+    try {
+      final r = await Api.instance.get<List<dynamic>>('/structures/',
+          params: {'lat': d.lat, 'lng': d.lng, 'type_urgence': d.typeUrgence ?? 'non_precise', 'limite': 6});
+      if (mounted) setState(() => _proches = r.cast<Map<String, dynamic>>());
+    } on ApiException {/* le choix reste celui du serveur */}
+  }
+
+  Future<void> _agir(String cle, String chemin, Object corps) async {
+    setState(() => _envoi = cle);
+    try {
+      final r = await Api.instance.post<Map<String, dynamic>>('${d.chemin}$chemin/', data: corps);
+      widget.onMaj(Dossier.depuis(r, estSos: true));
+    } on ApiException catch (e) {
+      if (mounted) afficherMessage(context, e.message, erreur: true);
+    } finally {
+      if (mounted) setState(() => _envoi = null);
+    }
+  }
+
+  Future<void> _ajouterPhoto() async {
+    final source = kIsWeb ? ImageSource.gallery : await showModalBottomSheet<ImageSource>(context: context, builder: (c) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(leading: const Icon(Icons.photo_camera_outlined), title: const Text('Prendre une photo'), onTap: () => Navigator.pop(c, ImageSource.camera)),
+          ListTile(leading: const Icon(Icons.photo_library_outlined), title: const Text('Choisir dans la galerie'), onTap: () => Navigator.pop(c, ImageSource.gallery)),
+        ])));
+    if (source == null) return;
+    try {
+      final x = await ImagePicker().pickImage(source: source, maxWidth: 2048, imageQuality: 82);
+      if (x == null) return;
+      final octets = await x.readAsBytes();
+      if (!mounted) return;
+      if (octets.length > 5 * 1024 * 1024 || !formatImageAccepte(octets)) {
+        return afficherMessage(context, 'Photo refusée : JPEG, PNG ou WEBP de 5 Mo maximum.', erreur: true);
+      }
+      await _agir('photo', 'completer', FormData.fromMap({'photos': MultipartFile.fromBytes(octets, filename: 'photo.jpg')}));
+    } catch (_) {
+      if (mounted) afficherMessage(context, 'Impossible d’ouvrir l’appareil photo ou la galerie.', erreur: true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Carte(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        if (_modifiable && _proches.length > 1) ...[
+          Text(tr('Structure prévenue'), style: const TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 6),
+          DropdownButtonFormField<int>(
+            isExpanded: true,
+            value: _proches.any((s) => s['id'] == d.structureId) ? d.structureId : null,
+            items: [for (final s in _proches) DropdownMenuItem(value: s['id'] as int,
+                child: Text('${s['nom']} — ${s['service_nom']}${s['distance_m'] != null ? ' (${distance(s['distance_m'])})' : ''}',
+                    overflow: TextOverflow.ellipsis))],
+            onChanged: _envoi != null ? null : (v) { if (v != null && v != d.structureId) _agir('structure', 'changer-structure', {'structure': v}); },
+          ),
+          const SizedBox(height: 12),
+        ],
+        Row(children: [
+          Expanded(child: Text(d.photos.isEmpty ? tr('Aucune photo jointe') : '${d.photos.length} photo(s) jointe(s)')),
+          if (d.photos.length < 5 && d.statut != 'resolu')
+            OutlinedButton.icon(onPressed: _envoi != null ? null : _ajouterPhoto,
+                icon: _envoi == 'photo' ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.add_a_photo_outlined),
+                label: Text(tr('Ajouter une photo'))),
+        ]),
+      ]));
 }

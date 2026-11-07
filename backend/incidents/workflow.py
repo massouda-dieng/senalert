@@ -127,27 +127,16 @@ def exiger_portee_supervision(acteur, dossier):
 # Création
 # --------------------------------------------------------------------------
 
-def apres_creation(dossier, acteur, agent=None):
-    """Événement initial, doublons potentiels, transmission à l'agent choisi et notifications."""
+def apres_creation(dossier, acteur):
+    """Événement initial, doublons potentiels et notification du superviseur de la structure.
+
+    Le dossier reste « nouveau » : c'est le superviseur de la structure qui l'affecte à l'un de ses agents.
+    """
     evenement(dossier, 'creation', acteur, apres=dossier.statut,
               message='Alerte SOS enregistrée.' if not est_incident(dossier) else 'Signalement enregistré.')
     if est_incident(dossier):
         detecter_doublon(dossier)
-    if agent is not None:
-        transmettre(dossier, agent, acteur)
     transaction.on_commit(lambda: notif.notifier_nouveau_dossier(dossier))
-
-
-def transmettre(dossier, agent, acteur):
-    """Le dossier part directement à l'agent choisi par le citoyen (ou désigné automatiquement pour un SOS)."""
-    Intervention.objects.update_or_create(**_lien(dossier), defaults={
-        'agent': agent, 'service': dossier.service or (dossier.structure.service if dossier.structure_id else None),
-        'affecte_par': None, 'date_affectation': timezone.now(),
-    })
-    structure = dossier.structure.nom if dossier.structure_id else 'la structure'
-    evenement(dossier, 'affectation', acteur, f'Transmis à {agent.nom_affiche} ({structure}).', visible=False)
-    _changer_statut(dossier, AFFECTE, acteur, f'Dossier transmis à {structure}.')
-    transaction.on_commit(lambda: notif.notifier_affectation(dossier, agent))
 
 
 def detecter_doublon(incident):
@@ -374,6 +363,34 @@ def annuler(dossier, acteur, motif):
     inter = _intervention(dossier)
     if inter and inter.agent_id and inter.agent_id != acteur.pk:
         transaction.on_commit(lambda: notif.notifier_desaffectation(dossier, inter.agent))
+    return dossier
+
+
+def structure_competente_pour(dossier, structure):
+    """La structure traite-t-elle ce dossier ? (catégorie d'un incident, type d'urgence d'un SOS)"""
+    from core.constants import TYPES_URGENCE
+    from core.models import Categorie
+    if est_incident(dossier):
+        cat = Categorie.objects.filter(code=dossier.type_incident).first()
+        return not (cat and cat.service_defaut_id) or structure.service_id == cat.service_defaut_id
+    return structure.service.code in TYPES_URGENCE[dossier.type_urgence or 'non_precise']['services']
+
+
+@transaction.atomic
+def changer_structure(dossier, citoyen, structure):
+    """Le déclarant choisit une autre structure tant que son dossier n'est pas encore affecté."""
+    dossier = _verrouiller(dossier)
+    if dossier.citoyen_id != citoyen.pk:
+        raise PermissionDenied('Ce dossier ne vous appartient pas.')
+    _exiger_statut(dossier, {NOUVEAU}, 'changer de structure')
+    if not structure.actif or not structure_competente_pour(dossier, structure):
+        raise ValidationError({'structure': "Cette structure n'est pas compétente pour ce dossier."})
+    if dossier.structure_id == structure.pk:
+        return dossier
+    dossier.structure, dossier.service = structure, structure.service
+    dossier.save(update_fields=['structure', 'service', 'date_modification'])
+    evenement(dossier, 'affectation', citoyen, f'Transmis à {structure.nom} (choix du citoyen).')
+    transaction.on_commit(lambda: notif.notifier_nouveau_dossier(dossier))
     return dossier
 
 

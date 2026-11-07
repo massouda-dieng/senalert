@@ -18,7 +18,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from .audit import ACTIONS, actions_de, journaliser, libelle_action
-from .constants import GRAVITE_CHOICES, REGIONS, ROLE_CHOICES, STATUT_CHOICES
+from .constants import GRAVITE_CHOICES, REGIONS, ROLE_CHOICES, STATUT_CHOICES, TYPES_URGENCE
 from .exceptions import ServiceIndisponible
 from .geo import dans_senegal, distance_m, region_la_plus_proche
 from .models import Categorie, FicheSecours, JournalAudit, Parametre, Service, Structure
@@ -110,12 +110,13 @@ class StructureSerializer(serializers.ModelSerializer):
     distance_m = serializers.SerializerMethodField()
     nb_agents_disponibles = serializers.SerializerMethodField()
     dans_la_zone = serializers.SerializerMethodField()
+    suggeree = serializers.SerializerMethodField()
 
     class Meta:
         model = Structure
         fields = ['id', 'nom', 'service', 'service_nom', 'service_code', 'latitude', 'longitude', 'region',
                   'region_libelle', 'adresse', 'telephone', 'position_approximative', 'source', 'actif',
-                  'distance_m', 'nb_agents_disponibles', 'dans_la_zone']
+                  'distance_m', 'nb_agents_disponibles', 'dans_la_zone', 'suggeree']
         read_only_fields = ['source']
 
     def get_distance_m(self, obj) -> int | None:
@@ -124,6 +125,10 @@ class StructureSerializer(serializers.ModelSerializer):
 
     def get_nb_agents_disponibles(self, obj) -> int | None:
         return self.context.get('agents', {}).get(obj.pk)
+
+    def get_suggeree(self, obj) -> bool:
+        """Recherche par position : structure présélectionnée pour le citoyen (celle que le serveur choisirait)."""
+        return self.context.get('suggeree') == obj.pk
 
     def get_dans_la_zone(self, obj) -> bool | None:
         """Recherche par position : la structure est-elle compétente pour la région du lieu ?"""
@@ -165,7 +170,7 @@ class StructureViewSet(ReferentielViewSet):
     filterset_class = FiltreStructure
 
     def list(self, request, *args, **kwargs):
-        from .structures import agents_disponibles, structures_proches
+        from .structures import agents_disponibles, structure_competente, structures_proches
         p = request.query_params
         if p.get('lat') is None and p.get('lng') is None:
             return super().list(request, *args, **kwargs)
@@ -173,13 +178,16 @@ class StructureViewSet(ReferentielViewSet):
         services = [p['service']] if p.get('service') else None
         if services and services[0].isdigit():  # identifiant du service (configuration publique) ou son code
             services = list(Service.objects.filter(pk=int(services[0])).values_list('code', flat=True)) or ['?']
+        if p.get('type_urgence') in TYPES_URGENCE:
+            services = list(TYPES_URGENCE[p['type_urgence']]['services'])
         if p.get('categorie'):
             cat = Categorie.objects.filter(code=p['categorie'], actif=True).select_related('service_defaut').first()
             if cat and cat.service_defaut_id:
                 services = [cat.service_defaut.code]
         region = p.get('region') if p.get('region') in REGIONS else region_la_plus_proche(lat, lng)
         proches = structures_proches(lat, lng, services, entier(p.get('limite'), 8, 1, 20, 'limite'), region=region)
-        contexte = {**self.get_serializer_context(), 'region': region,
+        suggeree = structure_competente(lat, lng, region, services) if proches else None
+        contexte = {**self.get_serializer_context(), 'region': region, 'suggeree': suggeree.pk if suggeree else None,
                     'distances': {s.pk: d for s, d in proches},
                     'agents': {s.pk: agents_disponibles(s).count() for s, _ in proches}}
         return Response(StructureSerializer([s for s, _ in proches], many=True, context=contexte).data)

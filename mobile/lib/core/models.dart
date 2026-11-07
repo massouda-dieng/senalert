@@ -45,7 +45,7 @@ class Utilisateur {
   bool get estCitoyen => role == 'citoyen';
   bool get estAgent => role == 'agent';
   bool get estSuperadmin => role == 'superadmin';
-  /// Superviseur national ou superviseur d'une structure : ils travaillent sur le web.
+  /// Administrateur de la plateforme ou superviseur d'une structure : ils travaillent sur le web.
   bool get estSupervision => role == 'superadmin' || role == 'superviseur';
   String get nomAffiche => prenom.isNotEmpty ? '$prenom $nom'.trim() : username;
 }

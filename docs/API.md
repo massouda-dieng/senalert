@@ -30,7 +30,7 @@ Conventions :
 |---|---|---|---|
 | GET | `…/` | connecté | Liste **selon la visibilité du rôle**. Filtres : `statut` (multiple), `region`, `gravite`, `type_incident`, `service`, `agent`, `date_debut`, `date_fin`, `q`, `actifs`, `affecte_a_moi`, `doublons`, `ordering` |
 | POST | `/api/incidents/` | citoyen, superadmin (30/h) | JSON ou multipart : `type_incident`, `latitude`, `longitude`, `precision_gps`, `region`, `adresse`, `description`, `date_incident`, `infos_complementaires`, `client_request_id`, `photos[]` (≤ 5, ≤ 5 Mo, JPEG/PNG/WEBP) → 201, ou 200 si déjà reçu |
-| POST | `/api/alertes/sos/` | connecté (10/h) | `latitude`/`longitude` facultatifs (jamais inventés), `precision_gps`, `message`, `client_request_id` → 201 `{…, deja_enregistree: false}` ou 200 `{…, deja_enregistree: true}` |
+| POST | `/api/alertes/sos/` | connecté (10/h) | `latitude`/`longitude` facultatifs (jamais inventés), `precision_gps`, `type_urgence`, `structure` (facultatif, sinon la plus proche pour le type d'urgence), `photos[]` (multipart), `message`, `client_request_id` → 201 `{…, deja_enregistree: false}` ou 200 `{…, deja_enregistree: true}`. Le SOS est créé au statut `nouveau` : le superviseur de la structure l'affecte |
 | GET | `…/{id}/` | visible | Détail (intervention, photos, contact du déclarant si autorisé) |
 | GET | `…/{id}/evenements/` | visible | Chronologie (événements internes masqués au citoyen) |
 | POST | `…/{id}/affecter/` | superadmin | `{agent, service?, message?}` affecte ou réaffecte |
@@ -43,7 +43,8 @@ Conventions :
 | POST | `…/{id}/rejeter/` | superadmin | `{motif}` nouveau → refuse |
 | POST | `…/{id}/gravite/` | superadmin, agent affecté | `{gravite}` |
 | POST | `…/{id}/note/` | agent, superadmin | `{message, visible_citoyen}` |
-| POST | `/api/incidents/{id}/completer/` | citoyen propriétaire | `message` et/ou `photos[]` sur un dossier ouvert |
+| POST | `/api/incidents/{id}/completer/`, `/api/alertes/sos/{id}/completer/` | citoyen propriétaire | `message` et/ou `photos[]` sur un dossier ouvert |
+| POST | `/api/incidents/{id}/changer-structure/`, `/api/alertes/sos/{id}/changer-structure/` | citoyen propriétaire | `{structure}` : autre structure compétente, tant que le dossier est `nouveau` (le nouveau superviseur est notifié) |
 | GET | `/api/incidents/{id}/photos/{photo_id}/` | visible | Fichier image (jamais servi publiquement) |
 | GET | `/api/incidents/carte/` | connecté | Vue publique minimale (`jours`, `type_incident`, `region`) |
 | GET | `/api/incidents/resume/` | connecté | Compteurs par statut selon la visibilité |

@@ -1,7 +1,7 @@
-"""Choix des structures et des agents : structures les plus proches, agents disponibles, choix automatique (SOS)."""
+"""Choix des structures : structures les plus proches, agents disponibles, structure compétente par défaut."""
 from django.db.models import Count, Q
 
-from .constants import REGIONS, ROLE_AGENT, STATUTS_ACTIFS, TYPES_URGENCE
+from .constants import REGIONS, ROLE_AGENT, ROLE_SUPERVISEUR, STATUTS_ACTIFS, TYPES_URGENCE
 from .geo import distance_m, region_la_plus_proche
 from .models import Structure
 from .structures_osm import SERVICES_PAR_REGION
@@ -37,20 +37,25 @@ def agents_disponibles(structure):
             .order_by('missions_actives', 'first_name', 'pk'))
 
 
-def choix_automatique(lat, lng, region, services):
-    """Structure la plus proche ayant un agent disponible, et cet agent (SOS, signalement sans choix).
+def structure_competente(lat, lng, region, services):
+    """Structure compétente la plus proche, vers laquelle part le dossier quand le citoyen n'en choisit pas.
 
-    Sans agent disponible à proximité, le dossier va à la structure la plus proche sans agent :
-    son superviseur l'affectera. Sans position, on se replie sur le chef-lieu de la région.
+    Le dossier va toujours à une structure, jamais directement à un agent : c'est le superviseur de la
+    structure qui l'affecte à l'un de ses agents. Les structures dotées d'un superviseur actif passent
+    d'abord, sinon personne ne verrait le dossier. Sans position, on se replie sur le chef-lieu de la région.
     """
+    from accounts.models import User
     if lat is None or lng is None:
         r = REGIONS.get(region)
         if not r:
-            return None, None
+            return None
         lat, lng = r['lat'], r['lng']
     proches = structures_proches(lat, lng, services, limite=10, region=region)
+    if not proches:
+        return None
+    supervisees = set(User.objects.filter(role=ROLE_SUPERVISEUR, is_active=True,
+                                          structure__in=[s for s, _ in proches]).values_list('structure_id', flat=True))
     for structure, _ in proches:
-        agent = agents_disponibles(structure).first()
-        if agent:
-            return structure, agent
-    return (proches[0][0], None) if proches else (None, None)
+        if structure.pk in supervisees:
+            return structure
+    return proches[0][0]

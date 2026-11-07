@@ -1,5 +1,5 @@
 """Constat de l'équipe : SOS typé, compétence territoriale des structures, journal d'audit lisible et inaltérable."""
-from core.constants import ACCEPTE, AFFECTE
+from core.constants import ACCEPTE, NOUVEAU
 from core.models import JournalAudit, Structure
 from core.tests_utils import MDP, SenAlertTestCase
 
@@ -22,7 +22,7 @@ class SOSTypeTests(SenAlertTestCase):
         self.assertEqual(r.data['type_urgence'], 'medicale')
         self.assertEqual(r.data['type_urgence_libelle'], 'Urgence médicale')
         self.assertEqual(r.data['structure'], self.medecin.structure_id)
-        self.assertEqual(r.data['statut'], AFFECTE)
+        self.assertEqual(r.data['statut'], NOUVEAU, 'le superviseur de la structure affectera')
         # La confirmation affichée au citoyen repose sur ces champs enregistrés par le serveur.
         for champ in ('reference', 'structure_nom', 'date_creation', 'latitude', 'longitude'):
             self.assertTrue(r.data[champ], champ)
@@ -79,17 +79,18 @@ class JournalAuditTests(SenAlertTestCase):
         self.client.post('/api/auth/connexion/', {'username': 'awa@test.sn', 'password': MDP, 'espace': 'citoyen'},
                          format='json')
         self.en_tant_que(self.awa)
-        r = self.client.post(INCIDENTS, self.incident_payload(structure=self.pompier.structure_id, agent=self.pompier.pk),
-                             format='json')
+        r = self.client.post(INCIDENTS, self.incident_payload(structure=self.pompier.structure_id), format='json')
         self.client.post(SOS, {'type_urgence': 'incendie'}, format='json')
         self.client.patch('/api/auth/profil/', {'telephone': '771234567'}, format='json')
-        self.en_tant_que(self.pompier)
         pk = r.data['id']
+        self.en_tant_que(self.superviseur(structure=self.pompier.structure))
+        self.client.post(f'{INCIDENTS}{pk}/affecter/', {'agent': self.pompier.pk}, format='json')
+        self.en_tant_que(self.pompier)
         self.assertEqual(self.client.post(f'{INCIDENTS}{pk}/accepter/').data['statut'], ACCEPTE)
         self.client.post(f'{INCIDENTS}{pk}/demarrer/')
         self.client.post(f'{INCIDENTS}{pk}/resoudre/', {'compte_rendu': 'Feu maîtrisé, aucun blessé.'}, format='json')
         actions = set(JournalAudit.objects.values_list('action', flat=True))
-        for attendu in ('compte.connexion', 'incident.creation', 'sos.envoi', 'compte.modification_profil',
+        for attendu in ('compte.connexion', 'incident.creation', 'sos.envoi', 'compte.modification_profil', 'dossier.affectation',
                         'dossier.acceptation', 'dossier.demarrage', 'dossier.cloture'):
             self.assertIn(attendu, actions)
 

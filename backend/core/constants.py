@@ -32,7 +32,7 @@ ROLE_CHOICES = [
     (ROLE_CITOYEN, 'Citoyen'),
     (ROLE_AGENT, 'Agent de secours'),
     (ROLE_SUPERVISEUR, 'Superviseur de structure'),
-    (ROLE_SUPERADMIN, 'Superadministrateur'),
+    (ROLE_SUPERADMIN, 'Administrateur de la plateforme'),
 ]
 # Rôles qui accèdent à l'espace de supervision : le superadministrateur (tout le pays)
 # et le superviseur d'une structure (uniquement les dossiers et agents de sa structure).

@@ -112,11 +112,12 @@ class ConnexionScreen extends StatefulWidget {
 const _espaces = {
   'citoyen': ('Citoyen', Icons.person_outline, 'Signalez un incident, lancez un SOS et suivez vos dossiers.', 'E-mail ou identifiant'),
   'agent': ('Agent', Icons.badge_outlined, 'Police, pompiers, santé, SENELEC, ONAS : traitez les interventions qui vous sont transmises.', 'E-mail professionnel'),
-  'superadmin': ('Superviseur', Icons.admin_panel_settings_outlined, 'Superviseur de structure ou national : suivez les dossiers et vos agents.', 'E-mail ou identifiant'),
+  'superadmin': ('Superviseur', Icons.admin_panel_settings_outlined, 'Superviseur de structure : suivez les dossiers de votre structure et vos agents.', 'E-mail ou identifiant'),
 };
 
+/// Connexion unique : identifiant et mot de passe. Le serveur reconnaît le rôle du compte
+/// (citoyen, agent, superviseur) et l'application ouvre l'espace correspondant.
 class _ConnexionScreenState extends State<ConnexionScreen> {
-  String _espace = 'citoyen';
   final _ident = TextEditingController();
   final _mdp = TextEditingController();
   bool _visible = false;
@@ -125,12 +126,12 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
 
   Future<void> _valider() async {
     if (_ident.text.trim().isEmpty || _mdp.text.isEmpty) {
-      setState(() => _erreur = 'Renseignez votre e-mail et votre mot de passe.');
+      setState(() => _erreur = 'Renseignez votre identifiant et votre mot de passe.');
       return;
     }
     setState(() { _envoi = true; _erreur = null; });
     try {
-      await context.read<Session>().connexion(_ident.text, _mdp.text, espace: _espace);
+      await context.read<Session>().connexion(_ident.text, _mdp.text);
     } on ApiException catch (e) {
       setState(() => _erreur = e.message);
     } finally {
@@ -141,23 +142,10 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
   @override
   Widget build(BuildContext context) {
     final expiree = context.watch<Session>().expiree;
-    final e = _espaces[_espace]!;
-    return _Cadre(titreEcran: 'Connexion', sousTitre: e.$3, enfants: [
-      SegmentedButton<String>(
-        showSelectedIcon: false,
-        style: const ButtonStyle(visualDensity: VisualDensity.compact, padding: WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 6))),
-        segments: [for (final x in _espaces.entries) ButtonSegment(value: x.key, label: Text(x.value.$1, maxLines: 1, softWrap: false))],
-        selected: {_espace},
-        onSelectionChanged: (s) => setState(() { _espace = s.first; _erreur = null; }),
-      ),
-      const SizedBox(height: 20),
+    return _Cadre(titreEcran: 'Connexion', sousTitre: 'Citoyens, agents et superviseurs : votre espace s’ouvre automatiquement.', enfants: [
       if (expiree) const Padding(padding: EdgeInsets.only(bottom: 16), child: Bandeau.alerte('Votre session a expiré. Reconnectez-vous.')),
-      if (_espace == 'citoyen') ...[
-        _BoutonGoogle(onErreur: (e) => setState(() => _erreur = e.message)),
-        const _Separateur('ou'),
-      ],
       TextField(controller: _ident, keyboardType: TextInputType.emailAddress, autofillHints: const [AutofillHints.username],
-          textInputAction: TextInputAction.next, decoration: InputDecoration(labelText: e.$4, prefixIcon: const Icon(Icons.alternate_email))),
+          textInputAction: TextInputAction.next, decoration: const InputDecoration(labelText: 'E-mail ou identifiant', prefixIcon: Icon(Icons.alternate_email))),
       const SizedBox(height: 12),
       TextField(controller: _mdp, obscureText: !_visible, autofillHints: const [AutofillHints.password], onSubmitted: (_) => _valider(),
           decoration: InputDecoration(labelText: 'Mot de passe', prefixIcon: const Icon(Icons.lock_outline),
@@ -167,15 +155,13 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
       FilledButton(onPressed: _envoi ? null : _valider,
           child: _envoi
               ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white))
-              : Text('Se connecter en tant que ${e.$1.toLowerCase()}')),
+              : const Text('Se connecter')),
+      const _Separateur('ou, pour les citoyens'),
+      _BoutonGoogle(onErreur: (e) => setState(() => _erreur = e.message)),
       const SizedBox(height: 12),
-      if (_espace == 'citoyen') TextButton(onPressed: () => context.push('/inscription'), child: const Text('Pas de compte ? Créer un compte citoyen')),
-      if (_espace == 'agent')
-        Text('Pas encore de compte ? Il est créé par le superviseur de votre structure (caserne, commissariat, hôpital, agence).',
-            textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: AppColors.textGrey)),
-      if (_espace == 'superadmin')
-        Text('Les comptes superviseur ne se créent pas dans l’application : ils sont attribués par le superviseur national.',
-            textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: AppColors.textGrey)),
+      TextButton(onPressed: () => context.push('/inscription'), child: const Text('Pas de compte ? Créer un compte citoyen')),
+      Text('Les comptes agent et superviseur ne se créent pas dans l’application : ils sont remis par votre structure.',
+          textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: AppColors.textGrey)),
     ]);
   }
 }
@@ -203,7 +189,7 @@ class CompteSuperviseurScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _Cadre(titreEcran: 'Compte superviseur', sousTitre: 'Accès réservé aux responsables de la plateforme.', enfants: [
         const _ChoixCompte('superadmin'),
-        const Bandeau.alerte('Pour protéger les données des citoyens, un compte superviseur n’est jamais créé dans l’application : chaque structure reçoit son superviseur du superviseur national.'),
+        const Bandeau.alerte('Pour protéger les données des citoyens, un compte superviseur n’est jamais créé dans l’application : chaque structure reçoit son superviseur de l’administrateur de la plateforme.'),
         const SizedBox(height: 12),
         TextButton(onPressed: () => context.go('/connexion'), child: const Text('J’ai déjà un compte')),
       ]);

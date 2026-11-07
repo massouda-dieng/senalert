@@ -5,7 +5,7 @@ const Contexte = createContext(null);
 
 export const ESPACE_PAR_ROLE = { citoyen: '/citoyen', agent: '/agent', superviseur: '/supervision', superadmin: '/supervision' };
 
-/** Superviseur national (tout le pays) ou superviseur d'une structure (ses dossiers et ses agents). */
+/** Administrateur de la plateforme (tout le pays) ou superviseur d'une structure (ses dossiers et ses agents). */
 export const estSupervision = (role) => role === 'superadmin' || role === 'superviseur';
 
 export function FournisseurAuth({ children }) {

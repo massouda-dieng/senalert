@@ -3,9 +3,8 @@ from datetime import timedelta
 from django.utils import timezone
 from rest_framework import serializers
 
-from core.constants import ACCEPTE, AFFECTE, EN_COURS, GRAVITE_CHOICES, NOUVEAU, REGIONS, ROLE_AGENT, ROLES_SUPERVISION
+from core.constants import ACCEPTE, AFFECTE, EN_COURS, GRAVITE_CHOICES, NOUVEAU, REGIONS, ROLES_SUPERVISION
 from core.geo import dans_senegal, distance_m, region_la_plus_proche
-from accounts.models import User
 from core.models import Categorie, Parametre, Structure
 
 from . import workflow
@@ -76,6 +75,8 @@ class PieceJointeSerializer(serializers.ModelSerializer):
         fields = ['id', 'taille', 'largeur', 'hauteur', 'date_ajout', 'url']
 
     def get_url(self, obj) -> str:
+        if obj.alerte_id:
+            return f'/api/alertes/sos/{obj.alerte_id}/photos/{obj.pk}/'
         return f'/api/incidents/{obj.incident_id}/photos/{obj.pk}/'
 
 
@@ -182,17 +183,16 @@ class IncidentCreationSerializer(PositionMixin, serializers.ModelSerializer):
     adresse = serializers.CharField(required=False, allow_blank=True, max_length=255)
     infos_complementaires = serializers.CharField(required=False, allow_blank=True, max_length=1000)
     client_request_id = serializers.UUIDField(required=False, allow_null=True)
-    # Choix du citoyen : structure proposée près du lieu, puis un agent disponible de cette structure.
-    # Sans choix, le serveur oriente vers la structure compétente la plus proche (son superviseur affecte).
+    # Structure concernée, choisie par le citoyen parmi celles compétentes pour la catégorie (la plus proche
+    # est suggérée). Sans choix, le serveur prend la structure compétente la plus proche. Le citoyen ne
+    # choisit jamais l'agent : c'est le superviseur de la structure qui affecte.
     structure = serializers.PrimaryKeyRelatedField(queryset=Structure.objects.filter(actif=True), required=False,
                                                    allow_null=True)
-    agent = serializers.PrimaryKeyRelatedField(queryset=User.objects.filter(role=ROLE_AGENT, is_active=True),
-                                               required=False, allow_null=True)
 
     class Meta:
         model = Incident
         fields = ['type_incident', 'description', 'latitude', 'longitude', 'precision_gps', 'region', 'adresse',
-                  'date_incident', 'infos_complementaires', 'client_request_id', 'structure', 'agent']
+                  'date_incident', 'infos_complementaires', 'client_request_id', 'structure']
 
     def validate_type_incident(self, value):
         if not Categorie.objects.filter(code=value, actif=True).exists():
@@ -217,17 +217,11 @@ class IncidentCreationSerializer(PositionMixin, serializers.ModelSerializer):
             raise serializers.ValidationError({'latitude': 'La position indiquée est hors du Sénégal.'})
         if attrs['type_incident'] == 'autre' and len((attrs.get('description') or '').strip()) < 10:
             raise serializers.ValidationError({'description': 'Décrivez l’incident (10 caractères minimum).'})
-        structure, agent = attrs.get('structure'), attrs.get('agent')
+        structure = attrs.get('structure')
         categorie = Categorie.objects.filter(code=attrs['type_incident']).first()
         if structure is not None and categorie and categorie.service_defaut_id \
                 and structure.service_id != categorie.service_defaut_id:
             raise serializers.ValidationError({'structure': "Cette structure n'est pas compétente pour ce type d'incident."})
-        if agent is not None:
-            if structure is None or agent.structure_id != structure.pk:
-                raise serializers.ValidationError({'agent': "Cet agent n'appartient pas à la structure choisie."})
-            profil = getattr(agent, 'profil_agent', None)
-            if profil is None or not profil.disponible:
-                raise serializers.ValidationError({'agent': "Cet agent n'est plus disponible : choisissez-en un autre."})
         return attrs
 
 

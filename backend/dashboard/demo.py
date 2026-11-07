@@ -29,7 +29,7 @@ CITOYEN = 'citoyen.test@senalert.local'
 AGENT = 'agent.pompiers@senalert.local'
 
 ETAPES = {
-    1: ('Une habitante déclenche un SOS', "Awa appuie sur le bouton SOS : sa position GPS part immédiatement vers l'agent disponible de la structure de secours la plus proche, et son superviseur est prévenu."),
+    1: ('Une habitante déclenche un SOS', "Awa appuie sur le bouton SOS : sa position GPS part immédiatement vers la structure de secours la plus proche, dont le superviseur est prévenu et affecte un agent."),
     2: ('Elle signale un incendie', "Elle précise la situation : incendie dans un entrepôt. L'application lui propose la caserne la plus proche, qu'elle choisit."),
     3: ('La caserne affecte le dossier', "Le superviseur de la caserne affecte l'incendie à un de ses agents. L'agent et la citoyenne sont notifiés."),
     4: ("L'agent accepte", "L'agent accepte l'intervention et le SOS qui lui ont été transmis : le délai de prise en charge est mesuré."),
@@ -78,7 +78,9 @@ class DemoView(APIView):
                                                region='dakar', gravite='critique', source_position='gps',
                                                structure=agent.structure, service=agent.structure.service,
                                                message='[DÉMO] SOS déclenché depuis l’application')
-                workflow.apres_creation(sos, citoyen, agent=agent)
+                workflow.apres_creation(sos, citoyen)
+                # Le superviseur affecte le SOS à un agent de sa structure.
+                sos = workflow.affecter(sos, request.user, agent=agent, message='SOS affecté (démonstration).')
             elif etape == 2:
                 cat = Categorie.objects.get(code='incendie')
                 inc = Incident.objects.create(

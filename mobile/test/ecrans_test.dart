@@ -22,9 +22,9 @@ void main() {
 
   testWidgets('connexion : champs vides refusés sans appel réseau', (t) async {
     await t.pumpWidget(envelopper(const ConnexionScreen()));
-    await t.tap(find.text('Se connecter en tant que citoyen'));
+    await t.tap(find.text('Se connecter'));
     await t.pump();
-    expect(find.text('Renseignez votre e-mail et votre mot de passe.'), findsOneWidget);
+    expect(find.text('Renseignez votre identifiant et votre mot de passe.'), findsOneWidget);
   });
 
   testWidgets('connexion Google signalée comme non configurée sans identifiant client', (t) async {
@@ -33,23 +33,14 @@ void main() {
     expect(find.text('Continuer avec Google'), findsNothing);
   });
 
-  testWidgets('connexion : onglet Superviseur sans création de compte ni Google', (t) async {
+  testWidgets('connexion unique : identifiant et mot de passe, sans choix de profil', (t) async {
     await t.pumpWidget(envelopper(const ConnexionScreen()));
-    await t.tap(find.text('Superviseur'));
-    await t.pump();
-    expect(find.text('Se connecter en tant que superviseur'), findsOneWidget);
-    expect(find.textContaining('Créer un compte'), findsNothing);
-    expect(find.textContaining('Connexion Google'), findsNothing);
-    expect(find.textContaining('superviseur national'), findsOneWidget);
-  });
-
-  testWidgets('connexion : onglet Agent sans demande de compte, créé par le superviseur', (t) async {
-    await t.pumpWidget(envelopper(const ConnexionScreen()));
-    await t.tap(find.text('Agent'));
-    await t.pump();
-    expect(find.text('Se connecter en tant que agent'), findsOneWidget);
-    expect(find.textContaining('Demander un compte'), findsNothing);
-    expect(find.textContaining('créé par le superviseur de votre structure'), findsOneWidget);
+    expect(find.byType(SegmentedButton<String>), findsNothing);
+    expect(find.text('E-mail ou identifiant'), findsOneWidget);
+    expect(find.text('Mot de passe'), findsOneWidget);
+    expect(find.text('Se connecter'), findsOneWidget);
+    expect(find.textContaining('superviseur national'), findsNothing);
+    expect(find.textContaining('remis par votre structure'), findsOneWidget);
   });
 
   testWidgets('création de compte : choix Citoyen, Agent, Superviseur', (t) async {

@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import {
-  CheckCircle2, Clock, Copy, ExternalLink, Flag, ImagePlus, LocateFixed, MapPin, MessageSquarePlus, Navigation, Phone, Play,
+  CheckCircle2, Clock, Copy, ExternalLink, Flag, ImagePlus, LocateFixed, MapPin, Navigation, Phone, Play,
   Send, Star, Truck, UserPlus, X, XCircle,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -54,13 +54,8 @@ export default function DossierDetail({ type = 'incident', id, onFermer, onModif
     }
   };
 
+  // Le citoyen suit son dossier sans agir dessus : seule la structure le traite. Il donne son avis une fois résolu.
   const actions = [];
-  if (role === 'citoyen' && d.est_proprietaire && ['nouveau', 'affecte'].includes(s)) {
-    actions.push(<Bouton key="annuler" variante="secondaire" icone={XCircle} onClick={() => setDialogue('annuler')}>{t('Annuler mon signalement')}</Bouton>);
-  }
-  if (role === 'citoyen' && d.est_proprietaire && !['resolu', 'refuse', 'annule'].includes(s)) {
-    actions.push(<Bouton key="completer" variante="secondaire" icone={MessageSquarePlus} onClick={() => setDialogue('completer')}>{t('Compléter')}</Bouton>);
-  }
   if (role === 'agent') {
     if (s === 'nouveau') actions.push(<Bouton key="pec" icone={CheckCircle2} onClick={() => agir('prendre-en-charge', undefined, 'Dossier pris en charge.').catch(() => {})}>Prendre en charge</Bouton>);
     if (s === 'affecte' && estMien) {
@@ -385,7 +380,7 @@ export function DialogueCloture({ ouverte, onFermer, onValider }) {
 function DialogueAffectation({ dossier, onFermer, onValider }) {
   const { utilisateur } = useAuth();
   const national = utilisateur.role === 'superadmin';
-  // Le superviseur affecte un agent de sa structure ; le superviseur national peut réorienter vers une structure proche.
+  // Le superviseur affecte un agent de sa structure ; l'administrateur de la plateforme peut réorienter vers une structure proche.
   const [structure, setStructure] = useState(dossier.structure ? String(dossier.structure) : '');
   const [agent, setAgent] = useState('');
   const [message, setMessage] = useState('');

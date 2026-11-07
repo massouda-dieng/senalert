@@ -10,12 +10,17 @@ import {
 import { useConfig } from '../../lib/config';
 import { dateHeure, ilYa } from '../../lib/format';
 
-/** Choix d'une structure (caserne, commissariat, hôpital, agence) par service et par nom. */
+/**
+ * Choix d'une structure, lue en base à chaque ouverture (jamais une liste écrite dans le code) : une structure
+ * créée dans « Structures » apparaît aussitôt, en tête de liste. Filtres par service et par nom.
+ */
 export function ChoixStructure({ id, valeur, onChange, services }) {
   const [service, setService] = useState('');
   const [q, setQ] = useState('');
-  const structures = useRessource(service || q.length >= 2 ? '/structures/' : null, { service: service || undefined, q: q || undefined, actif: true });
-  const liste = (structures.donnees || []).slice(0, 80);
+  const structures = useRessource('/structures/', { service: service || undefined, q: q.length >= 2 ? q : undefined, actif: true });
+  const liste = [...(structures.donnees || [])]
+    .sort((a, b) => (a.source === 'manuel' ? 0 : 1) - (b.source === 'manuel' ? 0 : 1) || b.id - a.id)
+    .slice(0, 300);
   return (
     <div className="space-y-2">
       <div className="grid gap-2 sm:grid-cols-2">
@@ -24,7 +29,7 @@ export function ChoixStructure({ id, valeur, onChange, services }) {
         <input className="champ" placeholder="Nom (ex. Médina, Thiès)…" aria-label="Rechercher une structure" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
       {structures.chargement ? <Chargement className="py-2" /> : (
-        <Selecteur id={id} valeur={valeur} onChange={onChange} vide={service || q ? `Choisir parmi ${liste.length} structure(s)…` : 'Choisissez d’abord un service ou tapez un nom'}
+        <Selecteur id={id} valeur={valeur} onChange={onChange} vide={`Choisir parmi ${liste.length} structure(s)…`}
           options={liste.map((s) => ({ code: String(s.id), libelle: `${s.nom} — ${s.region_libelle}${s.position_approximative ? ' (position à confirmer)' : ''}` }))} />
       )}
     </div>

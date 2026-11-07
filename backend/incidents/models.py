@@ -41,9 +41,11 @@ def chemin_piece_jointe(instance, filename):
 
 
 class PieceJointe(models.Model):
-    """Photo jointe à un incident (ré-encodée en JPEG, métadonnées EXIF supprimées)."""
+    """Photo jointe à un incident ou à une alerte SOS (ré-encodée en JPEG, métadonnées EXIF supprimées)."""
 
-    incident = models.ForeignKey(Incident, on_delete=models.CASCADE, related_name='pieces_jointes')
+    incident = models.ForeignKey(Incident, null=True, blank=True, on_delete=models.CASCADE, related_name='pieces_jointes')
+    alerte = models.ForeignKey('alerts.AlerteSOS', null=True, blank=True, on_delete=models.CASCADE,
+                               related_name='pieces_jointes')
     fichier = models.FileField(upload_to=chemin_piece_jointe)
     taille = models.PositiveIntegerField()
     largeur = models.PositiveIntegerField(null=True)
@@ -53,6 +55,13 @@ class PieceJointe(models.Model):
 
     class Meta:
         ordering = ['date_ajout']
+        constraints = [
+            models.CheckConstraint(
+                condition=(models.Q(incident__isnull=False, alerte__isnull=True)
+                           | models.Q(incident__isnull=True, alerte__isnull=False)),
+                name='piece_jointe_un_seul_dossier',
+            ),
+        ]
 
 
 class Intervention(models.Model):

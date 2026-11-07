@@ -326,6 +326,74 @@ paths:
               schema:
                 $ref: '#/components/schemas/AlerteSOS'
           description: ''
+  /api/alertes/sos/{id}/changer-structure/:
+    post:
+      operationId: alertes_sos_changer_structure_create
+      description: Le citoyen choisit une autre structure compétente tant que le dossier
+        n'est pas affecté.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Alerte SOS.
+        required: true
+      tags:
+      - alertes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlerteSOSRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlerteSOSRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlerteSOSRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlerteSOS'
+          description: ''
+  /api/alertes/sos/{id}/completer/:
+    post:
+      operationId: alertes_sos_completer_create
+      description: Le citoyen ajoute une information ou des photos à son dossier ouvert
+        (incident ou SOS).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Alerte SOS.
+        required: true
+      tags:
+      - alertes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlerteSOSRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlerteSOSRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlerteSOSRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlerteSOS'
+          description: ''
   /api/alertes/sos/{id}/decliner/:
     post:
       operationId: alertes_sos_decliner_create
@@ -538,6 +606,35 @@ paths:
             schema:
               $ref: '#/components/schemas/NoteRequest'
         required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlerteSOS'
+          description: ''
+  /api/alertes/sos/{id}/photos/{photo_id}/:
+    get:
+      operationId: alertes_sos_photos_retrieve
+      description: Sert une photo du dossier après contrôle d'accès (les fichiers
+        ne sont jamais publics).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) Alerte SOS.
+        required: true
+      - in: path
+        name: photo_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - alertes
       security:
       - jwtAuth: []
       responses:
@@ -886,6 +983,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Assistant'
+          description: ''
+  /api/analyse/assistant/transcrire/:
+    post:
+      operationId: analyse_assistant_transcrire_create
+      description: |-
+        Dictée vocale : transforme un message vocal en texte, que le citoyen relit avant de l'envoyer à l'assistant.
+        L'audio est transmis au fournisseur pour la transcription puis oublié : il n'est jamais enregistré.
+      tags:
+      - analyse
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TranscriptionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
           description: ''
   /api/analyse/niveaux-regions/:
     get:
@@ -2167,10 +2288,46 @@ paths:
               schema:
                 $ref: '#/components/schemas/Incident'
           description: ''
+  /api/incidents/{id}/changer-structure/:
+    post:
+      operationId: incidents_changer_structure_create
+      description: Le citoyen choisit une autre structure compétente tant que le dossier
+        n'est pas affecté.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/IncidentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IncidentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
   /api/incidents/{id}/completer/:
     post:
       operationId: incidents_completer_create
-      description: Le citoyen ajoute une information ou des photos à son dossier ouvert.
+      description: Le citoyen ajoute une information ou des photos à son dossier ouvert
+        (incident ou SOS).
       parameters:
       - in: path
         name: id
@@ -2426,8 +2583,8 @@ paths:
   /api/incidents/{id}/photos/{photo_id}/:
     get:
       operationId: incidents_photos_retrieve
-      description: Sert une photo après contrôle d'accès (les fichiers ne sont jamais
-        publics).
+      description: Sert une photo du dossier après contrôle d'accès (les fichiers
+        ne sont jamais publics).
       parameters:
       - in: path
         name: id
@@ -3683,6 +3840,11 @@ components:
         est_proprietaire:
           type: boolean
           readOnly: true
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/PieceJointe'
+          readOnly: true
       required:
       - citoyen_contact
       - date_modification
@@ -3690,6 +3852,7 @@ components:
       - est_proprietaire
       - id
       - intervention
+      - photos
       - reference
       - region_libelle
       - service_nom
@@ -3728,6 +3891,9 @@ components:
         client_request_id:
           type: string
           format: uuid
+          nullable: true
+        structure:
+          type: integer
           nullable: true
     AlerteSOSCreationTypeUrgenceEnum:
       enum:
@@ -4607,9 +4773,6 @@ components:
         structure:
           type: integer
           nullable: true
-        agent:
-          type: integer
-          nullable: true
       required:
       - type_incident
     IncidentRequest:
@@ -5399,7 +5562,7 @@ components:
         * `citoyen` - Citoyen
         * `agent` - Agent de secours
         * `superviseur` - Superviseur de structure
-        * `superadmin` - Superadministrateur
+        * `superadmin` - Administrateur de la plateforme
     Service:
       type: object
       properties:
@@ -5550,6 +5713,11 @@ components:
           description: 'Recherche par position : la structure est-elle compétente
             pour la région du lieu ?'
           readOnly: true
+        suggeree:
+          type: boolean
+          description: 'Recherche par position : structure présélectionnée pour le
+            citoyen (celle que le serveur choisirait).'
+          readOnly: true
       required:
       - dans_la_zone
       - distance_m
@@ -5564,6 +5732,7 @@ components:
       - service_code
       - service_nom
       - source
+      - suggeree
     StructureRequest:
       type: object
       properties:
@@ -5618,6 +5787,14 @@ components:
           minLength: 1
       required:
       - refresh
+    TranscriptionRequest:
+      type: object
+      properties:
+        audio:
+          type: string
+          format: binary
+      required:
+      - audio
     TypeEnum:
       enum:
       - nouvelle_alerte

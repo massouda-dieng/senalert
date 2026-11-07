@@ -28,6 +28,13 @@ class _ServicesScreenState extends State<ServicesScreen> {
   String? _erreur;
   bool _chargement = false;
 
+  @override
+  void initState() {
+    super.initState();
+    // Position prise automatiquement à l'ouverture : les services autour de soi s'affichent sans rien toucher.
+    _chercher();
+  }
+
   Future<void> _chercher() async {
     setState(() { _chargement = true; _erreur = null; });
     _position = _position?.ok == true ? _position : await Localisation.lire();
@@ -57,7 +64,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
         ])),
         const SizedBox(height: 12),
         FilledButton.icon(onPressed: _chargement ? null : _chercher, icon: const Icon(Icons.my_location),
-            label: Text(_donnees == null ? 'Rechercher autour de moi' : 'Actualiser')),
+            label: Text(_donnees == null ? 'Réessayer la localisation' : 'Actualiser')),
         const SizedBox(height: 6),
         Text('Votre position est arrondie (~1 km) avant d’interroger OpenStreetMap.', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
         if (_chargement) const Chargement(),

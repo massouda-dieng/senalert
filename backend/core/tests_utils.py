@@ -8,7 +8,7 @@ from rest_framework.test import APITestCase
 
 from accounts.models import AgentProfil, User
 from core.constants import ROLE_AGENT, ROLE_CITOYEN, ROLE_SUPERADMIN, ROLE_SUPERVISEUR
-from core.models import Service
+from core.models import Service, Structure
 from core.structures import structures_proches
 
 # Position des signalements de test (incident_payload) : Dakar.
@@ -27,6 +27,9 @@ class SenAlertTestCase(APITestCase):
     def structure(self, service='pompiers', position=POSITION_TEST):
         """Structure du service la plus proche de la position (par défaut celle des signalements de test)."""
         return structures_proches(*position, [service], 1)[0][0]
+
+    def structure_par_id(self, pk):
+        return Structure.objects.get(pk=pk)
 
     def agent(self, nom='moussa', service='pompiers', zones=('dakar',), structure=None, disponible=True):
         structure = structure or self.structure(service)

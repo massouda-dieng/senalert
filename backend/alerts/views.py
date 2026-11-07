@@ -7,8 +7,9 @@ from rest_framework.throttling import ScopedRateThrottle
 
 from core.audit import journaliser
 from core.constants import STATUTS_ACTIFS, TYPES_URGENCE
-from core.structures import choix_automatique
+from core.structures import structure_competente
 from incidents import workflow
+from incidents.photos import enregistrer_photos, valider_photos
 from incidents.dossier_views import ActionsDossierMixin, FiltreDossier
 
 from .models import AlerteSOS
@@ -42,7 +43,9 @@ class AlerteSOSViewSet(ActionsDossierMixin, mixins.ListModelMixin, mixins.Retrie
         return [ScopedRateThrottle()] if self.action == 'create' else super().get_throttles()
 
     def get_queryset(self):
-        base = AlerteSOS.objects.select_related('citoyen', 'service', 'intervention__agent', 'intervention__service')
+        base = AlerteSOS.objects.select_related(
+            'citoyen', 'service', 'structure', 'intervention__agent', 'intervention__service',
+        ).prefetch_related('pieces_jointes')
         return self.queryset_visible(base)
 
     def get_serializer_class(self):
@@ -71,19 +74,24 @@ class AlerteSOSViewSet(ActionsDossierMixin, mixins.ListModelMixin, mixins.Retrie
         donnees = s.validated_data
         if not donnees.get('region') and user.region:
             donnees['region'] = user.region
-        # En urgence le citoyen ne choisit pas de structure : celle du service lié au type d'urgence
-        # (tous les services de secours si non précisé), la plus proche ayant un agent disponible.
-        services = TYPES_URGENCE[donnees.get('type_urgence') or 'non_precise']['services']
-        structure, agent = choix_automatique(donnees.get('latitude'), donnees.get('longitude'),
+        photos = valider_photos(request.FILES.getlist('photos'))
+        # Structure choisie par le citoyen, sinon la plus proche pour le type d'urgence (tous les services de
+        # secours si non précisé). Le SOS part à son superviseur, prévenu immédiatement, qui affecte un agent.
+        structure = donnees.pop('structure', None)
+        if structure is None:
+            services = TYPES_URGENCE[donnees.get('type_urgence') or 'non_precise']['services']
+            structure = structure_competente(donnees.get('latitude'), donnees.get('longitude'),
                                              donnees.get('region'), services)
         try:
             with transaction.atomic():
                 alerte = AlerteSOS.objects.create(citoyen=user, gravite='critique', structure=structure,
                                                   service=structure.service if structure else None, **donnees)
-                workflow.apres_creation(alerte, user, agent=agent)
+                enregistrer_photos(alerte, photos, user)
+                workflow.apres_creation(alerte, user)
                 journaliser(request, 'sos.envoi', alerte, {
                     'reference': alerte.reference, 'type_urgence': alerte.type_urgence,
-                    'structure': structure.nom if structure else None, 'position': alerte.a_position})
+                    'structure': structure.nom if structure else None, 'position': alerte.a_position,
+                    'photos': len(photos)})
         except IntegrityError:
             existant = AlerteSOS.objects.filter(citoyen=user, client_request_id=cle).first()
             if existant is None:

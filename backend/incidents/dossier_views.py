@@ -1,7 +1,9 @@
 """Actions communes aux dossiers (incidents et SOS), exposées en sous-routes POST."""
 
 import django_filters
+from django.db import transaction
 from django.db.models import Q
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -12,11 +14,13 @@ from rest_framework.response import Response
 from accounts.models import User
 from core.audit import journaliser
 from core.constants import GRAVITE_CHOICES, REGION_CHOICES, ROLE_AGENT, STATUT_CHOICES
-from core.models import Service
-from core.params import motif as lire_motif
+from core.models import Service, Structure
+from core.params import entier, motif as lire_motif
 from core.permissions import est_agent, est_supervision
 
 from . import workflow
+from .models import PieceJointe
+from .photos import enregistrer_photos, valider_photos
 from .serializers import (
     AffectationSerializer, ClotureSerializer, EvaluationSerializer, EvenementSerializer, GraviteSerializer,
     InterventionSerializer, MotifSerializer, NoteSerializer, PositionAgentSerializer,
@@ -176,6 +180,46 @@ class ActionsDossierMixin:
         s.is_valid(raise_exception=True)
         return self._repondre(workflow.evaluer(self.get_object(), request.user, s.validated_data['note'],
                                                s.validated_data.get('commentaire', '')))
+
+    @action(detail=True, methods=['post'], url_path='changer-structure')
+    def changer_structure(self, request, pk=None):
+        """Le citoyen choisit une autre structure compétente tant que le dossier n'est pas affecté."""
+        structure = get_object_or_404(Structure.objects.select_related('service'),
+                                      pk=entier(request.data.get('structure'), None, 1, 2 ** 62, 'structure'))
+        dossier = workflow.changer_structure(self.get_object(), request.user, structure)
+        journaliser(request, 'dossier.changement_structure', dossier, {'structure': structure.nom})
+        return self._repondre(dossier)
+
+    @action(detail=True, methods=['post'], url_path='completer')
+    def completer(self, request, pk=None):
+        """Le citoyen ajoute une information ou des photos à son dossier ouvert (incident ou SOS)."""
+        dossier = self.get_object()
+        message = (request.data.get('message') or '').strip()
+        fichiers = request.FILES.getlist('photos')
+        photos = []
+        if fichiers:
+            if dossier.citoyen_id != request.user.pk:
+                raise PermissionDenied('Ce dossier ne vous appartient pas.')
+            photos = valider_photos(fichiers, deja=dossier.pieces_jointes.count())
+        with transaction.atomic():
+            workflow.completer(dossier, request.user, message or f'{len(fichiers)} photo(s) ajoutée(s).')
+            if fichiers:
+                enregistrer_photos(dossier, photos, request.user)
+        return self._repondre(dossier)
+
+    @action(detail=True, methods=['get'], url_path=r'photos/(?P<photo_id>\d+)')
+    def photo(self, request, pk=None, photo_id=None):
+        """Sert une photo du dossier après contrôle d'accès (les fichiers ne sont jamais publics)."""
+        dossier = self.get_object()
+        pj = PieceJointe.objects.filter(**workflow._lien(dossier), pk=photo_id).first()
+        if pj is None or not pj.fichier:
+            raise Http404
+        try:
+            reponse = FileResponse(pj.fichier.open('rb'), content_type='image/jpeg')
+        except FileNotFoundError:
+            raise Http404
+        reponse['Cache-Control'] = 'private, max-age=3600'
+        return reponse
 
     @action(detail=True, methods=['get'])
     def evenements(self, request, pk=None):

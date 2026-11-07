@@ -107,16 +107,17 @@ const ESPACES = {
   },
 };
 
+/**
+ * Connexion unique pour tous : identifiant et mot de passe. Le serveur reconnaît le rôle du compte
+ * (citoyen, agent, superviseur de structure, administrateur) et chacun arrive dans son espace.
+ */
 export function Connexion() {
   const { connexion, connexionGoogle, sessionExpiree } = useAuth();
   const apres = useApresConnexion();
-  const [params, setParams] = useSearchParams();
-  const espace = ESPACES[params.get('espace')] ? params.get('espace') : 'citoyen';
   const [identifiant, setIdentifiant] = useState('');
   const [mdp, setMdp] = useState('');
   const [erreur, setErreur] = useState(null);
   const [envoi, setEnvoi] = useState(false);
-  const choisir = (e) => { setErreur(null); setParams(e === 'citoyen' ? {} : { espace: e }, { replace: true }); };
 
   const google = async (jeton) => {
     setErreur(null);
@@ -124,31 +125,25 @@ export function Connexion() {
   };
 
   return (
-    <Cadre titre="Connexion" sousTitre={ESPACES[espace].sousTitre}>
-      <div className="mb-6"><Onglets onglets={Object.entries(ESPACES).map(([code, e]) => ({ code, libelle: e.libelle }))} actif={espace} onChange={choisir} /></div>
+    <Cadre titre="Connexion" sousTitre="Citoyens, agents et superviseurs : connectez-vous avec votre identifiant, votre espace s’ouvre automatiquement.">
       {sessionExpiree && <Bandeau type="alerte" className="mb-4">Votre session a expiré. Reconnectez-vous.</Bandeau>}
-      {espace === 'citoyen' && (
-        <>
-          <BoutonGoogle onJeton={google} />
-          <div className="my-5 flex items-center gap-3 text-xs text-texte-pale"><span className="h-px flex-1 bg-surface-bord" />ou<span className="h-px flex-1 bg-surface-bord" /></div>
-        </>
-      )}
       <form className="space-y-4" onSubmit={async (e) => {
         e.preventDefault();
         setEnvoi(true);
         setErreur(null);
-        try { apres(await connexion(identifiant.trim(), mdp, espace)); } catch (err) { setErreur(err.detail); } finally { setEnvoi(false); }
+        try { apres(await connexion(identifiant.trim(), mdp)); } catch (err) { setErreur(err.detail); } finally { setEnvoi(false); }
       }}>
-        <Champ libelle={ESPACES[espace].identifiant}>{(id) => <input id={id} className="champ" value={identifiant} onChange={(e) => setIdentifiant(e.target.value)} autoComplete="username" required autoFocus />}</Champ>
+        <Champ libelle="E-mail ou identifiant">{(id) => <input id={id} className="champ" value={identifiant} onChange={(e) => setIdentifiant(e.target.value)} autoComplete="username" required autoFocus />}</Champ>
         <Champ libelle="Mot de passe">{(id) => <ChampMotDePasse id={id} valeur={mdp} onChange={setMdp} />}</Champ>
         <div className="flex justify-end"><Link to="/mot-de-passe-oublie" className="lien text-sm">Mot de passe oublié ?</Link></div>
         {erreur && <Bandeau type="danger">{erreur}</Bandeau>}
-        <Bouton type="submit" taille="lg" className="w-full" icone={LogIn} chargement={envoi}>Se connecter en tant que {ESPACES[espace].libelle.toLowerCase()}</Bouton>
+        <Bouton type="submit" taille="lg" className="w-full" icone={LogIn} chargement={envoi}>Se connecter</Bouton>
       </form>
+      <div className="my-5 flex items-center gap-3 text-xs text-texte-pale"><span className="h-px flex-1 bg-surface-bord" />ou, pour les citoyens<span className="h-px flex-1 bg-surface-bord" /></div>
+      <BoutonGoogle onJeton={google} />
       <p className="mt-6 text-center text-sm text-texte-doux">
-        {espace === 'citoyen' && <>Pas encore de compte ? <Link to="/inscription" className="lien">Créer un compte citoyen</Link></>}
-        {espace === 'agent' && <>Pas encore de compte ? Il est créé par le superviseur de votre structure (caserne, commissariat, hôpital, agence).</>}
-        {espace === 'superadmin' && <>Les comptes superviseur ne se créent pas en ligne : ils sont attribués par le superviseur national.</>}
+        Pas encore de compte ? <Link to="/inscription" className="lien">Créer un compte citoyen</Link>
+        <span className="mt-1 block text-xs">Les comptes agent et superviseur ne se créent pas en ligne : ils sont remis par votre structure.</span>
       </p>
     </Cadre>
   );
@@ -178,7 +173,7 @@ export function Inscription() {
     return (
       <Cadre titre="Compte superviseur" sousTitre="Accès réservé aux responsables de la plateforme.">
         <ChoixCompte actif="superadmin" />
-        <Bandeau type="info" titre="Pas de création en ligne">Pour protéger les données des citoyens, un compte superviseur n’est jamais créé depuis le site : chaque structure reçoit son superviseur du superviseur national.</Bandeau>
+        <Bandeau type="info" titre="Pas de création en ligne">Pour protéger les données des citoyens, un compte superviseur n’est jamais créé depuis le site : chaque structure reçoit son superviseur de l’administrateur de la plateforme.</Bandeau>
         <p className="mt-6 text-center text-sm text-texte-doux">Vous avez déjà ce compte ? <Link to="/connexion?espace=superadmin" className="lien">Se connecter</Link></p>
       </Cadre>
     );

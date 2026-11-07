@@ -220,7 +220,7 @@ export default function Supervision() {
     <div className="mx-auto max-w-7xl">
       <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-[13px] font-semibold text-marque-600">{national ? 'Supervision nationale' : utilisateur.structure_nom || 'Ma structure'}</p>
+          <p className="text-[13px] font-semibold text-marque-600">{national ? 'Administration de la plateforme · tout le Sénégal' : utilisateur.structure_nom || 'Ma structure'}</p>
           <h1 className="font-titre text-2xl font-extrabold sm:text-3xl">{`Bonjour ${utilisateur.first_name || ''}`.trim()}</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
