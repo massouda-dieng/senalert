@@ -25,7 +25,8 @@ android {
         applicationId = "com.senalert.senalert_mobile"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // Android 7.0 minimum : exigé par flutter_tts (lecture vocale des réponses de l’assistant).
+        minSdk = 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

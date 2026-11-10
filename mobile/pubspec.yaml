@@ -30,8 +30,10 @@ dependencies:
   google_fonts: ^6.2.1
   intl: ^0.19.0
   # Assistant vocal : dictée (micro, transcrite par le serveur) et lecture des réponses à voix haute.
-  # record 6.x reste compatible avec Flutter 3.24 (la 7 exige Flutter 3.44).
-  record: ^6.1.0
+  # record 6.0.0 exactement : à partir de 6.1, record_android lit flutter.compileSdkVersion, que Flutter 3.24 ne fournit pas aux modules (l’APK ne compile plus).
+  record: 6.0.0
+  # Versions de la même époque que record 6.0.0 (compileSdk fixe, compatible Flutter 3.24).
+  record_android: 1.3.3
   flutter_tts: ^4.2.0
   # Authentification Google (ID token vérifié par le backend)
   google_sign_in: ^6.2.1
