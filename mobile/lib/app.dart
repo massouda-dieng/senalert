@@ -22,7 +22,7 @@ import 'ui/kit.dart';
 import 'state/langue.dart';
 
 const _publiques = {'/bienvenue', '/connexion', '/inscription', '/compte-agent', '/compte-superviseur', '/mot-de-passe-oublie', '/secours'};
-const _citoyen = {'/accueil', '/signaler', '/sos', '/services', '/assistant', '/carte', '/dossiers', '/communaute'};
+const _citoyen = {'/accueil', '/signaler', '/sos', '/services', '/assistant', '/dossiers', '/communaute'};
 const _agent = {'/agent', '/interventions', '/carte-agent'};
 
 String accueilPour(String role) => switch (role) { 'agent' => '/agent', 'superviseur' || 'superadmin' => '/supervision', _ => '/accueil' };
@@ -62,7 +62,8 @@ GoRouter creerRouteur(Session session) => GoRouter(
           routes: [
             GoRoute(path: '/accueil', builder: (_, __) => const AccueilCitoyen()),
             GoRoute(path: '/dossiers', builder: (_, s) => ListeDossiersScreen(sos: s.uri.queryParameters['type'] == 'sos')),
-            GoRoute(path: '/carte', builder: (_, __) => const CarteScreen()),
+            // Carte interactive retirée de l'espace citoyen (remarque de l'encadreur) : ancien lien → « Autour de moi ».
+            GoRoute(path: '/carte', redirect: (_, __) => '/communaute'),
             GoRoute(path: '/secours', builder: (_, __) => const PremiersSecoursScreen()),
             GoRoute(path: '/communaute', builder: (_, __) => const CommunauteScreen()),
             GoRoute(path: '/profil', builder: (_, __) => const ProfilScreen()),
@@ -88,7 +89,7 @@ class _Coquille extends StatelessWidget {
         ? const [('/agent', Icons.space_dashboard_outlined, 'Tableau'), ('/interventions', Icons.assignment_outlined, 'Interventions'),
             ('/carte-agent', Icons.map_outlined, 'Carte'), ('/profil', Icons.person_outline, 'Profil')]
         : [('/accueil', Icons.home_outlined, tr('Accueil')), ('/dossiers', Icons.folder_open_outlined, tr('Dossiers')),
-            ('/communaute', Icons.groups_outlined, tr('Autour')), ('/carte', Icons.map_outlined, tr('Carte')), ('/profil', Icons.person_outline, tr('Profil'))];
+            ('/communaute', Icons.groups_outlined, tr('Autour')), ('/profil', Icons.person_outline, tr('Profil'))];
     final index = onglets.indexWhere((o) => o.$1 == lieu);
     return Scaffold(
       body: child,

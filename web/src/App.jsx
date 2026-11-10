@@ -62,7 +62,8 @@ export default function App() {
         <Route path="/citoyen" element={<Espace roles={['citoyen']}><Accueil /></Espace>} />
         <Route path="/citoyen/signaler" element={<Espace roles={['citoyen']}><Signaler /></Espace>} />
         <Route path="/citoyen/dossiers" element={<Espace roles={['citoyen']}><MesDossiers /></Espace>} />
-        <Route path="/citoyen/carte" element={<Espace roles={['citoyen']}><CartePage /></Espace>} />
+        {/* Carte interactive retirée de l'espace citoyen (remarque de l'encadreur) : les anciens liens mènent à « Autour de moi ». */}
+        <Route path="/citoyen/carte" element={<Navigate to="/citoyen/communaute" replace />} />
         <Route path="/citoyen/communaute" element={<Espace roles={['citoyen']}><Communaute /></Espace>} />
         <Route path="/citoyen/services" element={<Espace roles={['citoyen']}><Services /></Espace>} />
         <Route path="/citoyen/secours" element={<Espace roles={['citoyen']}><Guide /></Espace>} />

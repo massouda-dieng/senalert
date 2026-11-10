@@ -22,7 +22,6 @@ export const NAVIGATION = {
     { a: '/citoyen/signaler', libelle: 'Signaler un incident', icone: ShieldAlert },
     { a: '/citoyen/dossiers', libelle: 'Mes dossiers', icone: FolderOpen },
     { a: '/citoyen/communaute', libelle: 'Autour de moi', icone: UsersRound },
-    { a: '/citoyen/carte', libelle: 'Carte interactive', icone: Map },
     { a: '/citoyen/services', libelle: 'Services proches', icone: MapPinned },
     { a: '/citoyen/secours', libelle: 'Premiers secours', icone: BookOpenCheck },
     { a: '/citoyen/assistant', libelle: 'Assistant', icone: Bot },
@@ -225,7 +224,7 @@ export default function Layout() {
 }
 
 const BARRE_MOBILE = {
-  citoyen: [['/citoyen', 'Accueil', Home, true], ['/citoyen/signaler', 'Signaler', ShieldAlert], ['/citoyen/dossiers', 'Dossiers', FolderOpen], ['/citoyen/carte', 'Carte', Map]],
+  citoyen: [['/citoyen', 'Accueil', Home, true], ['/citoyen/signaler', 'Signaler', ShieldAlert], ['/citoyen/dossiers', 'Dossiers', FolderOpen], ['/citoyen/communaute', 'Autour de moi', UsersRound]],
   agent: [['/agent', 'Tableau', Gauge, true], ['/agent/interventions', 'Missions', ClipboardList], ['/agent/carte', 'Carte', Map], ['/notifications', 'Alertes', Bell]],
   superadmin: [['/supervision', 'Vue d’ensemble', Gauge, true], ['/supervision/incidents', 'Incidents', ClipboardList], ['/supervision/sos', 'SOS', Siren], ['/supervision/carte', 'Carte', Map]],
   superviseur: [['/supervision', 'Ma structure', Gauge, true], ['/supervision/incidents', 'Incidents', ClipboardList], ['/supervision/sos', 'SOS', Siren], ['/supervision/utilisateurs', 'Agents', Users]],

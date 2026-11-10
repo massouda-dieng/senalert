@@ -47,7 +47,7 @@ MOTS_CLES_FICHES = {
 
 AIDE_APPLICATION = (
     "Dans SenAlert, vous pouvez : déclencher un SOS (bouton rouge, envoi de votre position), "
-    "signaler un incident avec photo, suivre vos dossiers, consulter la carte des incidents, "
+    "signaler un incident avec photo, suivre vos dossiers, voir les incidents autour de vous, "
     "trouver les services proches (hôpitaux, pharmacies, police, pompiers) et lire les fiches de premiers secours."
 )
 
@@ -65,8 +65,8 @@ ORIENTATIONS = [
     (('hopital', 'pharmacie', 'clinique', 'commissariat', 'police', 'pompier', 'proche', 'pres de'),
      "La page « Services proches » liste les hôpitaux, pharmacies, police et pompiers autour de vous, avec l'itinéraire.",
      {'libelle': 'Services proches', 'cible': '/citoyen/services'}),
-    (('carte', 'autour de moi', 'quartier'), "La carte montre les incidents récents et les alertes officielles de votre région.",
-     {'libelle': 'Ouvrir la carte', 'cible': '/citoyen/carte'}),
+    (('carte', 'autour de moi', 'quartier'), "La page « Autour de moi » montre les incidents récents près de chez vous.",
+     {'libelle': 'Autour de moi', 'cible': '/citoyen/communaute'}),
 ]
 
 # Conseils généraux de prévention : ils ne remplacent ni un professionnel de santé ni les secours.
