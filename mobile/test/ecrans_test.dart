@@ -103,7 +103,7 @@ void main() {
     await t.pump(const Duration(seconds: 1));
     expect(find.text('Où se passe l’incident ?'), findsOneWidget);
     expect(find.textContaining('Rechercher une adresse'), findsOneWidget);
-    expect(find.text('Utiliser ma position actuelle'), findsOneWidget);
+    expect(find.text('Utiliser ma position actuelle'), findsNothing, reason: 'position prise automatiquement, sans bouton');
     // Pas de GPS dans le test (comme une permission refusée) : message clair et repli proposé.
     expect(find.textContaining('Autorisation de localisation refusée'), findsOneWidget);
     expect(find.textContaining('Recherchez l’adresse ou déplacez la carte'), findsOneWidget);

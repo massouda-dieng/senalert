@@ -388,7 +388,12 @@ function DialogueAffectation({ dossier, onFermer, onValider }) {
   const proches = useRessource(national && dossier.latitude != null ? '/structures/' : null,
     { lat: dossier.latitude, lng: dossier.longitude, limite: 10 });
   const agents = useRessource(structure ? '/gestion/utilisateurs/' : null, { role: 'agent', is_active: true, structure, taille: 100 });
-  const liste = agents.donnees?.results || [];
+  // Agent choisi automatiquement : un agent disponible, le moins occupé (missions ouvertes) ; le superviseur n'a qu'à confirmer.
+  const liste = [...(agents.donnees?.results || [])].sort((a, b) => Number(Boolean(b.profil_agent?.disponible)) - Number(Boolean(a.profil_agent?.disponible))
+    || (a.missions_en_cours ?? 0) - (b.missions_en_cours ?? 0));
+  const propose = liste[0];
+  useEffect(() => { if (propose && !agent) setAgent(String(propose.id)); }, [propose, agent]);
+  const choisi = liste.find((a) => String(a.id) === agent);
   const optionsStructures = [
     ...(dossier.structure ? [{ code: String(dossier.structure), libelle: `${dossier.structure_nom} (actuelle)` }] : []),
     ...(proches.donnees || []).filter((s) => s.id !== dossier.structure)
@@ -408,16 +413,32 @@ function DialogueAffectation({ dossier, onFermer, onValider }) {
             <Selecteur id={id} valeur={structure} onChange={(v) => { setStructure(v); setAgent(''); }} vide="Choisir une structure…" options={optionsStructures} />
           )}</Champ>
         ) : <p className="text-sm text-texte-doux">Structure : <strong className="text-texte">{dossier.structure_nom}</strong></p>}
-        <Champ libelle="Agent" requis aide="Les agents disponibles sont proposés en premier.">{(id) => (
-          !structure ? <p id={id} className="text-sm text-texte-doux">Choisissez d’abord une structure.</p>
-            : agents.chargement ? <Chargement className="py-3" /> : liste.length === 0
-              ? <p id={id} className="rounded-xl bg-alerte-clair p-3 text-sm text-alerte">Aucun agent actif dans cette structure. Ajoutez-en un dans « {national ? 'Utilisateurs' : 'Mes agents'} ».</p>
-              : <Selecteur id={id} valeur={agent} onChange={setAgent} vide="Choisir un agent…"
-                options={[...liste].sort((a, b) => Number(b.profil_agent?.disponible) - Number(a.profil_agent?.disponible)).map((a) => ({
-                  code: String(a.id),
-                  libelle: `${a.first_name} ${a.last_name} — ${a.profil_agent?.fonction || 'agent'} · ${a.profil_agent?.disponible ? 'disponible' : 'indisponible'}`.trim(),
-                }))} />
-        )}</Champ>
+        <div>
+          <p className="etiquette">Agent</p>
+          {!structure ? <p className="text-sm text-texte-doux">Aucune structure pour ce dossier.</p>
+            : agents.chargement && !agents.donnees ? <Chargement className="py-3" /> : liste.length === 0
+              ? <p className="rounded-xl bg-alerte-clair p-3 text-sm text-alerte">Aucun agent actif dans cette structure. Ajoutez-en un dans « {national ? 'Citoyens et agents' : 'Mes agents'} ».</p>
+              : choisi && (
+                <div className="flex items-center gap-3 rounded-xl border border-surface-bord bg-surface-douce p-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-marque-100 text-sm font-bold text-marque-800" aria-hidden>{(choisi.first_name || choisi.username || '?')[0].toUpperCase()}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold">{`${choisi.first_name} ${choisi.last_name}`.trim() || choisi.username}</p>
+                    <p className="text-xs text-texte-doux">
+                      {choisi.profil_agent?.fonction || 'Agent'} · {choisi.profil_agent?.disponible ? 'disponible' : 'indisponible'}
+                      {' · '}{choisi.missions_en_cours ? `${choisi.missions_en_cours} mission(s) en cours` : 'aucune mission en cours'}
+                    </p>
+                  </div>
+                  {liste.length > 1 && (
+                    <button type="button" className="lien shrink-0 text-xs" onClick={() => {
+                      const i = liste.findIndex((a) => String(a.id) === agent);
+                      setAgent(String(liste[(i + 1) % liste.length].id));
+                    }}>Autre agent</button>
+                  )}
+                </div>
+              )}
+          {choisi && !choisi.profil_agent?.disponible && <p className="mt-1.5 text-xs text-alerte">Aucun agent disponible : l’agent le moins occupé est proposé.</p>}
+          {choisi && choisi.id === propose?.id && <p className="mt-1.5 text-xs text-texte-doux">Choisi automatiquement : agent disponible le moins occupé.</p>}
+        </div>
         <Champ libelle="Consigne (optionnelle)">{(id) => <textarea id={id} rows={2} className="champ" value={message} onChange={(e) => setMessage(e.target.value)} maxLength={500} />}</Champ>
       </div>
     </Fenetre>

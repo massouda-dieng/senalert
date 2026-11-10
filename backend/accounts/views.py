@@ -290,6 +290,9 @@ class FiltreUtilisateur(filters.FilterSet):
         return qs.filter(pk__in=ids)
 
 
+OUVERTS = ['affecte', 'accepte', 'en_cours']
+
+
 class UtilisateurAdminViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """Gestion des comptes (toutes les opérations sont journalisées).
 
@@ -308,7 +311,10 @@ class UtilisateurAdminViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, 
             qs = qs.filter(role=ROLE_AGENT, structure_id=self.request.user.structure_id) \
                 if self.request.user.structure_id else qs.none()
         return (qs.select_related('profil_agent__service', 'structure')
-                .annotate(nb_interventions=Count('interventions'))
+                .annotate(nb_interventions=Count('interventions'),
+                          # Missions encore ouvertes : sert à proposer automatiquement l'agent le moins occupé.
+                          missions_en_cours=Count('interventions', filter=Q(interventions__incident__statut__in=OUVERTS)
+                                                  | Q(interventions__alerte__statut__in=OUVERTS)))
                 .order_by('-date_joined'))
 
     def _creer_compte(self, d, role, structure):

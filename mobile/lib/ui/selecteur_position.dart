@@ -13,7 +13,7 @@ const fondPlan = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Str
 const _centreSenegal = LatLng(14.45, -14.9);
 
 /// Choix d'un lieu, pensé pour un débutant : le repère reste au centre et on déplace la carte dessous
-/// (comme les applications de VTC). Trois façons d'y arriver : « Ma position », la recherche d'une adresse
+/// (comme les applications de VTC). Position du téléphone prise automatiquement à l’ouverture, recherche d’une adresse
 /// ou d'une localité, ou le déplacement à la main. Si la localisation est refusée, la recherche et la carte
 /// restent utilisables.
 class SelecteurPosition extends StatefulWidget {
@@ -159,11 +159,12 @@ class _SelecteurPositionState extends State<SelecteurPosition> {
         ])),
       ),
       const SizedBox(height: 10),
-      OutlinedButton.icon(
-        onPressed: _gps ? null : _maPosition,
-        icon: _gps ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.my_location),
-        label: Text(_gps ? 'Recherche de votre position…' : 'Utiliser ma position actuelle'),
-      ),
+      // Position prise automatiquement à l'ouverture : pas de bouton à toucher (demande de l'encadreur).
+      if (_gps) Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+        const SizedBox(width: 8),
+        Text('Localisation en cours…', style: TextStyle(color: AppColors.textGrey)),
+      ]),
       if (_echecGps != null) Padding(padding: const EdgeInsets.only(top: 8), child: Bandeau.alerte(
           '${_echecGps!.erreur ?? 'Position indisponible.'} Recherchez l’adresse ou déplacez la carte jusqu’au lieu.',
           action: _echecGps!.reglagesRequis ? const TextButton(onPressed: Localisation.ouvrirReglages, child: Text('Ouvrir les réglages')) : null)),

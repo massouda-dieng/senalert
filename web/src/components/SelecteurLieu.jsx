@@ -1,5 +1,5 @@
 import 'leaflet/dist/leaflet.css';
-import { Crosshair, MapPin, Minus, Plus, Search } from 'lucide-react';
+import { LocateFixed, MapPin, Minus, Plus, Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Circle, MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import { api } from '../api/client';
@@ -69,7 +69,8 @@ function Zoom() {
 
 /**
  * Choix du lieu d'un incident, pensé pour un débutant : le repère rouge reste au centre et on fait glisser
- * la carte dessous. « Ma position » à l'ouverture (si autorisée), recherche d'adresse, clic sur la carte.
+ * la carte dessous. La position de l'appareil est prise automatiquement à l'ouverture (pas de bouton à toucher,
+ * demande de l'encadreur) ; sinon recherche d'adresse ou clic sur la carte.
  * Si la localisation est refusée, la recherche et la carte restent utilisables.
  */
 export default function SelecteurLieu({ lat, lng, precision, onLieu }) {
@@ -112,9 +113,11 @@ export default function SelecteurLieu({ lat, lng, precision, onLieu }) {
             Faites glisser la carte pour placer le repère sur le lieu
           </p>
         )}
-        <div className="absolute bottom-4 left-3 z-[600]">
-          <Bouton icone={Crosshair} chargement={gps?.enCours} onClick={localiser} className="shadow-flottant">Ma position</Bouton>
-        </div>
+        {gps?.enCours && (
+          <p className="pointer-events-none absolute bottom-4 left-3 z-[600] inline-flex items-center gap-2 rounded-full bg-marque-900/85 px-3.5 py-1.5 text-xs font-semibold text-white">
+            <LocateFixed className="h-3.5 w-3.5 animate-pulse" aria-hidden />Localisation en cours…
+          </p>
+        )}
       </div>
       {gps?.erreur && <Bandeau type="alerte">{gps.erreur} Recherchez l’adresse ou faites glisser la carte jusqu’au lieu.</Bandeau>}
       <p className={`flex items-center gap-1.5 text-sm ${aPosition ? 'font-semibold text-succes' : 'text-texte-doux'}`}>

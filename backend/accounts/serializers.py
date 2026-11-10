@@ -211,12 +211,13 @@ class UtilisateurAdminSerializer(ProfilAgentSiAgentMixin, serializers.ModelSeria
     role_libelle = serializers.CharField(source='get_role_display', read_only=True)
     structure_nom = serializers.CharField(source='structure.nom', default=None, read_only=True)
     nb_interventions = serializers.IntegerField(read_only=True, default=None)
+    missions_en_cours = serializers.IntegerField(read_only=True, default=None)
 
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'telephone', 'region', 'role', 'role_libelle',
                   'structure', 'structure_nom', 'is_active', 'last_login', 'date_joined', 'profil_agent',
-                  'nb_interventions']
+                  'nb_interventions', 'missions_en_cours']
         read_only_fields = fields
 
 
