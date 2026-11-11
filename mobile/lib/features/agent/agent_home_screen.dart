@@ -135,13 +135,13 @@ class _AccueilAgentState extends State<AccueilAgent> {
                 BandeauAlertesZone(region: u.zones.isEmpty ? null : u.zones.first),
                 Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 if (u.structureId == null) const Padding(padding: EdgeInsets.only(top: 10),
-                    child: Bandeau.alerte('Compte non rattaché à une structure : aucun citoyen ne peut vous choisir. Contactez votre superviseur.')),
+                    child: Bandeau.alerte('Compte non rattaché à une structure : aucun dossier ne peut vous être affecté. Contactez votre superviseur.')),
                 Padding(padding: const EdgeInsets.only(top: 10), child: Carte(padding: EdgeInsets.zero, child: SwitchListTile(
                   value: u.disponible,
                   onChanged: _bascule ? null : _basculerDisponibilite,
                   secondary: Icon(Icons.power_settings_new_rounded, color: u.disponible ? AppColors.success : AppColors.textMuted),
                   title: Text(u.disponible ? 'Disponible' : 'Indisponible', style: const TextStyle(fontWeight: FontWeight.w700)),
-                  subtitle: const Text('Les citoyens ne peuvent vous choisir que lorsque vous êtes disponible.'),
+                  subtitle: const Text('Votre superviseur voit si vous êtes disponible avant de vous affecter un dossier.'),
                 ))),
                 if (_erreur != null) Padding(padding: const EdgeInsets.only(top: 10), child: Bandeau.erreur(_erreur!.message)),
                 const SizedBox(height: 14),
@@ -163,7 +163,7 @@ class _AccueilAgentState extends State<AccueilAgent> {
                 if (_miens.isEmpty) Carte(child: Row(children: [
                   const Icon(Icons.check_circle_outline_rounded, color: AppColors.success),
                   const SizedBox(width: 10),
-                  Expanded(child: Text('Aucune mission active. Restez disponible : les citoyens et le superviseur vous transmettent les dossiers.',
+                  Expanded(child: Text('Aucune mission active. Restez disponible : votre superviseur vous affecte les dossiers de votre structure.',
                       style: TextStyle(color: AppColors.textGrey))),
                 ])),
                 for (final d in _miens.skip(1)) Padding(padding: const EdgeInsets.only(bottom: 10),

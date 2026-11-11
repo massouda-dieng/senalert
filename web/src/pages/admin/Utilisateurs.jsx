@@ -56,7 +56,7 @@ function FormulaireCompte({ type, national, onFermer, onFait, services }) {
         } catch (e) { setErreurs(e.champs || {}); setErreur(e.detail); } finally { setEnvoi(false); }
       }}>{agent ? 'Ajouter l’agent' : 'Créer le superviseur'}</Bouton>
     </>}>
-      {agent && !national && <Bandeau type="info" className="mb-4">L’agent est rattaché à votre structure. Il sera proposé aux citoyens dès qu’il est disponible.</Bandeau>}
+      {agent && !national && <Bandeau type="info" className="mb-4">L’agent est rattaché à votre structure. Vous pourrez lui affecter les dossiers de la structure.</Bandeau>}
       <div className="grid gap-4 sm:grid-cols-2">
         <Champ libelle="Prénom" requis erreur={erreurs.first_name} aide={agent ? 'Seul le prénom est montré aux citoyens.' : undefined}>{(id) => <input id={id} className="champ" value={f.first_name} onChange={maj('first_name')} />}</Champ>
         <Champ libelle="Nom" requis erreur={erreurs.last_name}>{(id) => <input id={id} className="champ" value={f.last_name} onChange={maj('last_name')} />}</Champ>

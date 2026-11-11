@@ -79,7 +79,7 @@ function Colonne({ titre, icone: Icone, nombre: n, vide, children, accent }) {
   );
 }
 
-/** L'agent se déclare disponible ou non : seuls les agents disponibles sont proposés aux citoyens. */
+/** L'agent se déclare disponible ou non : son superviseur le voit avant de lui affecter un dossier. */
 function Disponibilite() {
   const { utilisateur, setUtilisateur } = useAuth();
   const toast = useToast();
@@ -87,12 +87,12 @@ function Disponibilite() {
   const disponible = utilisateur.profil_agent?.disponible ?? true;
   return (
     <Bouton taille="sm" variante={disponible ? 'succes' : 'secondaire'} icone={Power} chargement={envoi} aria-pressed={disponible}
-      title="Les citoyens ne peuvent vous choisir que lorsque vous êtes disponible."
+      title="Votre superviseur voit si vous êtes disponible avant de vous affecter un dossier."
       onClick={async () => {
         setEnvoi(true);
         try {
           setUtilisateur(await api('/auth/disponibilite/', { methode: 'POST', corps: { disponible: !disponible } }));
-          toast(disponible ? 'Vous êtes indisponible : les citoyens ne peuvent plus vous choisir.' : 'Vous êtes disponible.');
+          toast(disponible ? 'Vous êtes indisponible : votre superviseur le voit avant de vous affecter un dossier.' : 'Vous êtes disponible.');
         } catch (e) { toast(e.detail, 'erreur'); } finally { setEnvoi(false); }
       }}>
       {disponible ? 'Disponible' : 'Indisponible'}
@@ -167,7 +167,7 @@ export function TableauAgent() {
         </div>
       </div>
 
-      {!utilisateur.structure && <Bandeau type="alerte" className="mb-5">Votre compte n’est rattaché à aucune structure : aucun citoyen ne peut vous choisir. Contactez votre superviseur.</Bandeau>}
+      {!utilisateur.structure && <Bandeau type="alerte" className="mb-5">Votre compte n’est rattaché à aucune structure : aucun dossier ne peut vous être affecté. Contactez votre superviseur.</Bandeau>}
       {erreur && <div className="mb-5"><EtatErreur erreur={erreur} onReessayer={toutRecharger} /></div>}
 
       <div className="mb-6 grid grid-cols-3 gap-3">
@@ -178,7 +178,7 @@ export function TableauAgent() {
 
       {miensInc.chargement && !miensInc.donnees ? <Chargement /> : (
         <div className="grid gap-4 lg:grid-cols-2">
-          <Colonne titre="À prendre en charge" icone={Hourglass} accent="text-sos-fonce" nombre={attente.length} vide="Aucune mission reçue. Les citoyens et votre superviseur vous transmettent les dossiers.">{attente.map(mission)}</Colonne>
+          <Colonne titre="À prendre en charge" icone={Hourglass} accent="text-sos-fonce" nombre={attente.length} vide="Aucune mission reçue. Votre superviseur vous affecte les dossiers de votre structure.">{attente.map(mission)}</Colonne>
           <Colonne titre="Interventions en cours" icone={Timer} nombre={encours.length} vide="Aucune intervention en cours.">{encours.map(mission)}</Colonne>
         </div>
       )}
@@ -230,7 +230,7 @@ export function Interventions() {
   const sos = useRessource('/alertes/sos/', { actifs: true, taille: 1 }, { intervalle: 20000 });
   return (
     <>
-      <EnTetePage titre="Interventions" sousTitre="Dossiers qui vous sont transmis par les citoyens ou par votre superviseur."
+      <EnTetePage titre="Interventions" sousTitre="Dossiers que votre superviseur vous a affectés."
         actions={<Onglets actif={type} onChange={(t) => setParams(t === 'sos' ? { type: 'sos' } : {})} onglets={[{ code: 'incident', libelle: 'Incidents', compte: incidents.donnees?.count }, { code: 'sos', libelle: 'SOS', compte: sos.donnees?.count }]} />} />
       <ListeDossiers key={type} type={type} intervalle={20000} vues={VUES_INTERVENTIONS}
         filtresVisibles={['q', 'type_incident', 'region', 'gravite', 'date_debut', 'date_fin']} vide={{ titre: 'Aucun dossier', texte: 'Les dossiers de votre zone apparaîtront ici.' }} />
