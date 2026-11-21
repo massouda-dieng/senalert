@@ -229,7 +229,6 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
   Widget build(BuildContext context) {
     final config = context.watch<Configuration>();
     return _Cadre(titreEcran: 'Créer un compte', sousTitre: 'Compte citoyen : actif tout de suite.', enfants: [
-      const _ChoixCompte('citoyen'),
       _BoutonGoogle(onErreur: (e) => setState(() => _erreur = e)),
       const _Separateur('ou avec votre e-mail'),
       Row(children: [Expanded(child: _champ('first_name', 'Prénom')), const SizedBox(width: 10), Expanded(child: _champ('last_name', 'Nom'))]),
@@ -251,6 +250,8 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
       if (_erreur != null) Padding(padding: const EdgeInsets.only(bottom: 12), child: Bandeau.erreur(_erreur!.message)),
       FilledButton(onPressed: _envoi ? null : _valider, child: _envoi ? const CircularProgressIndicator(color: Colors.white) : const Text('Créer mon compte')),
       TextButton(onPressed: () => context.pop(), child: const Text('J’ai déjà un compte')),
+      Text('Les comptes agent et superviseur ne se créent pas dans l’application : ils sont remis par votre structure.',
+          textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: AppColors.textGrey)),
     ]);
   }
 }

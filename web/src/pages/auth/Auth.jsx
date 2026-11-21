@@ -5,7 +5,7 @@ import { api } from '../../api/client';
 import { ESPACE_PAR_ROLE, useAuth } from '../../auth/AuthContext';
 import { Logo } from '../../components/Logo';
 import Photo from '../../components/Photo';
-import { Bandeau, Bouton, Champ, Onglets, Selecteur } from '../../components/ui';
+import { Bandeau, Bouton, Champ, Selecteur } from '../../components/ui';
 import { useConfig } from '../../lib/config';
 
 function Cadre({ titre, sousTitre, children }) {
@@ -95,18 +95,6 @@ function useApresConnexion() {
   return (u) => navigate(lieu.state?.depuis && lieu.state.depuis !== '/' ? lieu.state.depuis : ESPACE_PAR_ROLE[u.role] || '/', { replace: true });
 }
 
-const ESPACES = {
-  citoyen: {
-    libelle: 'Citoyen', sousTitre: 'Signalez un incident, lancez un SOS et suivez vos dossiers.', identifiant: 'E-mail ou identifiant',
-  },
-  agent: {
-    libelle: 'Agent', sousTitre: 'Police, pompiers, santé, SENELEC, ONAS : traitez les interventions qui vous sont transmises.', identifiant: 'E-mail professionnel',
-  },
-  superadmin: {
-    libelle: 'Superviseur', sousTitre: 'Superviseur de structure ou national : suivez les dossiers et gérez vos agents.', identifiant: 'E-mail ou identifiant',
-  },
-};
-
 /**
  * Connexion unique pour tous : identifiant et mot de passe. Le serveur reconnaît le rôle du compte
  * (citoyen, agent, superviseur de structure, administrateur) et chacun arrive dans son espace.
@@ -149,35 +137,11 @@ export function Connexion() {
   );
 }
 
-/** Choix du type de compte à créer : citoyen (libre) ; agent et superviseur ne se créent jamais en ligne. */
-function ChoixCompte({ actif }) {
-  const navigate = useNavigate();
-  const chemins = { citoyen: '/inscription', agent: '/inscription?espace=agent', superadmin: '/inscription?espace=superadmin' };
-  return (
-    <div className="mb-6"><Onglets onglets={Object.entries(ESPACES).map(([code, e]) => ({ code, libelle: e.libelle }))} actif={actif} onChange={(e) => navigate(chemins[e], { replace: true })} /></div>
-  );
-}
-
+/**
+ * Inscription directe, sans choisir de profil : seul le citoyen crée son compte en ligne.
+ * Les comptes agent et superviseur sont remis par la structure ou par l'administrateur.
+ */
 export function Inscription() {
-  const [params] = useSearchParams();
-  if (params.get('espace') === 'agent') {
-    return (
-      <Cadre titre="Compte agent" sousTitre="Police, pompiers, santé, SENELEC, ONAS.">
-        <ChoixCompte actif="agent" />
-        <Bandeau type="info" titre="Créé par votre superviseur">Votre compte agent est créé par le superviseur de votre structure (caserne, commissariat, hôpital, agence). Il vous remet un mot de passe provisoire, que vous changez à la première connexion.</Bandeau>
-        <p className="mt-6 text-center text-sm text-texte-doux">Vous avez déjà ce compte ? <Link to="/connexion?espace=agent" className="lien">Se connecter</Link></p>
-      </Cadre>
-    );
-  }
-  if (params.get('espace') === 'superadmin') {
-    return (
-      <Cadre titre="Compte superviseur" sousTitre="Accès réservé aux responsables de la plateforme.">
-        <ChoixCompte actif="superadmin" />
-        <Bandeau type="info" titre="Pas de création en ligne">Pour protéger les données des citoyens, un compte superviseur n’est jamais créé depuis le site : chaque structure reçoit son superviseur de l’administrateur de la plateforme.</Bandeau>
-        <p className="mt-6 text-center text-sm text-texte-doux">Vous avez déjà ce compte ? <Link to="/connexion?espace=superadmin" className="lien">Se connecter</Link></p>
-      </Cadre>
-    );
-  }
   return <InscriptionCitoyen />;
 }
 
@@ -193,7 +157,6 @@ function InscriptionCitoyen() {
 
   return (
     <Cadre titre="Créer un compte" sousTitre="Compte citoyen : actif tout de suite.">
-      <ChoixCompte actif="citoyen" />
       <BoutonGoogle onJeton={async (j) => { try { apres(await connexionGoogle(j)); } catch (e) { setErreur(e.detail); } }} />
       <div className="my-5 flex items-center gap-3 text-xs text-texte-pale"><span className="h-px flex-1 bg-surface-bord" />ou avec votre e-mail<span className="h-px flex-1 bg-surface-bord" /></div>
       <form className="space-y-4" onSubmit={async (e) => {
@@ -217,7 +180,10 @@ function InscriptionCitoyen() {
         {erreur && <Bandeau type="danger">{erreur}</Bandeau>}
         <Bouton type="submit" taille="lg" className="w-full" chargement={envoi}>Créer mon compte</Bouton>
       </form>
-      <p className="mt-6 text-center text-sm text-texte-doux">Déjà inscrit ? <Link to="/connexion" className="lien">Se connecter</Link></p>
+      <p className="mt-6 text-center text-sm text-texte-doux">
+        Déjà inscrit ? <Link to="/connexion" className="lien">Se connecter</Link>
+        <span className="mt-1 block text-xs">Les comptes agent et superviseur ne se créent pas en ligne : ils sont remis par votre structure.</span>
+      </p>
     </Cadre>
   );
 }

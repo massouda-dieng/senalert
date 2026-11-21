@@ -43,11 +43,14 @@ void main() {
     expect(find.textContaining('remis par votre structure'), findsOneWidget);
   });
 
-  testWidgets('création de compte : choix Citoyen, Agent, Superviseur', (t) async {
+  testWidgets('création de compte directe, sans choix de profil (citoyen uniquement)', (t) async {
     await t.pumpWidget(envelopper(const InscriptionScreen()));
+    expect(find.byType(SegmentedButton<String>), findsNothing);
     for (final libelle in ['Citoyen', 'Agent', 'Superviseur']) {
-      expect(find.text(libelle), findsOneWidget);
+      expect(find.text(libelle), findsNothing);
     }
+    expect(find.text('Créer mon compte'), findsOneWidget);
+    expect(find.textContaining('remis par votre structure'), findsOneWidget);
   });
 
   testWidgets('accueil : présentation en pages, « Passer » mène aux deux actions et aux premiers secours', (t) async {
