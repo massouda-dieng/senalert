@@ -235,7 +235,7 @@ export default function Supervision() {
         <div className="space-y-5">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <Chiffre icone={Hourglass} ton="alerte" libelle="À traiter" valeur={nombre(r.a_traiter)} detail={r.en_retard ? `dont ${nombre(r.en_retard)} en retard` : 'aucun retard'} aide={def.a_traiter} />
-            <Chiffre icone={Timer} libelle="En cours" valeur={nombre(r.en_cours)} detail={`${nombre(r.agents_en_intervention)} agents sur le terrain`} aide={def.en_cours} />
+            <Chiffre icone={Timer} libelle="En cours" valeur={nombre(r.en_cours)} detail={`${nombre(r.agents_en_intervention)} ${r.agents_en_intervention > 1 ? 'agents' : 'agent'} sur le terrain`} aide={def.en_cours} />
             <Chiffre icone={Siren} ton="sos" libelle="Alertes SOS" valeur={nombre(r.total_sos)} detail={`sur ${libellePeriode}`} aide={def.total_sos} />
             <Chiffre icone={CheckCircle2} ton="succes" libelle="Résolus" valeur={r.taux_resolution == null ? '—' : pct(r.taux_resolution)}
               detail={r.delai_moyen_prise_en_charge_min == null ? `${nombre(r.resolus)} dossiers` : `pris en charge en ${duree(r.delai_moyen_prise_en_charge_min)}`} aide={def.taux_resolution} />

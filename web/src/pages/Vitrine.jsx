@@ -37,7 +37,7 @@ const ETAPES = [
 ];
 
 const PARCOURS = [
-  { titre: 'Alerte reçue', texte: 'Le dossier arrive à la structure la plus proche et à l’agent choisi.' },
+  { titre: 'Alerte reçue', texte: 'Le dossier arrive à la structure choisie ; son superviseur l’affecte à un agent.' },
   { titre: 'Pris en charge', texte: 'Un agent accepte l’intervention.' },
   { titre: 'Secours en route', texte: 'Vous voyez l’agent approcher sur la carte.' },
   { titre: 'Résolu', texte: 'Compte rendu, puis votre évaluation.' },
