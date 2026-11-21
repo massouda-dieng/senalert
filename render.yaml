@@ -1,0 +1,61 @@
+# Mise en ligne de SenAlert sur Render (offre gratuite) : un service web Docker et une base PostgreSQL.
+# Mode d'emploi : docs/DEPLOIEMENT_RENDER.md
+services:
+  - type: web
+    name: senalert
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: test
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /app/
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      # Toute adresse en .onrender.com (le nom exact dépend de la disponibilité)
+      - key: ALLOWED_HOSTS
+        value: .onrender.com
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://*.onrender.com
+      - key: DB_ENGINE
+        value: postgresql
+      - key: DB_NAME
+        fromDatabase:
+          name: senalert-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: senalert-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: senalert-db
+          property: password
+      - key: DB_HOST
+        fromDatabase:
+          name: senalert-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: senalert-db
+          property: port
+      # Valeurs secrètes, saisies dans le tableau de bord de Render (jamais dans Git)
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID_WEB
+        sync: false
+      - key: SENALERT_ADMIN_EMAIL
+        sync: false
+      - key: SENALERT_ADMIN_MOT_DE_PASSE
+        sync: false
+      - key: SENALERT_MOT_DE_PASSE_DEMO
+        sync: false
+
+databases:
+  - name: senalert-db
+    plan: free
+    region: frankfurt
+    databaseName: senalert
+    user: senalert

@@ -1,0 +1,22 @@
+# Rien de local ni de secret ne doit entrer dans l'image de production
+.git
+**/.env
+**/*.env
+**/firebase-adminsdk.json
+**/node_modules
+**/__pycache__
+**/*.pyc
+web/dist
+backend/env
+backend/venv
+backend/db.sqlite3
+backend/*.sqlite3
+backend/media
+backend/staticfiles
+backend/.media-tests
+backend/.cache-osm
+backups
+mobile
+simulateur-mobile
+docs
+scripts

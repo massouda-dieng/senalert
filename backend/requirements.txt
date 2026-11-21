@@ -17,3 +17,5 @@ google-auth==2.56.3
 firebase_admin==7.5.0
 # PostgreSQL (production)
 psycopg[binary]==3.3.6
+# Serveur de production (Render)
+gunicorn==23.0.0
