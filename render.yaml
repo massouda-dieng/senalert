@@ -8,7 +8,8 @@ services:
     region: frankfurt
     branch: test
     dockerfilePath: ./Dockerfile
-    healthCheckPath: /app/
+    # Pas de healthCheckPath : le contrôle de santé interne de Render n'arrive pas avec une adresse .onrender.com,
+    # et Django le refuserait (ALLOWED_HOSTS). Render vérifie alors seulement que le port répond.
     envVars:
       - key: DEBUG
         value: "False"
