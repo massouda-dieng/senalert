@@ -19,6 +19,8 @@ COPY backend/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ ./
 COPY --from=web /app/web/dist /app/web/dist
+# Application mobile (version web de Flutter, compilée à l'avance), servie à l'adresse /mobile/
+COPY deploiement/mobile-web/ /app/simulateur-mobile/
 # Fichiers statiques collectés à la construction (la clé ci-dessous ne sert qu'à cette étape)
 RUN DEBUG=False SECRET_KEY=construction-uniquement python manage.py collectstatic --noinput
 

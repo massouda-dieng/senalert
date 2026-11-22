@@ -1,0 +1,206 @@
+{
+  "version": "2026-10-29",
+  "avertissement": "Ces fiches résument des gestes de premiers secours reconnus. Elles ne remplacent ni une formation aux premiers secours ni l'avis des services de secours. Elles doivent être validées par un professionnel de santé avant une mise en production.",
+  "fiches": [
+    {
+      "slug": "arret-cardiaque",
+      "titre": "Arrêt cardiaque (adulte)",
+      "categorie": "Urgences vitales",
+      "resume": "La personne ne répond pas et ne respire pas normalement.",
+      "etapes": [
+        "Assurez-vous que la zone est sans danger pour vous et la victime.",
+        "Vérifiez si elle réagit : parlez-lui fort et touchez ses épaules.",
+        "Si elle ne répond pas et ne respire pas normalement, faites alerter les secours immédiatement (ou alertez vous-même, haut-parleur activé).",
+        "Placez vos mains l'une sur l'autre au centre de la poitrine.",
+        "Appuyez fort et vite : environ 5 cm de profondeur, 100 à 120 compressions par minute, en laissant la poitrine remonter.",
+        "Si un défibrillateur (DAE) est disponible, allumez-le et suivez ses instructions vocales.",
+        "Continuez sans interruption jusqu'à l'arrivée des secours ou la reprise d'une respiration normale."
+      ],
+      "a_eviter": ["Ne pas interrompre les compressions plus de quelques secondes.", "Ne pas laisser la victime seule."],
+      "appeler_si": "Toujours : appelez immédiatement les secours.",
+      "sources": ["IFRC — International First Aid, Resuscitation and Education Guidelines 2020", "Croix-Rouge française — Gestes qui sauvent"],
+      "ordre": 1
+    },
+    {
+      "slug": "etouffement",
+      "titre": "Étouffement (adulte)",
+      "categorie": "Urgences vitales",
+      "resume": "La personne ne peut plus parler, tousser ni respirer après avoir avalé quelque chose.",
+      "etapes": [
+        "Si la personne peut tousser, encouragez-la à tousser et ne faites rien d'autre.",
+        "Si elle ne peut ni parler ni tousser : penchez-la vers l'avant et donnez jusqu'à 5 claques fermes dans le dos, entre les omoplates.",
+        "Si l'objet n'est pas sorti : placez-vous derrière elle, poing fermé au-dessus du nombril, et faites jusqu'à 5 compressions abdominales vers vous et vers le haut.",
+        "Alternez 5 claques dans le dos et 5 compressions abdominales jusqu'à la désobstruction.",
+        "Si elle perd connaissance, faites alerter les secours et commencez la réanimation (fiche Arrêt cardiaque)."
+      ],
+      "a_eviter": ["Ne pas chercher l'objet à l'aveugle avec les doigts."],
+      "appeler_si": "Si l'obstruction persiste ou si la personne perd connaissance.",
+      "sources": ["IFRC — International First Aid, Resuscitation and Education Guidelines 2020", "Croix-Rouge française — Gestes qui sauvent"],
+      "ordre": 2
+    },
+    {
+      "slug": "hemorragie",
+      "titre": "Saignement abondant",
+      "categorie": "Urgences vitales",
+      "resume": "Le sang coule en abondance ou ne s'arrête pas.",
+      "etapes": [
+        "Protégez-vous si possible (gants, sac plastique).",
+        "Appuyez fortement et directement sur la plaie avec un tissu propre ou votre main.",
+        "Maintenez la pression sans relâcher jusqu'à l'arrivée des secours.",
+        "Allongez la victime et couvrez-la pour éviter qu'elle ait froid.",
+        "Faites alerter les secours."
+      ],
+      "a_eviter": ["Ne pas retirer un objet planté dans la plaie.", "Ne pas relâcher la pression pour vérifier."],
+      "appeler_si": "Toujours en cas de saignement abondant.",
+      "sources": ["IFRC — International First Aid, Resuscitation and Education Guidelines 2020", "Croix-Rouge française — Gestes qui sauvent"],
+      "ordre": 3
+    },
+    {
+      "slug": "inconscient-respire",
+      "titre": "Personne inconsciente qui respire",
+      "categorie": "Urgences vitales",
+      "resume": "La personne ne répond pas mais respire normalement.",
+      "etapes": [
+        "Vérifiez qu'elle respire normalement (regardez la poitrine se soulever pendant 10 secondes).",
+        "Placez-la sur le côté en position latérale de sécurité, tête légèrement basculée en arrière.",
+        "Faites alerter les secours.",
+        "Surveillez sa respiration en continu jusqu'à leur arrivée.",
+        "Si elle cesse de respirer normalement, remettez-la sur le dos et commencez la réanimation."
+      ],
+      "a_eviter": ["Ne pas lui donner à boire.", "Ne pas la laisser seule sur le dos."],
+      "appeler_si": "Toujours.",
+      "sources": ["IFRC — International First Aid, Resuscitation and Education Guidelines 2020"],
+      "ordre": 4
+    },
+    {
+      "slug": "brulure",
+      "titre": "Brûlure",
+      "categorie": "Blessures",
+      "resume": "Brûlure par la chaleur, un liquide chaud ou une flamme.",
+      "etapes": [
+        "Éloignez la victime de la source de chaleur.",
+        "Refroidissez immédiatement la brûlure sous l'eau courante tempérée pendant au moins 20 minutes.",
+        "Retirez bijoux et vêtements non collés à la peau autour de la zone.",
+        "Couvrez ensuite avec un linge propre ou un film alimentaire, sans serrer."
+      ],
+      "a_eviter": ["Ne pas appliquer de glace, de beurre, d'huile, de dentifrice ou de produit traditionnel.", "Ne pas percer les cloques."],
+      "appeler_si": "Brûlure étendue, au visage, aux mains, aux parties génitales, chez un enfant, ou brûlure électrique ou chimique.",
+      "sources": ["IFRC — International First Aid, Resuscitation and Education Guidelines 2020", "Croix-Rouge française — Gestes qui sauvent"],
+      "ordre": 5
+    },
+    {
+      "slug": "accident-route",
+      "titre": "Accident de la route",
+      "categorie": "Accidents",
+      "resume": "Premiers réflexes en arrivant sur un accident.",
+      "etapes": [
+        "Protégez : stationnez en sécurité, allumez vos feux de détresse et balisez la zone si possible.",
+        "Ne vous exposez pas à la circulation.",
+        "Alertez les secours en indiquant le lieu exact et le nombre de victimes.",
+        "Parlez aux victimes et rassurez-les.",
+        "Appliquez si nécessaire les fiches Saignement abondant ou Personne inconsciente."
+      ],
+      "a_eviter": ["Ne pas déplacer une victime sauf danger immédiat (incendie, noyade).", "Ne pas retirer le casque d'un motard.", "Ne pas donner à boire ou à manger."],
+      "appeler_si": "Dès qu'il y a une victime.",
+      "sources": ["Croix-Rouge française — Gestes qui sauvent"],
+      "ordre": 6
+    },
+    {
+      "slug": "electrocution",
+      "titre": "Électrocution",
+      "categorie": "Accidents",
+      "resume": "Une personne est en contact ou a été en contact avec le courant.",
+      "etapes": [
+        "Ne touchez pas la victime tant qu'elle est en contact avec le courant.",
+        "Coupez le courant au disjoncteur ou au compteur si possible.",
+        "Si la ligne est à haute tension, éloignez-vous et alertez les secours et la SENELEC.",
+        "Une fois le courant coupé, vérifiez si la victime répond et respire, puis appliquez la fiche adaptée.",
+        "Refroidissez les brûlures éventuelles à l'eau."
+      ],
+      "a_eviter": ["Ne jamais toucher un câble tombé au sol."],
+      "appeler_si": "Toujours, même si la victime semble aller bien.",
+      "sources": ["IFRC — International First Aid, Resuscitation and Education Guidelines 2020"],
+      "ordre": 7
+    },
+    {
+      "slug": "noyade",
+      "titre": "Noyade",
+      "categorie": "Accidents",
+      "resume": "Une personne a été retirée de l'eau.",
+      "etapes": [
+        "Ne vous mettez pas en danger : utilisez si possible une perche, une corde ou une bouée.",
+        "Une fois la victime hors de l'eau, vérifiez si elle répond et respire.",
+        "Si elle ne respire pas normalement, faites alerter les secours et commencez la réanimation.",
+        "Si elle respire, mettez-la en position latérale de sécurité et couvrez-la."
+      ],
+      "a_eviter": ["Ne pas plonger sans savoir nager ni dans un courant fort."],
+      "appeler_si": "Toujours.",
+      "sources": ["IFRC — International First Aid, Resuscitation and Education Guidelines 2020"],
+      "ordre": 8
+    },
+    {
+      "slug": "convulsions",
+      "titre": "Crise convulsive",
+      "categorie": "Malaises",
+      "resume": "La personne a des mouvements saccadés involontaires.",
+      "etapes": [
+        "Éloignez les objets dangereux et protégez sa tête (vêtement plié).",
+        "Notez l'heure de début de la crise.",
+        "Laissez la crise se terminer.",
+        "Après la crise, placez-la sur le côté et surveillez sa respiration."
+      ],
+      "a_eviter": ["Ne rien mettre dans sa bouche.", "Ne pas la maintenir de force."],
+      "appeler_si": "Crise de plus de 5 minutes, première crise, blessure, grossesse, ou si elle ne reprend pas conscience.",
+      "sources": ["IFRC — International First Aid, Resuscitation and Education Guidelines 2020"],
+      "ordre": 9
+    },
+    {
+      "slug": "coup-de-chaleur",
+      "titre": "Coup de chaleur",
+      "categorie": "Malaises",
+      "resume": "Peau très chaude, confusion, maux de tête après une exposition à la chaleur.",
+      "etapes": [
+        "Installez la personne à l'ombre ou dans un endroit frais.",
+        "Desserrez ses vêtements.",
+        "Refroidissez-la : eau fraîche sur la peau, éventail, linges humides.",
+        "Si elle est consciente et peut avaler, donnez-lui de l'eau par petites gorgées."
+      ],
+      "a_eviter": ["Ne pas donner à boire à une personne confuse ou inconsciente."],
+      "appeler_si": "Confusion, perte de connaissance, convulsions ou absence d'amélioration rapide.",
+      "sources": ["IFRC — International First Aid, Resuscitation and Education Guidelines 2020"],
+      "ordre": 10
+    },
+    {
+      "slug": "inondation",
+      "titre": "Inondation : se protéger",
+      "categorie": "Prévention",
+      "resume": "Consignes de sécurité en cas de montée des eaux.",
+      "etapes": [
+        "Coupez l'électricité si vous pouvez le faire sans toucher l'eau.",
+        "Montez en hauteur avec vos papiers et vos médicaments.",
+        "Éloignez-vous des caniveaux et canaux.",
+        "Suivez les consignes des autorités et de la protection civile."
+      ],
+      "a_eviter": ["Ne pas marcher ni rouler dans l'eau en mouvement : quelques dizaines de centimètres suffisent à emporter une personne ou un véhicule.", "Ne pas toucher d'appareil électrique les pieds dans l'eau."],
+      "appeler_si": "Personne bloquée par les eaux, blessée ou emportée.",
+      "sources": ["Croix-Rouge française — Gestes qui sauvent", "IFRC — Public awareness and public education for disaster risk reduction"],
+      "ordre": 11
+    },
+    {
+      "slug": "incendie",
+      "titre": "Incendie : se protéger",
+      "categorie": "Prévention",
+      "resume": "Conduite à tenir face à un départ de feu.",
+      "etapes": [
+        "Alertez les personnes présentes et les sapeurs-pompiers.",
+        "Évacuez en fermant les portes derrière vous.",
+        "Dans la fumée, baissez-vous : l'air est plus respirable près du sol.",
+        "Si vos vêtements prennent feu : arrêtez-vous, allongez-vous et roulez sur vous-même."
+      ],
+      "a_eviter": ["Ne pas utiliser d'eau sur un feu d'huile ou électrique.", "Ne pas retourner chercher des affaires."],
+      "appeler_si": "Tout départ de feu non maîtrisé immédiatement.",
+      "sources": ["Croix-Rouge française — Gestes qui sauvent"],
+      "ordre": 12
+    }
+  ]
+}
